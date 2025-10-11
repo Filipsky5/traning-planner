@@ -1,11 +1,28 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
-# AI Rules for {app-name}
+# AI Rules for AI Running Training Planner
 
-{project-description}
+## Project Description
+
+AI Running Training Planner is a web application that generates personalized running training suggestions using AI. The MVP focuses on helping beginner and intermediate runners plan their workouts without requiring specialized knowledge.
+
+### Core Features:
+- **User Onboarding**: New users add their last 3 training sessions to provide AI with initial data
+- **AI Training Generation**: AI generates structured workout suggestions (warm-up, main part, cool-down) based on user's history and feedback
+- **Training Management**: Users can manually add, edit, and delete completed workouts (distance, duration, average heart rate)
+- **Calendar Visualization**: Main screen displays training schedule with color-coded workout types
+- **Rating System**: Users rate completed workouts (too easy, just right, too hard) to improve AI suggestions
+- **Progressive Training Logic**: AI adjusts intensity based on last 3 ratings for each workout type (calibration mode for first 3 sessions)
+
+### Out of Scope for MVP:
+- File imports (.FIT, .GPX)
+- Third-party integrations (Strava, Garmin)
+- Charts and advanced data visualizations
+- Social features
+- Mobile applications
 
 ## Tech Stack
 

@@ -1,70 +1,173 @@
-# Product Requirements Document (PRD): Planer Biegowy AI - Wersja MVP
+# Tech Stack - AI Running Training Planner
 
-## 1. Wprowadzenie i Cel 🎯
+## Frontend
 
-**Produkt:** Aplikacja webowa, która generuje spersonalizowane propozycje treningów biegowych przy użyciu AI.
+### Framework
+- **Astro 5** (SSR mode)
+  - Szybkie, wydajne strony z minimalnym JavaScript
+  - Server-side rendering dla lepszego SEO i performance
+  - Adapter: `@astrojs/node` w trybie standalone
 
-**Problem:** Planowanie treningów biegowych jest trudne dla początkujących i średniozaawansowanych biegaczy. Aplikacja eliminuje potrzebę posiadania specjalistycznej wiedzy, dostarczając proste i zróżnicowane sugestie treningowe.
+### UI Framework
+- **React 19**
+  - Komponenty interaktywne (kalendarz, formularze)
+  - Hydration tylko tam gdzie potrzebna (Astro Islands)
+  - Dyrektywy: `client:load`, `client:visible` dla optymalizacji
 
-**Cel MVP:** Szybkie zweryfikowanie hipotezy, że użytkownicy zaufają sugestiom AI i będą regularnie korzystać z aplikacji do planowania swoich biegów.
+### Styling
+- **Tailwind CSS 4**
+  - Utility-first CSS framework
+  - Szybkie prototypowanie
+  - Rekomendowany przez autorów kursu
 
----
+### UI Components
+- **shadcn/ui**
+  - Dostępne, konfigurowalne komponenty React
+  - Oparte na Radix UI
+  - TypeScript support out of the box
 
-## 2. Persony Użytkowników
+### Ikony
+- **Lucide React**
+  - Spójna biblioteka ikon
+  - Tree-shakeable
 
-* **Początkująca Ania:** Zaczyna biegać, ma za sobą kilka nieregularnych treningów. Chce biegać systematycznie, ale nie wie, jak zaplanować swoje treningi, aby uniknąć błędów i monotonii.
-* **Biegacz Tomek:** Biega od roku 2-3 razy w tygodniu, ale bez konkretnego planu. Chce poprawić swoje wyniki i wprowadzić do swoich treningów więcej struktury, ale nie chce korzystać ze skomplikowanych, płatnych planów.
+## Backend
 
----
+### Database
+- **Supabase** (hosted PostgreSQL)
+  - Automatyczne REST API
+  - Wbudowana autentykacja
+  - Real-time subscriptions (opcjonalnie na przyszłość)
+  - Row Level Security (RLS) dla bezpieczeństwa
+  - Darmowy tier wystarczający na MVP
 
-## 3. Główne Funkcjonalności (Epiki)
+### Authentication
+- **Supabase Auth**
+  - Gotowe rozwiązanie
+  - Email/password authentication
+  - Session management
+  - Zero konfiguracji
 
-* Rejestracja i Onboarding Użytkownika
-* Generowanie Sugestii Treningowych przez AI
-* Zarządzanie Treningami (Dodawanie/Edycja/Usuwanie)
-* Wizualizacja Planu w Kalendarzu
-* System Zbierania Ocen Treningów
+### API Layer
+- **Astro API Routes**
+  - Endpointy w `src/pages/api/`
+  - Server-side tylko
+  - TypeScript support
 
----
+### AI Integration
+- **OpenRouter.ai**
+  - Dostęp do wielu modeli AI (OpenAI, Anthropic, Google)
+  - Elastyczność w wyborze modelu
+  - Ustawienie limitów finansowych na klucze API
+  - Jeden interfejs dla różnych providerów
 
-## 4. Szczegółowe Wymagania i Przepływy Użytkownika
+## DevOps & Deployment
 
-### Onboarding
-* Użytkownik po rejestracji musi dodać **dokładnie 3 swoje ostatnie treningi**, aby AI miało dane startowe.
-* Interfejs udostępnia **przykładowe dane** (np. "Spacer 30 min", "Lekki trucht 15 min"), które można wpisać, aby obniżyć barierę wejścia.
-* Użytkownik opcjonalnie odpowiada na pytanie o cel (np. "Biegać dla zdrowia", "Przebiec X km"), z informacją, że dane te posłużą do ulepszenia aplikacji w przyszłości.
+### Containerization
+- **Docker**
+  - Dockerfile oparty na `node:20-alpine`
+  - Single-stage build dla uproszczenia
+  - docker-compose dla lokalnego developmentu (opcjonalnie)
 
-### Generowanie Treningu (AI)
-* **Tryb Kalibracji:** Pierwsze **3 treningi** wygenerowane przez AI służą "wyczuciu" użytkownika. Powinny być bardziej zachowawcze i zróżnicowane, aby zebrać dane na temat reakcji użytkownika.
-* **Logika Progresji:** Po trybie kalibracji, jeśli 3 ostatnie treningi danego typu (np. Bieg Spokojny) zostaną ocenione jako "W sam raz" lub "Za łatwy", kolejna propozycja tego typu będzie miała nieznacznie (np. o 10%) zwiększony dystans.
-* **Struktura i Treść:** AI zawsze generuje trening o strukturze: **Rozgrzewka, Część główna, Schłodzenie**. Sugerowane tempa są określane przez AI na podstawie analizy **średniego tempa** z historycznych biegów użytkownika.
-* **Interfejs:** Propozycja treningu pojawia się w **oknie modalnym** z przyciskami "Akceptuj i dodaj do planu" oraz "Odrzuć i wygeneruj nowy". Użytkownik ma limit **3 re-generacji** na dzień.
+### Hosting
+- **DigitalOcean**
+  - Droplet z Docker Marketplace image (zalecane)
+  - LUB DigitalOcean App Platform (prostsze, $5/miesiąc)
+  - Container Registry dla Docker images
 
-### Zarządzanie Treningami
-* Użytkownik ręcznie dodaje zrealizowane treningi, podając **dystans, czas trwania i średnie tętno**.
-* Zaplanowany trening jest potwierdzany przez otwarcie formularza z danymi planu, które użytkownik modyfikuje, wpisując faktyczne wyniki.
-* Użytkownik może **edytować i usuwać** historyczne treningi. Funkcja edycji zostanie usunięta po wprowadzeniu wsparcia dla plików .FIT w przyszłości.
-* Po potwierdzeniu wykonania treningu, użytkownik może go ocenić ("Za łatwy", "W sam raz", "Za trudny").
+### CI/CD
+- **GitHub Actions**
+  - Automatyczne buildy przy push do main
+  - Uruchamianie testów
+  - Automatyczny deploy na DigitalOcean
+  - Ręczny trigger przez `workflow_dispatch`
 
-### Kalendarz i Widok Detali
-* **Widok kalendarza** jest głównym ekranem aplikacji. Wyświetla treningi zróżnicowane za pomocą **kolorów lub ikon** odpowiadających typowi treningu.
-* Puste dni w kalendarzu mają ikonę **"+"** do inicjowania generowania treningu.
-* Widok szczegółów treningu **nie zawiera żadnych wykresów**. Prezentuje kluczowe metryki w formie **numerycznej** (dystans, czas, śr. tętno, śr. tempo) oraz ocenę wystawioną przez użytkownika.
+### Testing
+- **Playwright**
+  - Testy E2E
+  - Cross-browser testing
+  - TypeScript support
+  - Minimum 1 test weryfikujący flow użytkownika
 
----
+## Development Tools
 
-## 5. Co NIE Wchodzi w Zakres MVP 🚫
+### Type Safety
+- **TypeScript 5**
+  - Statyczne typowanie
+  - Lepsze wsparcie IDE
+  - Mniej błędów w runtime
 
-* **Import plików .FIT, GPX** lub jakichkolwiek innych.
-* **Integracje** z zewnętrznymi aplikacjami (Strava, Garmin Connect etc.).
-* **Wykresy** i zaawansowane wizualizacje danych.
-* Funkcje **społecznościowe** (udostępnianie, komentowanie).
-* Aplikacje mobilne.
+### Code Quality
+- **ESLint 9** - linting JavaScript/TypeScript
+- **Prettier** - formatowanie kodu
+- **Husky** - Git hooks
+- **lint-staged** - linting tylko zmienionych plików
 
----
+## Struktura Projektu
 
-## 6. Kryteria Sukcesu i Mierniki ✅
+```
+src/
+├── pages/
+│   ├── api/              # API endpoints (Astro SSR)
+│   │   ├── auth/         # Autentykacja
+│   │   ├── trainings/    # CRUD treningów
+│   │   └── ai/           # Generator AI
+│   ├── dashboard/        # Główny widok kalendarza
+│   ├── login/            # Strona logowania
+│   └── register/         # Rejestracja
+├── components/
+│   ├── ui/               # shadcn/ui komponenty
+│   ├── Calendar.tsx      # Komponent kalendarza
+│   ├── TrainingForm.tsx  # Formularz treningu
+│   └── AIGenerator.tsx   # Generator AI
+├── lib/
+│   ├── supabase.ts       # Supabase client
+│   ├── openrouter.ts     # OpenRouter client
+│   └── utils.ts          # Utility functions
+├── types/
+│   └── index.ts          # TypeScript types
+└── styles/
+    └── global.css        # Style globalne
+```
 
-* **Wskaźnik Akceptacji:** 75% treningów wygenerowanych przez AI jest akceptowanych (kliknięcie "Akceptuj i dodaj do planu").
-* **Wskaźnik Wykorzystania AI:** 75% wszystkich treningów dodanych do kalendarza pochodzi z generatora AI (a nie jest dodawanych w pełni ręcznie).
-* **Jakościowy Wskaźnik Satysfakcji:** Dążenie do tego, aby większość ocenianych treningów otrzymywała ocenę "W sam raz".
+## Koszty Miesięczne (Szacowane)
+
+- **Supabase**: $0 (Free tier - 500MB DB, 2GB transfer)
+- **DigitalOcean Droplet**: $12-24/miesiąc (Basic/Regular)
+- **DigitalOcean App Platform** (alternatywa): $5/miesiąc
+- **OpenRouter AI**: $5-20/miesiąc (zależnie od użycia)
+- **GitHub Actions**: $0 (darmowe dla public repos, 2000 min/miesiąc dla private)
+
+**RAZEM: $17-44/miesiąc** (lub $10-25/miesiąc z App Platform)
+
+## Alternatywy i Plan B
+
+### Jeśli zabraknie czasu na Docker + DO:
+1. Deploy na **Vercel** (darmowy, 5 minut setup)
+2. Vercel automatycznie obsługuje Astro SSR
+3. GitHub Actions deploy do Vercel
+4. W dokumentacji: "Deployment available on multiple platforms"
+
+### Jeśli Tailwind 4 sprawia problemy:
+- Downgrade do **Tailwind 3.4** (stabilny)
+
+### Jeśli React jest za trudny:
+- **Alpine.js** jako alternatywa (prostszy)
+- Lub czyste **Astro components**
+
+## Dlaczego Ten Stack?
+
+1. **Spełnia wymagania certyfikacyjne** - wszystkie obowiązkowe punkty pokryte
+2. **Dobry dla iOS developera** - React koncepty podobne do React Native/SwiftUI
+3. **TypeScript** - type safety jak w Swift
+4. **Supabase** - prosty setup, podobny do Firebase
+5. **GitHub Actions** - wystarczająco konfigurowalne
+6. **Realistyczny timeframe** - 25-30h na implementację
+
+## Timeline (5 tygodni, 8h/tydzień)
+
+**Tydzień 1**: Setup (Supabase, DO, Docker, GitHub Actions)
+**Tydzień 2**: CRUD + UI (Kalendarz, formularze)
+**Tydzień 3**: AI Generator + logika biznesowa
+**Tydzień 4**: Testy + debugging + dokumentacja
+**Tydzień 5**: Buffer na nieprzewidziane problemy

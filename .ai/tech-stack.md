@@ -65,7 +65,7 @@
 
 ### Containerization
 - **Docker**
-  - Dockerfile oparty na `node:20-alpine`
+  - Dockerfile oparty na `node:22-alpine`
   - Single-stage build dla uproszczenia
   - docker-compose dla lokalnego developmentu (opcjonalnie)
 

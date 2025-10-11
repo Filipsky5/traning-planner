@@ -1,422 +1,204 @@
-### 1. Lista tabel z kolumnami, typami i ograniczeniami
+## Plan bazy danych (MVP) — opis wysokopoziomowy
 
-```sql
--- Extensions
-create extension if not exists pgcrypto with schema public;
+Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w formie opisowej (bez SQL). Celem jest ujednolicenie języka biznesowego i technicznego oraz zapewnienie spójności z PRD i decyzjami architektonicznymi.
 
--- Enums
-do $$ begin
-  create type workout_status as enum ('planned','completed','skipped','canceled');
-exception when duplicate_object then null; end $$;
+### Założenia architektoniczne
 
-do $$ begin
-  create type workout_rating as enum ('too_easy','just_right','too_hard');
-exception when duplicate_object then null; end $$;
+- System identyfikacji użytkowników: `auth.users` (Supabase Auth). Własnej tabeli profilu nie ma w MVP.
+- Wszystkie tabele domenowe mają `user_id uuid → auth.users(id) ON DELETE CASCADE`.
+- Czas i doby w UTC. `planned_date` to data (UTC), znaczące chwile czasu jako `timestamptz` (`created_at`, `updated_at`, `completed_at`).
+- Klucze główne: `uuid`, generowane po stronie DB. Włączona funkcjonalność do generowania UUID (pgcrypto).
+- RLS włączone na tabelach użytkownika; polityki USING/WITH CHECK `user_id = auth.uid()`.
+- Słownik `training_types` utrzymuje listę typów treningów; deaktywacja przez `is_active` zamiast usuwania.
+- Enumeracje (stabilne wartości, zarządzane w DB):
+  - `workout_status`: planned | completed | skipped | canceled
+  - `workout_rating`: too_easy | just_right | too_hard
+  - `workout_origin`: manual | ai | import
+  - `ai_suggestion_status`: shown | accepted | rejected | expired
+  - `ai_event_kind`: regenerate (MVP)
+  - `goal_type`: distance_by_date (MVP)
 
-do $$ begin
-  create type workout_origin as enum ('manual','ai','import');
-exception when duplicate_object then null; end $$;
+---
 
-do $$ begin
-  create type ai_suggestion_status as enum ('shown','accepted','rejected','expired');
-exception when duplicate_object then null; end $$;
+## Encje domenowe
 
-do $$ begin
-  create type ai_event_kind as enum ('regenerate');
-exception when duplicate_object then null; end $$;
+### 1) training_types (słownik)
+- Przeznaczenie: kanoniczny słownik typów treningów używany przez plan (workouts) i generator (ai_suggestions).
+- Kluczowe atrybuty: `code` (PK, tekstowy kod), `name` (czytelna nazwa), `is_active` (aktywność), `created_at` (UTC).
+- Zasady: usunięcie typu jest zabronione (RESTRICT) — dla spójności historycznej; wycofanie przez `is_active=false`.
+- Dane początkowe (seed): `easy`, `tempo`, `intervals`, `long_run`, `recovery`, `walk`.
 
-do $$ begin
-  create type goal_type as enum ('distance_by_date');
-exception when duplicate_object then null; end $$;
+### 2) workouts (plan i realizacja)
+- Przeznaczenie: reprezentuje jednostkę treningową — plan i (opcjonalnie) metryki realizacji.
+- Kluczowe atrybuty planu (zawsze wymagane):
+  - `user_id`, `training_type_code` (→ `training_types.code`), `planned_date` (UTC), `position` (kolejność w danym dniu, ≥1, unikalna per `user_id+planned_date`),
+  - `planned_distance_m` (100–100000), `planned_duration_s` (300–21600).
+- Kluczowe atrybuty realizacji (wymagane wyłącznie dla `status=completed`):
+  - `distance_m` (100–100000), `duration_s` (300–21600), `avg_hr_bpm` (0–240), `completed_at` (UTC).
+- Inne atrybuty:
+  - `status` (planned/completed/skipped/canceled), `rating` (too_easy/just_right/too_hard tylko dla completed),
+  - `origin` (manual/ai/import), `ai_suggestion_id` (występuje wyłącznie gdy `origin='ai'`),
+  - `steps_jsonb` (lista kroków: rozgrzewka, część główna, schłodzenie — weryfikowana schematem w API),
+  - `avg_pace_s_per_km` (pochodna: `duration_s / (distance_m/1000)`, null jeśli braki danych).
+- Reguły integralności (egzekwowane w DB):
+  - Metryki realizacji są wymagane wyłącznie dla `status='completed'`; w pozostałych statusach muszą być puste.
+  - `rating` dozwolony wyłącznie przy `status='completed'`.
+  - Zależność `origin ↔ ai_suggestion_id`: `origin='ai'` wtedy i tylko wtedy, gdy `ai_suggestion_id` nie jest null.
+  - Unikalność `user_id + planned_date + position` (pozwala na kilka sesji w tym samym dniu, ale z kolejnością).
+- Kluczowe relacje:
+  - `training_type_code` → `training_types(code)` (RESTRICT),
+  - `(ai_suggestion_id, user_id)` → `ai_suggestions(id, user_id)` (zapewnia spójność właściciela),
+  - `user_id` → `auth.users(id)` (CASCADE przy usunięciu użytkownika).
 
--- Utility: updated_at trigger
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at := now();
-  return new;
-end;
-$$;
+### 3) ai_suggestions (propozycje AI)
+- Przeznaczenie: przechowuje propozycje treningów wygenerowane przez AI przed akceptacją.
+- Kluczowe atrybuty: `user_id`, `training_type_code` (→ słownik), `steps_jsonb` (lista kroków), `status` (shown/accepted/rejected/expired),
+  `accepted_workout_id` (1–1 z `workouts`), `created_at`, `updated_at`.
+- Zasady:
+  - Wygaśnięcie po 24h liczone w logice aplikacji względem `created_at` (bez dodatkowej kolumny w DB).
+  - Akceptacja ustawia `status='accepted'` i wskazuje `accepted_workout_id`; spójność typu i daty weryfikowana w API.
+  - Unikalne odwzorowanie 1–1 między zaakceptowaną sugestią a treningiem (po obu stronach).
 
--- 1) Słownik typów treningów
-create table if not exists public.training_types (
-  code        text primary key,
-  name        text not null,
-  is_active   boolean not null default true,
-  created_at  timestamptz not null default now()
-);
+### 4) ai_suggestion_events (telemetria re-generacji)
+- Przeznaczenie: rejestruje akcje „regenerate” (MVP) na sugestiach AI, do egzekwowania limitów.
+- Kluczowe atrybuty: `user_id`, `ai_suggestion_id`, `kind` (zawsze `regenerate` w MVP), `occurred_at`, `metadata` (opcjonalnie).
 
--- 2) Sugestie AI
-create table if not exists public.ai_suggestions (
-  id                   uuid primary key default gen_random_uuid(),
-  user_id              uuid not null references auth.users(id) on delete cascade,
-  training_type_code   text not null references public.training_types(code) on delete restrict,
-  steps_jsonb          jsonb not null,
-  status               ai_suggestion_status not null default 'shown',
-  accepted_workout_id  uuid unique,
-  created_at           timestamptz not null default now(),
-  updated_at           timestamptz not null default now(),
+### 5) user_goals (cele użytkownika)
+- Przeznaczenie: prosty cel dystansowy w horyzoncie czasowym.
+- Kluczowe atrybuty: `goal_type` (MVP: `distance_by_date`), `target_distance_m` (>0), `due_date` (data), `notes` (opcjonalnie).
+- Zasady: na MVP dokładnie jeden cel na użytkownika (unikalność po `user_id`).
 
-  constraint ai_suggestions_steps_jsonb_chk
-    check (jsonb_typeof(steps_jsonb) = 'array')
-);
+### 6) ai_logs (logi serwisowe)
+- Przeznaczenie: logowanie zdarzeń i metryk interakcji z AI do diagnozy i rozliczeń.
+- Dostęp: tylko dla service-role; RLS typowo wyłączone, kontrola przez uprawnienia. Retencja 30 dni (job zewnętrzny).
+- Przykładowe atrybuty: `event`, `level`, `model`, `provider`, `latency_ms`, `input_tokens`, `output_tokens`, `cost_usd`, `payload`.
 
--- Zapewnia możliwość kompozytowego FK (id, user_id)
-alter table public.ai_suggestions
-  add constraint if not exists ai_suggestions_id_user_unique unique (id, user_id);
+---
 
--- 3) Treningi (plan i realizacja)
-create table if not exists public.workouts (
-  id                   uuid primary key default gen_random_uuid(),
-  user_id              uuid not null references auth.users(id) on delete cascade,
-  training_type_code   text not null references public.training_types(code) on delete restrict,
-  planned_date         date not null,
-  position             smallint not null,
+## Relacje i kardynalność
 
-  -- Plan (zawsze wymagany w MVP)
-  planned_distance_m   integer not null,
-  planned_duration_s   integer not null,
+- `training_types (1) → (N) workouts` — spójność historyczna (RESTRICT).
+- `training_types (1) → (N) ai_suggestions` — słownik typów (RESTRICT).
+- `auth.users (1) → (N) workouts` — własność danych użytkownika (CASCADE na usunięcie użytkownika).
+- `auth.users (1) → (N) ai_suggestions` — jw.
+- `auth.users (1) → (N) ai_suggestion_events` — jw.
+- `auth.users (1) → (1) user_goals` — dokładnie jeden cel na MVP.
+- `ai_suggestions (1) → (0..1) workouts` — akceptacja: `accepted_workout_id` ↔ `workouts.id` (1–1, spójność `user_id`).
+- `workouts (0..1) → (1) ai_suggestions` — pochodzenie AI: `(ai_suggestion_id, user_id)` ↔ `(id, user_id)`.
 
-  -- Realizacja (wymagana tylko dla status='completed')
-  distance_m           integer,
-  duration_s           integer,
-  avg_hr_bpm           integer,
-  completed_at         timestamptz,
+---
 
-  -- Atrybuty statusu
-  status               workout_status not null default 'planned',
-  rating               workout_rating,
-  origin               workout_origin not null default 'manual',
-  ai_suggestion_id     uuid,
+## Indeksy (cele i uzasadnienie)
 
-  -- Struktura treningu
-  steps_jsonb          jsonb,
+- `workouts (user_id, planned_date)` — szybkie pobieranie wpisów do widoku kalendarza (zakresy dni).
+- `workouts (user_id, training_type_code, completed_at DESC)` — 3 ostatnie zakończone treningi danego typu.
+- `workouts (user_id, completed_at DESC)` — 3 ostatnie zakończone treningi ogólnie.
+- Unikalny częściowy indeks `workouts (ai_suggestion_id) WHERE ai_suggestion_id IS NOT NULL` — odwzorowanie 1–1 akceptacji.
+- `ai_suggestions (user_id, status, created_at DESC)` — filtrowanie po statusie i czasie (wygasanie, lista propozycji).
+- `ai_suggestion_events (user_id, ai_suggestion_id, occurred_at DESC)` — egzekwowanie limitów re-generacji i audyt.
 
-  -- Kolumna generowana: średnie tempo (s/km)
-  avg_pace_s_per_km    integer generated always as (
-    case
-      when distance_m is null or duration_s is null or distance_m = 0 then null
-      else (duration_s * 1000) / distance_m
-    end
-  ) stored,
+---
 
-  created_at           timestamptz not null default now(),
-  updated_at           timestamptz not null default now(),
+## Widoki pomocnicze
 
-  -- CHECK: pozycja w dniu
-  constraint workouts_position_chk check (position >= 1),
+- `vw_last3_completed_per_type` — dla każdego użytkownika i typu treningu zwraca maks. 3 ostatnie wiersze o `status='completed'` posortowane po `completed_at DESC`.
+- `vw_last3_completed_overall` — dla każdego użytkownika zwraca maks. 3 ostatnie wiersze o `status='completed'` posortowane po `completed_at DESC`.
 
-  -- CHECK: zakresy planu
-  constraint workouts_planned_distance_chk check (planned_distance_m between 100 and 100000),
-  constraint workouts_planned_duration_chk check (planned_duration_s between 300 and 21600),
+---
 
-  -- CHECK: zakresy realizacji (jeśli obecne)
-  constraint workouts_distance_range_chk check (distance_m is null or (distance_m between 100 and 100000)),
-  constraint workouts_duration_range_chk check (duration_s is null or (duration_s between 300 and 21600)),
-  constraint workouts_avg_hr_range_chk   check (avg_hr_bpm is null or (avg_hr_bpm between 0 and 240)),
+## Zasady bezpieczeństwa (RLS)
 
-  -- CHECK: steps_jsonb minimalnie weryfikowane jako tablica
-  constraint workouts_steps_jsonb_chk check (steps_jsonb is null or jsonb_typeof(steps_jsonb) = 'array'),
+- RLS włączone dla: `workouts`, `ai_suggestions`, `ai_suggestion_events`, `user_goals`.
+- Polityki: SELECT/INSERT/UPDATE/DELETE wyłącznie gdy `user_id = auth.uid()` (USING i WITH CHECK). Dzięki temu każdy użytkownik widzi tylko swoje dane.
+- `ai_logs` — dostęp tylko dla service-role; dane techniczne, bez RLS.
 
-  -- CHECK: metryki realizacji wymagane wyłącznie dla completed
-  constraint workouts_metrics_required_chk check (
-    (status = 'completed' and distance_m is not null and duration_s is not null and avg_hr_bpm is not null and completed_at is not null)
-    or
-    (status <> 'completed' and distance_m is null and duration_s is null and avg_hr_bpm is null and completed_at is null)
-  ),
+---
 
-  -- CHECK: rating tylko dla completed
-  constraint workouts_rating_when_completed_chk check (
-    (status = 'completed' and rating is not null) or (status <> 'completed' and rating is null)
-  ),
+## Walidacje i spójność (DB + API)
 
-  -- CHECK: origin 'ai' IFF istnieje ai_suggestion_id
-  constraint workouts_origin_ai_link_chk check (
-    ((origin = 'ai') and (ai_suggestion_id is not null)) or ((origin <> 'ai') and (ai_suggestion_id is null))
-  )
-);
+- Zakresy planu: `planned_distance_m` 100–100000, `planned_duration_s` 300–21600.
+- Zakresy realizacji: `distance_m` 100–100000, `duration_s` 300–21600, `avg_hr_bpm` 0–240 (wymagane tylko dla `completed`).
+- Zależności warunkowe w DB:
+  - `status='completed'` ⇒ metryki realizacji i `completed_at` muszą być obecne; dla innych statusów — muszą być puste.
+  - `rating` dozwolony wyłącznie przy `status='completed'`.
+  - `origin='ai'` ⇔ `ai_suggestion_id` niepuste.
+- `steps_jsonb` weryfikowane minimalnie w DB (musi być tablicą); pełna walidacja schematu po stronie API.
+- `avg_pace_s_per_km` obliczane pochodnie (może być kolumną generowaną w DB; null przy brakach danych).
 
--- Unikalność pozycji w danym dniu na użytkownika
-alter table public.workouts
-  add constraint if not exists workouts_unique_position_per_day
-  unique (user_id, planned_date, position);
+---
 
--- Kompozytowe FK między workouts a ai_suggestions (egzekwuje spójność user_id)
--- Najpierw umożliwiamy referencję do (id, user_id) w workouts
-alter table public.workouts
-  add constraint if not exists workouts_id_user_unique unique (id, user_id);
+## Dane początkowe (seed)
 
--- FK: workouts -> ai_suggestions (id, user_id)
-alter table public.workouts
-  add constraint if not exists workouts_ai_suggestion_fk
-  foreign key (ai_suggestion_id, user_id)
-  references public.ai_suggestions (id, user_id)
-  on delete restrict;
+- `training_types.code`: `easy`, `tempo`, `intervals`, `long_run`, `recovery`, `walk` (bez `warmup`/`cooldown`).
 
--- FK: ai_suggestions.accepted_workout_id -> workouts (id, user_id)
-alter table public.ai_suggestions
-  add constraint if not exists ai_suggestions_accepted_workout_fk
-  foreign key (accepted_workout_id, user_id)
-  references public.workouts (id, user_id)
-  on delete restrict;
+---
 
--- 4) Zdarzenia związane z sugestiami (MVP: tylko 'regenerate')
-create table if not exists public.ai_suggestion_events (
-  id                uuid primary key default gen_random_uuid(),
-  user_id           uuid not null references auth.users(id) on delete cascade,
-  ai_suggestion_id  uuid not null references public.ai_suggestions(id) on delete cascade,
-  kind              ai_event_kind not null default 'regenerate',
-  occurred_at       timestamptz not null default now(),
-  metadata          jsonb
-);
+## Rozszerzalność (poza MVP)
 
--- 5) Cele użytkownika (MVP: wyłącznie 'distance_by_date', 1 cel na użytkownika)
-create table if not exists public.user_goals (
-  id                 uuid primary key default gen_random_uuid(),
-  user_id            uuid not null references auth.users(id) on delete cascade,
-  goal_type          goal_type not null default 'distance_by_date',
-  target_distance_m  integer not null check (target_distance_m > 0),
-  due_date           date not null,
-  notes              text,
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now(),
+- Tabela `profiles` (opcjonalnie) z dodatkowymi danymi użytkownika.
+- Partycjonowanie `workouts` po `planned_date` dla dużych wolumenów.
+- Więcej zdarzeń w `ai_suggestion_events` (np. `generate`, `accept`).
+- Nowe typy celów w `user_goals` (np. liczba sesji, czas do celu, konsekwencja).
+- Integracje/importy (np. GPX/FIT) z `origin='import'` oraz dedykowanym źródłem metryk.
 
-  constraint user_goals_one_per_user unique (user_id)
-);
+---
 
--- 6) Logi AI (tylko dla service-role; RLS wyłączone, retencja 30 dni przez job)
-create table if not exists public.ai_logs (
-  id            uuid primary key default gen_random_uuid(),
-  created_at    timestamptz not null default now(),
-  user_id       uuid,
-  event         text not null,
-  level         text not null default 'info',
-  model         text,
-  provider      text,
-  latency_ms    integer,
-  input_tokens  integer,
-  output_tokens integer,
-  cost_usd      numeric(12,6),
-  payload       jsonb
-);
+## Diagram ER (Mermaid)
 
--- Triggery updated_at
-do $$ begin
-  create trigger set_updated_at_workouts
-    before update on public.workouts
-    for each row execute function public.set_updated_at();
-exception when duplicate_object then null; end $$;
+Poniższy diagram odzwierciedla kardynalność i główne relacje pomiędzy encjami.
 
-do $$ begin
-  create trigger set_updated_at_ai_suggestions
-    before update on public.ai_suggestions
-    for each row execute function public.set_updated_at();
-exception when duplicate_object then null; end $$;
+```mermaid
+erDiagram
+  AUTH_USERS {
+    uuid id PK
+  }
 
-do $$ begin
-  create trigger set_updated_at_user_goals
-    before update on public.user_goals
-    for each row execute function public.set_updated_at();
-exception when duplicate_object then null; end $$;
+  TRAINING_TYPES {
+    text code PK
+  }
+
+  WORKOUTS {
+    uuid id PK
+    uuid user_id FK
+    text training_type_code FK
+    uuid ai_suggestion_id FK
+  }
+
+  AI_SUGGESTIONS {
+    uuid id PK
+    uuid user_id FK
+    text training_type_code FK
+    uuid accepted_workout_id FK
+  }
+
+  AI_SUGGESTION_EVENTS {
+    uuid id PK
+    uuid user_id FK
+    uuid ai_suggestion_id FK
+  }
+
+  USER_GOALS {
+    uuid id PK
+    uuid user_id FK UNIQUE
+  }
+
+  AI_LOGS {
+    uuid id PK
+    uuid user_id FK
+  }
+
+  TRAINING_TYPES ||--o{ WORKOUTS            : "code ➜ training_type_code"
+  TRAINING_TYPES ||--o{ AI_SUGGESTIONS      : ""
+
+  AUTH_USERS     ||--o{ WORKOUTS            : "id ➜ user_id"
+  AUTH_USERS     ||--o{ AI_SUGGESTIONS      : ""
+  AUTH_USERS     ||--o{ AI_SUGGESTION_EVENTS: ""
+  AUTH_USERS     ||--|| USER_GOALS          : "1 : 1 (MVP)"
+  AUTH_USERS     ||--o{ AI_LOGS             : ""
+
+  AI_SUGGESTIONS ||--|| WORKOUTS            : "accepted_workout_id ↔ id (1 : 1)"
+  WORKOUTS       }o--|| AI_SUGGESTIONS      : "ai_suggestion_id ↔ id (0 : 1)"
+  AI_SUGGESTIONS ||--o{ AI_SUGGESTION_EVENTS: "id ➜ ai_suggestion_id"
 ```
 
-### 2. Relacje między tabelami (kardynalność)
-
-- **training_types (1) → (N) workouts**: `workouts.training_type_code` → `training_types.code` (RESTRICT)
-- **training_types (1) → (N) ai_suggestions**: `ai_suggestions.training_type_code` → `training_types.code` (RESTRICT)
-- **auth.users (1) → (N) workouts**: `workouts.user_id` (CASCADE)
-- **auth.users (1) → (N) ai_suggestions**: `ai_suggestions.user_id` (CASCADE)
-- **auth.users (1) → (N) ai_suggestion_events**: `ai_suggestion_events.user_id` (CASCADE)
-- **auth.users (1) → (N) user_goals**: `user_goals.user_id` (CASCADE; unikalność 1 cel / user)
-- **ai_suggestions (1) → (0..1) workouts**: `ai_suggestions.accepted_workout_id` ↔ `workouts.id` (unikalne, 1–1 z egzekwowaniem spójności `user_id`)
-- **workouts (0..1) → (1) ai_suggestions**: `workouts.ai_suggestion_id` ↔ `ai_suggestions.id` (kompozytowe FK z `user_id`)
-- **ai_suggestions (1) → (N) ai_suggestion_events**: `ai_suggestion_events.ai_suggestion_id` → `ai_suggestions.id` (CASCADE)
-
-Kardynalność 1–1 między zaakceptowaną sugestią a treningiem jest egzekwowana przez:
-- `unique (ai_suggestions.accepted_workout_id)` oraz
-- częściową unikalność `workouts.ai_suggestion_id` (index WHERE `ai_suggestion_id IS NOT NULL`),
-- kompozytowe FK `(ai_suggestion_id, user_id)` oraz `(accepted_workout_id, user_id)` zapewniają zgodność użytkownika.
-
-### 3. Indeksy
-
-```sql
--- Workouts pod kalendarz i analitykę
-create index if not exists idx_workouts_user_planned_date
-  on public.workouts (user_id, planned_date);
-
-create index if not exists idx_workouts_user_type_completed_at
-  on public.workouts (user_id, training_type_code, completed_at desc);
-
-create index if not exists idx_workouts_user_completed_at
-  on public.workouts (user_id, completed_at desc);
-
--- Unikalność odwzorowania sugestii -> trening (tylko gdy nie-null)
-create unique index if not exists idx_workouts_ai_suggestion_id_unique
-  on public.workouts (ai_suggestion_id)
-  where ai_suggestion_id is not null;
-
--- Sugestie AI do filtrowania po statusie i czasie
-create index if not exists idx_ai_suggestions_user_status_created_at
-  on public.ai_suggestions (user_id, status, created_at desc);
-
--- Zdarzenia AI
-create index if not exists idx_ai_suggestion_events_user_suggestion_time
-  on public.ai_suggestion_events (user_id, ai_suggestion_id, occurred_at desc);
-```
-
-### 4. Zasady PostgreSQL (RLS)
-
-```sql
--- Włącz RLS dla wszystkich tabel użytkownika
-alter table public.workouts enable row level security;
-alter table public.ai_suggestions enable row level security;
-alter table public.ai_suggestion_events enable row level security;
-alter table public.user_goals enable row level security;
-
--- Polityki: dostęp tylko do własnych wierszy (USING/WITH CHECK)
-do $$ begin
-  create policy workouts_select_own on public.workouts
-    for select using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy workouts_insert_own on public.workouts
-    for insert with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy workouts_update_own on public.workouts
-    for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy workouts_delete_own on public.workouts
-    for delete using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestions_select_own on public.ai_suggestions
-    for select using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestions_insert_own on public.ai_suggestions
-    for insert with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestions_update_own on public.ai_suggestions
-    for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestions_delete_own on public.ai_suggestions
-    for delete using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestion_events_select_own on public.ai_suggestion_events
-    for select using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestion_events_insert_own on public.ai_suggestion_events
-    for insert with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestion_events_update_own on public.ai_suggestion_events
-    for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy ai_suggestion_events_delete_own on public.ai_suggestion_events
-    for delete using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy user_goals_select_own on public.user_goals
-    for select using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy user_goals_insert_own on public.user_goals
-    for insert with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy user_goals_update_own on public.user_goals
-    for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
-do $$ begin
-  create policy user_goals_delete_own on public.user_goals
-    for delete using (user_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
--- Tabela ai_logs: tylko service-role (RLS można pozostawić wyłączone i użyć GRANTów)
--- Granty przykładowe (dostosować do środowiska Supabase):
--- revoke all on table public.ai_logs from public;
--- grant select, insert, update, delete on table public.ai_logs to role supabase_admin;
--- grant select, insert on table public.ai_logs to role service_role;
-```
-
-### 5. Widoki (do logiki progresji)
-
-```sql
--- Ostatnie 3 zakończone treningi per typ (na użytkownika)
-create or replace view public.vw_last3_completed_per_type as
-select * from (
-  select
-    w.*, 
-    row_number() over (
-      partition by w.user_id, w.training_type_code
-      order by w.completed_at desc
-    ) as rn
-  from public.workouts w
-  where w.status = 'completed'
-) t
-where t.rn <= 3;
-
--- Ostatnie 3 zakończone treningi ogółem (na użytkownika)
-create or replace view public.vw_last3_completed_overall as
-select * from (
-  select
-    w.*, 
-    row_number() over (
-      partition by w.user_id
-      order by w.completed_at desc
-    ) as rn
-  from public.workouts w
-  where w.status = 'completed'
-) t
-where t.rn <= 3;
-```
-
-### 6. Dane początkowe (seed) dla `training_types`
-
-```sql
-insert into public.training_types (code, name, is_active)
-values
-  ('easy',       'Bieg spokojny', true),
-  ('tempo',      'Bieg tempowy', true),
-  ('intervals',  'Interwały', true),
-  ('long_run',   'Długi bieg', true),
-  ('recovery',   'Regeneracyjny', true),
-  ('walk',       'Spacer', true)
-on conflict (code) do update set
-  name = excluded.name,
-  is_active = excluded.is_active;
-```
-
-### 7. Dodatkowe uwagi
-
-- Wszystkie czasy i daty w UTC; `planned_date` to data doby UTC, znaczące czasy to `timestamptz`.
-- `ai_suggestions` wygasają logicznie po 24h względem `created_at` (liczone w API; brak kolumny w DB).
-- Walidacja struktury `steps_jsonb` jest minimalna w DB (tylko typ tablicy); pełna walidacja schematu po stronie API.
-- Brak partycjonowania na MVP; opcja partycjonowania `workouts` po `planned_date` w przyszłości.
-- Większość reguł biznesowych (spójność dat przy akceptacji AI, limity regeneracji, itp.) egzekwowana w warstwie API.
-- Retencja `ai_logs` 30 dni do realizacji zewnętrznym jobem (cron/Task).
 

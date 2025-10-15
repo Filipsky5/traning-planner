@@ -127,6 +127,22 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
 
 ---
 
+## Zadania harmonogramowane (pg_cron)
+
+- Cel: automatyczne wygaszanie przeterminowanych sugestii AI w interwale co godzinę.
+- Reguła wygaśnięcia: rekord `ai_suggestions` o `status='shown'` i `created_at <= now() - interval '24 hours'` zostaje oznaczony jako `status='expired'` oraz aktualizowany jest `updated_at` (UTC).
+- Mechanizm:
+  - Funkcja `public.app_expire_ai_suggestions()` (PL/pgSQL) wykonująca pojedynczy `update` (idempotentna: wielokrotne wywołanie nie zmienia stanu poza pierwszym razem).
+  - Harmonogram poprzez rozszerzenie `pg_cron`: job `expire_ai_suggestions_hourly` uruchamiany co godzinę o pełnej godzinie (`0 * * * *`).
+- Bezpieczeństwo:
+  - Funkcja jest `security definer` i ustawia `search_path` na `public`, aby bezpiecznie ominąć RLS i działać w kontekście właściciela tabel.
+  - Funkcja nie jest udostępniana żadnym rolom aplikacyjnym; wywołuje ją wyłącznie harmonogram `pg_cron`.
+- Operacyjność:
+  - Migracja tworzy lub wznawia harmonogram; poprzednie zadanie o tej samej nazwie jest zastępowane (unikamy duplikatów).
+  - Alternatywa, gdy `pg_cron` nie jest dostępny: zaplanowana Edge Function w Supabase wywołująca endpoint serwerowy, który wywołuje tę samą logikę.
+
+---
+
 ## Dane początkowe (seed)
 
 - `training_types.code`: `easy`, `tempo`, `intervals`, `long_run`, `recovery`, `walk` (bez `warmup`/`cooldown`).

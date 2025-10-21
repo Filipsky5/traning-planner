@@ -24,6 +24,8 @@ Conventions
 - Pagination: `page`, `per_page` (default `page=1`, `per_page=20`, max 100) with `total`, `page`, `per_page` in response.
 - Sorting: `sort` query param with `field:direction` (e.g., `completed_at:desc`). Multiple fields comma-separated.
 - Filtering: resource-specific query params; unknown filters return 422 with `details.invalid_params` listing the offending names.
+ - Filtering: resource-specific query params; unknown filters return 422 with `details.invalid_params` listing the offending names.
+ - Comparison filters: `*_gte`/`*_lte` are inclusive; `*_after`/`*_before` are exclusive.
 - Response shape:
   - All successful responses use an envelope: `{ "data": ... }`.
   - List endpoints additionally include `page`, `per_page`, `total` alongside `data`.
@@ -55,7 +57,7 @@ Conventions
   - Response 200:
     - Headers:
       - `ETag` — Hash of training types content for cache validation.
-      - `Cache-Control: public, max-age=3600, stale-while-revalidate=86400`
+      - `Cache-Control: private, max-age=3600, stale-while-revalidate=86400`
 ```
 {
   "data": [
@@ -75,7 +77,7 @@ Errors
 - 403 forbidden (when `include_inactive=true` without privileges)
 
 Notes on performance
-- Reads are small and can be cached (public, max-age=3600, stale-while-revalidate).
+- Reads are small and can be cached (private, max-age=3600, stale-while-revalidate).
 
 ---
 
@@ -270,7 +272,7 @@ Domain actions (clearer semantics and validation)
 ```json
 { "data": { /* workout detail */ } }
 ```
-  - Errors: 409 if status != completed; 422 invalid rating
+  - Errors: 409 if status != completed; 422 invalid rating, 404 workout not found
 
 - GET `/api/v1/workouts/last3`
   - Description: Convenience endpoint to fetch up to last 3 completed workouts.
@@ -393,7 +395,7 @@ Endpoints
 ```json
 { "data": { /* suggestion */ } }
 ```
-  - Errors: 404, 409 already accepted, 410 expired
+  - Errors: 404, 409 already accepted, 410 expired, 403 user mismatch
 
 - POST `/api/v1/ai/suggestions/{id}/regenerate`
   - Description: Regenerate a new suggestion (creates a new suggestion linked by event log). Enforces per-user daily limit (3/day).
@@ -404,7 +406,7 @@ Endpoints
 ```
 
   - Response 201: new suggestion object
-  - Errors: 404 (base suggestion not found), 410 expired, 429 limit reached
+  - Errors: 404 (base suggestion not found), 410 expired, 429 limit reached, 403 user mismatch
 
 Notes
 - Regeneration and acceptance must be atomic and consistent (DB transaction). Enforce `(ai_suggestion_id) IS UNIQUE` where not null on workouts.
@@ -553,6 +555,10 @@ Workouts
       "duration_s": { "type": "integer", "minimum": 0 },
       "notes": { "type": "string" }
     },
+    "anyOf": [
+      { "required": ["distance_m"] },
+      { "required": ["duration_s"] }
+    ],
     "additionalProperties": false
   }
 }
@@ -569,7 +575,7 @@ AI Suggestions
   - Must be within 24h window (`created_at + 24h > now`).
   - Must ensure `training_type_code` matches suggestion; `planned_date` of created workout must match suggestion’s `planned_date`.
   - Enforce 1–1 mapping: set suggestion `status='accepted'`, store `accepted_workout_id` and link `workout.ai_suggestion_id`.
-  - Position uniqueness validated; conflicts return 422 with conflict details.
+  - Position uniqueness validated; conflicts return 409
 - Rejection:
   - Allowed unless already accepted or expired; set `status='rejected'`.
 - Regeneration:

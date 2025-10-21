@@ -147,7 +147,16 @@ Endpoints
     - `completed_at_gte`, `completed_at_lte` (ISO 8601)
     - `sort` default: `planned_date:asc,position:asc` if `status!=completed`; if `status=completed` default `completed_at:desc`
     - `page`, `per_page`
-  - Response 200: list of workout summaries with pagination metadata.
+  - Response 200:
+
+```json
+{
+  "data": [ { "id": "uuid", "training_type_code": "easy", "planned_date": "2025-10-13", "position": 1, "status": "planned" } ],
+  "page": 1,
+  "per_page": 20,
+  "total": 42
+}
+```
   - Errors: 401, 422 invalid filters
 
 - POST `/api/v1/workouts`
@@ -186,8 +195,12 @@ Endpoints
   "rating": "just_right"
 }
 ```
-  - Response 201: workout detail
-  - Errors: 400; 422 conflicting plan position, validation; 401; 409 duplicate `position` per `planned_date`; 404 invalid `training_type_code` or foreign keys; 403 user mismatch
+  - Response 201:
+
+```json
+{ "data": { /* workout detail */ } }
+```
+  - Errors: 400; 422 validation; 401; 409 duplicate `position` per `planned_date`; 404 invalid `training_type_code` or foreign keys; 403 user mismatch
 
 - GET `/api/v1/workouts/{id}`
   - Description: Get workout detail.
@@ -211,7 +224,7 @@ Endpoints
 
 Domain actions (clearer semantics and validation)
 
-- POST `/api/v1/workouts/{id}/complete`
+-- POST `/api/v1/workouts/{id}/complete`
   - Description: Mark a planned workout as completed, with required metrics.
   - Request JSON:
 
@@ -219,20 +232,32 @@ Domain actions (clearer semantics and validation)
 { "distance_m": 5200, "duration_s": 1850, "avg_hr_bpm": 145, "completed_at": "2025-10-13T18:30:00Z", "rating": "just_right" }
 ```
 
-  - Response 200: workout detail (status becomes `completed`)
+  - Response 200:
+
+```json
+{ "data": { /* workout detail (status becomes completed) */ } }
+```
   - Errors: 400/422 missing required metrics; 409 if not in a valid state
 
-- POST `/api/v1/workouts/{id}/skip`
+-- POST `/api/v1/workouts/{id}/skip`
   - Description: Mark as skipped. Clears realization metrics and rating.
-  - Response 200: workout detail (status `skipped`)
+  - Response 200:
+
+```json
+{ "data": { /* workout detail (status skipped) */ } }
+```
   - Errors: 409 invalid transition
 
-- POST `/api/v1/workouts/{id}/cancel`
+-- POST `/api/v1/workouts/{id}/cancel`
   - Description: Mark as canceled (e.g., plan change). Clears realization metrics and rating.
-  - Response 200: workout detail (status `canceled`)
+  - Response 200:
+
+```json
+{ "data": { /* workout detail (status canceled) */ } }
+```
   - Errors: 409 invalid transition
 
-- POST `/api/v1/workouts/{id}/rate`
+-- POST `/api/v1/workouts/{id}/rate`
   - Description: Set rating for a completed workout.
   - Request JSON:
 
@@ -240,14 +265,27 @@ Domain actions (clearer semantics and validation)
 { "rating": "too_hard" }
 ```
 
-  - Response 200: workout detail
+  - Response 200:
+
+```json
+{ "data": { /* workout detail */ } }
+```
   - Errors: 409 if status != completed; 422 invalid rating
 
 - GET `/api/v1/workouts/last3`
   - Description: Convenience endpoint to fetch up to last 3 completed workouts.
   - Query params:
     - `training_type_code` (optional). If omitted, returns overall last 3.
-  - Response 200: array of workout summaries sorted by `completed_at DESC`
+  - Response 200:
+
+```json
+{
+  "data": [ { "id": "uuid", "completed_at": "2025-10-13T18:30:00Z", "training_type_code": "easy" } ],
+  "page": 1,
+  "per_page": 3,
+  "total": 1
+}
+```
 
 - GET `/api/v1/calendar`
   - Description: Calendar view. Returns workouts grouped by `planned_date` within range.
@@ -255,15 +293,10 @@ Domain actions (clearer semantics and validation)
   - Response 200:
 
 ```json
-{
+{ "data": {
   "range": { "start": "2025-10-01", "end": "2025-10-31" },
-  "days": [
-    {
-      "date": "2025-10-13",
-      "workouts": [ { "id": "uuid", "training_type_code": "easy", "status": "planned", "position": 1 } ]
-    }
-  ]
-}
+  "days": [ { "date": "2025-10-13", "workouts": [ { "id": "uuid", "training_type_code": "easy", "status": "planned", "position": 1 } ] } ]
+} }
 ```
 
 ---
@@ -298,9 +331,18 @@ Endpoints
 - GET `/api/v1/ai/suggestions`
   - Description: List suggestions for the user. Does not mutate state; expiration is handled by a scheduled job (hourly) and computed as `created_at + 24h`.
   - Query params: `status` (optional), `created_after`, `created_before`, `page`, `per_page`, `sort` (default `created_at:desc`)
-  - Response 200: list with pagination.
+  - Response 200:
 
-- POST `/api/v1/ai/suggestions`
+```json
+{
+  "data": [ { "id": "uuid", "status": "shown", "planned_date": "2025-10-16" } ],
+  "page": 1,
+  "per_page": 20,
+  "total": 5
+}
+```
+
+-- POST `/api/v1/ai/suggestions`
   - Description: Generate a suggestion for a date and type. Enforces regeneration limit (3 per day). Applies calibration logic for the first 3 AI-generated workouts.
   - Request JSON:
 
@@ -312,7 +354,11 @@ Endpoints
 }
 ```
 
-  - Response 201: suggestion object (status `shown`).
+  - Response 201:
+
+```json
+{ "data": { /* suggestion (status shown) */ } }
+```
   - Errors: 401, 422 invalid inputs, 429 regeneration/day limit reached
 
 - GET `/api/v1/ai/suggestions/{id}`
@@ -324,7 +370,7 @@ Endpoints
 ```
   - Errors: 404, 410 if expired and `include_expired=false` (default)
 
-- POST `/api/v1/ai/suggestions/{id}/accept`
+-- POST `/api/v1/ai/suggestions/{id}/accept`
   - Description: Accept a suggestion and create a workout (`origin=ai`). Ensures 1–1 mapping and type/date consistency.
   - Request JSON:
 
@@ -332,8 +378,13 @@ Endpoints
 { "position": 1 }
 ```
 
-  - Response 201: created workout detail; suggestion updated to `accepted` with `accepted_workout_id` set.
-  - Errors: 404, 409 already accepted, 410 expired, 422 conflicting plan position, 403 user mismatch
+  - Response 201:
+
+```json
+{ "data": { /* workout detail; suggestion becomes accepted */ } }
+```
+
+  - Errors: 404, 409 already accepted/conflicting position, 410 expired, 403 user mismatch
 
 - POST `/api/v1/ai/suggestions/{id}/reject`
   - Description: Reject a suggestion (status `rejected`).
@@ -388,7 +439,7 @@ Errors
   - Response 200:
 
 ```json
-{ "goal_type": "distance_by_date", "target_distance_m": 100000, "due_date": "2025-12-31", "notes": "Berlin Half" }
+{ "data": { "goal_type": "distance_by_date", "target_distance_m": 100000, "due_date": "2025-12-31", "notes": "Berlin Half" } }
 ```
 
 - PUT `/api/v1/user-goal`
@@ -399,7 +450,11 @@ Errors
 { "goal_type": "distance_by_date", "target_distance_m": 100000, "due_date": "2025-12-31", "notes": "optional" }
 ```
 
-  - Response 200: goal object
+  - Response 200:
+
+```json
+{ "data": { /* goal */ } }
+```
   - Errors: 422 validation
 
 - DELETE `/api/v1/user-goal`
@@ -435,6 +490,16 @@ Errors
 
 - GET `/api/v1/internal/ai/logs`
   - Description: Admin-only logs listing with filters and pagination.
+  - Response 200:
+
+```json
+{
+  "data": [ { "id": "uuid", "event": "suggestion.generate", "level": "info" } ],
+  "page": 1,
+  "per_page": 20,
+  "total": 120
+}
+```
 
 ---
 

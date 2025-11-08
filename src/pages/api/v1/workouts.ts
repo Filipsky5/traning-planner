@@ -79,7 +79,13 @@ export async function GET(context: APIContext) {
     }
 
     // Błędy serwerowe/DB - loguj szczegóły (bez danych osobowych)
-    console.error("GET /api/v1/workouts failed", { err });
+    console.error("GET /api/v1/workouts failed", {
+      error: err,
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+      stringified: JSON.stringify(err)
+    });
     return new Response(
       JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
       { status: 500, headers: { "content-type": "application/json" } }

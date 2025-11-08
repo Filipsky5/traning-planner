@@ -55,62 +55,107 @@ export async function listWorkouts(
   userId: string,
   filters: ListQuery
 ): Promise<{ data: WorkoutSummaryDto[]; total: number }> {
-  // Base query: SELECT summary fields only (no steps_jsonb for performance)
-  let query = supabase
+  // FIX: PostgREST bug - count + range + multi-column sort powoduje błąd
+  // Rozwiązanie: osobny query dla count, osobny dla data
+
+  // 1. COUNT QUERY (bez range, bez multi-column sort - tylko filtry)
+  let countQuery = supabase
+    .from("workouts")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  // Apply filters to count query
+  if (filters.status) {
+    countQuery = countQuery.eq("status", filters.status);
+  }
+  if (filters.training_type_code) {
+    countQuery = countQuery.in("training_type_code", filters.training_type_code);
+  }
+  if (filters.origin) {
+    countQuery = countQuery.eq("origin", filters.origin);
+  }
+  if (filters.rating) {
+    countQuery = countQuery.eq("rating", filters.rating);
+  }
+  if (filters.planned_date_gte) {
+    countQuery = countQuery.gte("planned_date", filters.planned_date_gte);
+  }
+  if (filters.planned_date_lte) {
+    countQuery = countQuery.lte("planned_date", filters.planned_date_lte);
+  }
+  if (filters.completed_at_gte) {
+    countQuery = countQuery.gte("completed_at", filters.completed_at_gte);
+  }
+  if (filters.completed_at_lte) {
+    countQuery = countQuery.lte("completed_at", filters.completed_at_lte);
+  }
+
+  // 2. DATA QUERY (z range i multi-column sort, BEZ count: "exact")
+  let dataQuery = supabase
     .from("workouts")
     .select(
-      "id,training_type_code,planned_date,position,planned_distance_m,planned_duration_s,status,origin,rating,avg_pace_s_per_km",
-      { count: "exact" }
+      "id,training_type_code,planned_date,position,planned_distance_m,planned_duration_s,status,origin,rating,avg_pace_s_per_km"
     )
     .eq("user_id", userId);
 
-  // Apply filters (guard pattern - skip if undefined)
+  // Apply filters to data query
   if (filters.status) {
-    query = query.eq("status", filters.status);
+    dataQuery = dataQuery.eq("status", filters.status);
   }
   if (filters.training_type_code) {
-    query = query.in("training_type_code", filters.training_type_code);
+    dataQuery = dataQuery.in("training_type_code", filters.training_type_code);
   }
   if (filters.origin) {
-    query = query.eq("origin", filters.origin);
+    dataQuery = dataQuery.eq("origin", filters.origin);
   }
   if (filters.rating) {
-    query = query.eq("rating", filters.rating);
+    dataQuery = dataQuery.eq("rating", filters.rating);
   }
   if (filters.planned_date_gte) {
-    query = query.gte("planned_date", filters.planned_date_gte);
+    dataQuery = dataQuery.gte("planned_date", filters.planned_date_gte);
   }
   if (filters.planned_date_lte) {
-    query = query.lte("planned_date", filters.planned_date_lte);
+    dataQuery = dataQuery.lte("planned_date", filters.planned_date_lte);
   }
   if (filters.completed_at_gte) {
-    query = query.gte("completed_at", filters.completed_at_gte);
+    dataQuery = dataQuery.gte("completed_at", filters.completed_at_gte);
   }
   if (filters.completed_at_lte) {
-    query = query.lte("completed_at", filters.completed_at_lte);
+    dataQuery = dataQuery.lte("completed_at", filters.completed_at_lte);
   }
 
   // Sorting: default depends on status filter
-  // - completed workouts: sort by completed_at DESC (newest first)
-  // - planned workouts: sort by planned_date ASC, position ASC (chronological)
   const sort = filters.sort || (filters.status === "completed" ? "completed_at:desc" : "planned_date:asc,position:asc");
   const sortParts = sort.split(",");
   sortParts.forEach((part) => {
     const [field, order] = part.split(":");
-    query = query.order(field, { ascending: order === "asc" });
+    dataQuery = dataQuery.order(field, { ascending: order === "asc" });
   });
 
   // Pagination (range is 0-indexed, inclusive)
   const from = (filters.page - 1) * filters.per_page;
   const to = from + filters.per_page - 1;
-  query = query.range(from, to);
+  dataQuery = dataQuery.range(from, to);
 
-  const { data, error, count } = await query;
-  if (error) throw error;
+  // 3. Execute both queries in parallel
+  const [countResult, dataResult] = await Promise.all([
+    countQuery,
+    dataQuery
+  ]);
+
+  if (countResult.error) {
+    console.error("listWorkouts - Count query error:", countResult.error);
+    throw countResult.error;
+  }
+
+  if (dataResult.error) {
+    console.error("listWorkouts - Data query error:", dataResult.error);
+    throw dataResult.error;
+  }
 
   return {
-    data: (data ?? []) as WorkoutSummaryDto[],
-    total: count ?? 0
+    data: (dataResult.data ?? []) as WorkoutSummaryDto[],
+    total: countResult.count ?? 0
   };
 }
 

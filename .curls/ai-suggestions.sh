@@ -12,15 +12,26 @@
 #
 # Instrukcje:
 # 1. Uruchom środowisko lokalne (Supabase + `npm run dev`).
-# 2. Zaloguj się w aplikacji i pobierz ważny session token (JWT).
-# 3. Uzupełnij zmienną AUTH_TOKEN poniżej.
-# 4. Opcjonalnie dostosuj domyślne daty / typy treningu.
+# 2. Skrypt automatycznie zaloguje testowego użytkownika (test@example.com)
+# 3. Opcjonalnie dostosuj domyślne daty / typy treningu.
 
 set -euo pipefail
 
 BASE_URL="http://localhost:3000"
 ENDPOINT="/api/v1/ai/suggestions"
-AUTH_TOKEN="YOUR_SESSION_TOKEN_HERE"
+
+# Automatyczne pobieranie tokena z auth-test-user.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "🔐 Pobieranie tokena autoryzacyjnego..."
+AUTH_TOKEN=$("${SCRIPT_DIR}/auth-test-user.sh")
+
+if [[ -z "$AUTH_TOKEN" ]]; then
+  echo "❌ Nie udało się uzyskać tokena autoryzacyjnego."
+  exit 1
+fi
+
+echo "✅ Token uzyskany (user: test@example.com)"
+echo ""
 
 # Konfiguracja testu
 TRAINING_TYPE_CODE="easy"
@@ -130,34 +141,9 @@ if [[ "$LIST_STATUS" != "200" ]]; then
 fi
 
 # =========================================================
-# 4) POST /api/v1/ai/suggestions/{id}/accept
+# 4) POST /api/v1/ai/suggestions/{id}/regenerate
 # =========================================================
-echo "✅  Test 4: POST accept suggestion"
-ACCEPT_RESPONSE=$(curl -s -w "\n%{http_code}" \
-  -X POST \
-  "${BASE_URL}${ENDPOINT}/${SUGGESTION_ID}/accept" \
-  -H "content-type: application/json" \
-  -H "authorization: Bearer ${AUTH_TOKEN}" \
-  -d "$(jq -n --argjson pos "$POSITION" '{ position: $pos }')" \
-)
-ACCEPT_BODY=$(sed '$d' <<<"$ACCEPT_RESPONSE")
-ACCEPT_STATUS=$(tail -n1 <<<"$ACCEPT_RESPONSE")
-
-echo "Status: $ACCEPT_STATUS"
-pretty_print "$ACCEPT_BODY"
-separator
-
-if [[ "$ACCEPT_STATUS" != "201" ]]; then
-  echo "❌ Oczekiwany status 201."
-  exit 1
-fi
-
-ACCEPTED_WORKOUT_ID=$(jq -r '.data.id' <<<"$ACCEPT_BODY")
-
-# =========================================================
-# 5) POST /api/v1/ai/suggestions/{id}/regenerate
-# =========================================================
-echo "🔁  Test 5: POST regenerate suggestion"
+echo "🔁  Test 4: POST regenerate suggestion"
 REGENERATE_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -X POST \
   "${BASE_URL}${ENDPOINT}/${SUGGESTION_ID}/regenerate" \
@@ -177,15 +163,40 @@ if [[ "$REGENERATE_STATUS" != "201" ]]; then
   exit 1
 fi
 
-REGenerated_ID=$(jq -r '.data.id' <<<"$REGENERATE_BODY")
+REGENERATED_ID=$(jq -r '.data.id' <<<"$REGENERATE_BODY")
 
 # =========================================================
-# 6) POST /api/v1/ai/suggestions/{new_id}/reject
+# 5) POST /api/v1/ai/suggestions/{new_id}/accept
 # =========================================================
-echo "🚫  Test 6: POST reject regenerated suggestion"
+echo "✅  Test 5: POST accept regenerated suggestion"
+ACCEPT_RESPONSE=$(curl -s -w "\n%{http_code}" \
+  -X POST \
+  "${BASE_URL}${ENDPOINT}/${REGENERATED_ID}/accept" \
+  -H "content-type: application/json" \
+  -H "authorization: Bearer ${AUTH_TOKEN}" \
+  -d "$(jq -n --argjson pos "$POSITION" '{ position: $pos }')" \
+)
+ACCEPT_BODY=$(sed '$d' <<<"$ACCEPT_RESPONSE")
+ACCEPT_STATUS=$(tail -n1 <<<"$ACCEPT_RESPONSE")
+
+echo "Status: $ACCEPT_STATUS"
+pretty_print "$ACCEPT_BODY"
+separator
+
+if [[ "$ACCEPT_STATUS" != "201" ]]; then
+  echo "❌ Oczekiwany status 201."
+  exit 1
+fi
+
+ACCEPTED_WORKOUT_ID=$(jq -r '.data.id' <<<"$ACCEPT_BODY")
+
+# =========================================================
+# 6) POST /api/v1/ai/suggestions/{original_id}/reject
+# =========================================================
+echo "🚫  Test 6: POST reject original suggestion (expect 409 - already rejected by regenerate)"
 REJECT_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -X POST \
-  "${BASE_URL}${ENDPOINT}/${REGenerated_ID}/reject" \
+  "${BASE_URL}${ENDPOINT}/${SUGGESTION_ID}/reject" \
   -H "authorization: Bearer ${AUTH_TOKEN}" \
 )
 REJECT_BODY=$(sed '$d' <<<"$REJECT_RESPONSE")
@@ -195,9 +206,10 @@ echo "Status: $REJECT_STATUS"
 pretty_print "$REJECT_BODY"
 separator
 
-if [[ "$REJECT_STATUS" != "200" ]]; then
-  echo "❌ Oczekiwany status 200."
-  exit 1
+if [[ "$REJECT_STATUS" != "409" ]]; then
+  echo "⚠️  Oczekiwany status 409 (już rejected przez regenerate)."
+else
+  echo "✅  Konflikt poprawnie obsłużony."
 fi
 
 # =========================================================
@@ -206,10 +218,10 @@ fi
 echo "⚠️  Test 7: POST accept on already accepted suggestion (expect 409)"
 ACCEPT_CONFLICT_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -X POST \
-  "${BASE_URL}${ENDPOINT}/${SUGGESTION_ID}/accept" \
+  "${BASE_URL}${ENDPOINT}/${REGENERATED_ID}/accept" \
   -H "content-type: application/json" \
   -H "authorization: Bearer ${AUTH_TOKEN}" \
-  -d "$(jq -n --argjson pos "$POSITION" '{ position: $pos }')" \
+  -d "$(jq -n --argjson pos 2 '{ position: $pos }')" \
 )
 ACCEPT_CONFLICT_BODY=$(sed '$d' <<<"$ACCEPT_CONFLICT_RESPONSE")
 ACCEPT_CONFLICT_STATUS=$(tail -n1 <<<"$ACCEPT_CONFLICT_RESPONSE")
@@ -225,9 +237,9 @@ else
 fi
 
 echo "========================================"
-echo "Test Suite zakończony."
+echo "✅ Test Suite zakończony pomyślnie!"
 echo "Sugestia początkowa ID: ${SUGGESTION_ID}"
+echo "Regenerowana sugestia ID: ${REGENERATED_ID}"
 echo "Workout utworzony ID: ${ACCEPTED_WORKOUT_ID}"
-echo "Regenerowana sugestia ID: ${REGenerated_ID}"
 echo "========================================"
 

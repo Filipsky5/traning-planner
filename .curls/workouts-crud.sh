@@ -14,13 +14,24 @@
 # Przed uruchomieniem:
 # 1. Upewnij się że Supabase local działa (supabase start)
 # 2. Uruchom dev server: npm run dev
-# 3. Zaloguj się i uzyskaj session token
-# 4. Ustaw AUTH_TOKEN poniżej
+# 3. Skrypt automatycznie zaloguje testowego użytkownika (test@example.com)
 
 # Zmienne
 BASE_URL="http://localhost:3000"
 ENDPOINT="/api/v1/workouts"
-AUTH_TOKEN="YOUR_SESSION_TOKEN_HERE"
+
+# Automatyczne pobieranie tokena z auth-test-user.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "🔐 Pobieranie tokena autoryzacyjnego..."
+AUTH_TOKEN=$("${SCRIPT_DIR}/auth-test-user.sh")
+
+if [[ -z "$AUTH_TOKEN" ]]; then
+  echo "❌ Nie udało się uzyskać tokena autoryzacyjnego."
+  exit 1
+fi
+
+echo "✅ Token uzyskany (user: test@example.com)"
+echo ""
 
 # Zmienna na przechowanie utworzonego workout ID
 WORKOUT_ID=""

@@ -96,6 +96,9 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
 - Unikalny częściowy indeks `workouts (ai_suggestion_id) WHERE ai_suggestion_id IS NOT NULL` — odwzorowanie 1–1 akceptacji.
 - `ai_suggestions (user_id, status, created_at DESC)` — filtrowanie po statusie i czasie (wygasanie, lista propozycji).
 - `ai_suggestion_events (user_id, ai_suggestion_id, occurred_at DESC)` — egzekwowanie limitów re-generacji i audyt.
+- `ai_logs (event, created_at DESC)` — optymalizacja GET /api/v1/internal/ai/logs z filtrem po event i sortowaniem po dacie.
+- `ai_logs (level, created_at DESC)` — optymalizacja GET /api/v1/internal/ai/logs z filtrem po level i sortowaniem po dacie.
+- Częściowy indeks `ai_logs (user_id) WHERE user_id IS NOT NULL` — optymalizacja queries filtrujących po user_id (pomija null values).
 
 ---
 

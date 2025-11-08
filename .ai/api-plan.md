@@ -471,11 +471,15 @@ Errors
 
 ### 2.7 AI Logs (internal, service-role only)
 
-- POST `/api/v1/internal/ai/logs`
-  - Description: Ingest AI interaction logs for diagnostics and cost tracking.
-  - Auth: service-role key only.
-  - Request JSON (example):
+**SECURITY WARNING**: These endpoints are INTERNAL-ONLY and require service-role key. DO NOT expose service-role key in client-side code. User JWT tokens are rejected with 403 Forbidden.
 
+#### POST `/api/v1/internal/ai/logs`
+
+**Description**: Ingest AI interaction logs for diagnostics and cost tracking.
+
+**Auth**: Service-role key only (via `Authorization: Bearer <service_role_key>` header)
+
+**Request Body** (required fields: `event`, `level`):
 ```json
 {
   "event": "suggestion.generate",
@@ -486,25 +490,116 @@ Errors
   "input_tokens": 1200,
   "output_tokens": 300,
   "cost_usd": 0.015,
-  "payload": { "user_id": "uuid", "suggestion_id": "uuid" }
+  "payload": { "user_id": "uuid", "suggestion_id": "uuid" },
+  "user_id": "uuid"
 }
 ```
 
-  - Response 202: accepted
-  - Errors: 401/403
-
-- GET `/api/v1/internal/ai/logs`
-  - Description: Admin-only logs listing with filters and pagination.
-  - Response 200:
-
+**Response 202 Accepted**:
 ```json
 {
-  "data": [ { "id": "uuid", "event": "suggestion.generate", "level": "info" } ],
+  "data": { "status": "accepted" }
+}
+```
+
+**Error Codes**:
+- `400` - Invalid JSON body
+- `401` - Missing Authorization header
+- `403` - Invalid service-role key (or user token provided)
+- `422` - Validation error (missing required fields, invalid types)
+- `500` - Database error
+
+**Example (curl)**:
+```bash
+curl -X POST http://localhost:3000/api/v1/internal/ai/logs \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "suggestion.generate",
+    "level": "info",
+    "model": "gpt-4o-mini",
+    "provider": "openrouter",
+    "latency_ms": 450,
+    "input_tokens": 1200,
+    "output_tokens": 300,
+    "cost_usd": 0.015
+  }'
+```
+
+---
+
+#### GET `/api/v1/internal/ai/logs`
+
+**Description**: List AI logs with filters and pagination (admin/diagnostics).
+
+**Auth**: Service-role key only
+
+**Query Parameters** (all optional):
+- `event` - Filter by event type (e.g., "suggestion.generate")
+- `level` - Filter by log level (e.g., "info", "error")
+- `created_after` - Filter by date (ISO 8601 timestamp)
+- `created_before` - Filter by date (ISO 8601 timestamp)
+- `page` - Page number (≥1, default: 1)
+- `per_page` - Items per page (1-100, default: 20)
+
+**Response 200 OK**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "event": "suggestion.generate",
+      "level": "info",
+      "model": "gpt-4o-mini",
+      "provider": "openrouter",
+      "latency_ms": 450,
+      "input_tokens": 1200,
+      "output_tokens": 300,
+      "cost_usd": 0.015,
+      "payload": { "user_id": "uuid", "suggestion_id": "uuid" },
+      "created_at": "2025-11-08T10:00:00Z",
+      "user_id": "uuid"
+    }
+  ],
   "page": 1,
   "per_page": 20,
   "total": 120
 }
 ```
+
+**Error Codes**:
+- `401` - Missing Authorization header
+- `403` - Invalid service-role key (or user token provided)
+- `422` - Validation error (invalid query parameters)
+- `500` - Database error
+
+**Examples (curl)**:
+
+Get all logs (default pagination):
+```bash
+curl -X GET http://localhost:3000/api/v1/internal/ai/logs \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+```
+
+Filter by event and level:
+```bash
+curl -X GET "http://localhost:3000/api/v1/internal/ai/logs?event=suggestion.generate&level=error" \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+```
+
+Filter by date range with custom pagination:
+```bash
+curl -X GET "http://localhost:3000/api/v1/internal/ai/logs?created_after=2025-11-01T00:00:00Z&page=2&per_page=50" \
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+```
+
+**Implementation Details**:
+- **Validation schemas**: `src/lib/validation/aiLogs.ts` (Zod)
+- **Service layer**: `src/lib/services/aiLogsService.ts`
+- **Auth helper**: `src/lib/http/auth.ts` (`requireServiceRole()`)
+- **Client helper**: `src/lib/services/aiLogsClient.ts` (for AI Engine integration)
+- **Test scripts**: `.curls/ai-logs.sh` (21 test cases)
+- **Database indexes**: `ai_logs(event, created_at)`, `ai_logs(level, created_at)`, `ai_logs(user_id WHERE user_id IS NOT NULL)`
 
 ---
 

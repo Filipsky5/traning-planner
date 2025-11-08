@@ -222,3 +222,4 @@ Logowanie błędów:
 - ETag (opcjonalnie): zwrócić `ETag` i obsłużyć `If-None-Match` → 304
 
 
+

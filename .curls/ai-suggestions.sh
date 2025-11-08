@@ -35,7 +35,8 @@ echo ""
 
 # Konfiguracja testu
 TRAINING_TYPE_CODE="easy"
-PLANNED_DATE=$(date -u +"%Y-%m-%d")
+# Użyj daty jutrzejszej aby ominąć daily limit z poprzednich uruchomień
+PLANNED_DATE=$(date -u -v+1d +"%Y-%m-%d" 2>/dev/null || date -u -d "+1 day" +"%Y-%m-%d")
 POSITION=1
 
 SUGGESTION_ID=""
@@ -67,6 +68,32 @@ echo "========================================"
 echo ""
 
 require_auth_token
+
+# =========================================================
+# CLEANUP: usuń workouts dla testowej daty
+# =========================================================
+echo "🧹 Cleanup: usuwanie workouts dla daty ${PLANNED_DATE}..."
+CLEANUP_RESPONSE=$(curl -s -w "\n%{http_code}" \
+  -X GET \
+  "${BASE_URL}/api/v1/workouts?planned_date=${PLANNED_DATE}" \
+  -H "authorization: Bearer ${AUTH_TOKEN}" \
+)
+CLEANUP_BODY=$(sed '$d' <<<"$CLEANUP_RESPONSE")
+CLEANUP_STATUS=$(tail -n1 <<<"$CLEANUP_RESPONSE")
+
+if [[ "$CLEANUP_STATUS" == "200" ]]; then
+  WORKOUT_IDS=$(jq -r '.data[].id' <<<"$CLEANUP_BODY")
+  for WORKOUT_ID in $WORKOUT_IDS; do
+    echo "  Usuwanie workout: $WORKOUT_ID"
+    curl -s -X DELETE \
+      "${BASE_URL}/api/v1/workouts/${WORKOUT_ID}" \
+      -H "authorization: Bearer ${AUTH_TOKEN}" > /dev/null
+  done
+  echo "✅ Cleanup zakończony."
+else
+  echo "⚠️  Cleanup: nie udało się pobrać workouts (status: $CLEANUP_STATUS)"
+fi
+echo ""
 
 # =========================================================
 # 1) POST /api/v1/ai/suggestions  → utworzenie sugestii

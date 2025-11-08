@@ -37,13 +37,9 @@ function transformSteps(steps_jsonb: any): WorkoutStepDto[] {
   return Array.isArray(steps_jsonb) ? steps_jsonb : [];
 }
 
-// Helper: Calculate avg_pace_s_per_km (pace in seconds per kilometer)
-// Formula: duration_s / (distance_m / 1000)
-// Example: 1800s for 5000m = 1800 / 5 = 360s/km = 6:00 min/km
-function calculateAvgPace(distance_m: number | null, duration_s: number | null): number | null {
-  if (!distance_m || !duration_s || distance_m === 0) return null;
-  return Math.round(duration_s / (distance_m / 1000));
-}
+// Note: avg_pace_s_per_km calculation is now handled by DB as GENERATED ALWAYS column
+// Formula used by DB: duration_s / (distance_m / 1000)
+// No need for manual calculation in application code
 
 /**
  * 1. List workouts with filters and pagination
@@ -174,12 +170,8 @@ export async function createWorkout(
 
   if (!typeExists) throw new Error("INVALID_TRAINING_TYPE");
 
-  // Calculate avg_pace if completed
-  const avgPace = input.status === "completed" && input.distance_m && input.duration_s
-    ? calculateAvgPace(input.distance_m, input.duration_s)
-    : null;
-
   // Build insert object
+  // Note: avg_pace_s_per_km is a GENERATED ALWAYS column in DB - it's calculated automatically
   const insertData = {
     user_id: userId,
     training_type_code: input.training_type_code,
@@ -194,8 +186,7 @@ export async function createWorkout(
     duration_s: input.duration_s ?? null,
     avg_hr_bpm: input.avg_hr_bpm ?? null,
     completed_at: input.completed_at ?? null,
-    rating: input.rating ?? null,
-    avg_pace_s_per_km: avgPace
+    rating: input.rating ?? null
   };
 
   const { data, error } = await supabase
@@ -245,12 +236,8 @@ export async function updateWorkout(
   if (input.rating !== undefined) updateData.rating = input.rating;
   if (input.status !== undefined) updateData.status = input.status;
 
-  // Recalculate avg_pace if distance or duration changed
-  const newDistance = input.distance_m ?? current.distance_m;
-  const newDuration = input.duration_s ?? current.duration_s;
-  if (input.distance_m !== undefined || input.duration_s !== undefined) {
-    updateData.avg_pace_s_per_km = calculateAvgPace(newDistance, newDuration);
-  }
+  // Note: avg_pace_s_per_km is a GENERATED ALWAYS column - DB recalculates it automatically
+  // when distance_m or duration_s changes. No manual update needed.
 
   const { data, error } = await supabase
     .from("workouts")
@@ -317,8 +304,7 @@ export async function completeWorkout(
     throw new Error("ALREADY_COMPLETED");
   }
 
-  const avgPace = calculateAvgPace(input.distance_m, input.duration_s);
-
+  // Note: avg_pace_s_per_km is calculated automatically by DB based on distance_m and duration_s
   const { data, error } = await supabase
     .from("workouts")
     .update({
@@ -327,8 +313,7 @@ export async function completeWorkout(
       duration_s: input.duration_s,
       avg_hr_bpm: input.avg_hr_bpm,
       completed_at: input.completed_at,
-      rating: input.rating ?? null,
-      avg_pace_s_per_km: avgPace
+      rating: input.rating ?? null
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -361,6 +346,7 @@ export async function skipWorkout(
     throw new Error("ALREADY_SKIPPED");
   }
 
+  // Note: avg_pace_s_per_km will be NULL automatically when distance_m/duration_s are NULL
   const { data, error } = await supabase
     .from("workouts")
     .update({
@@ -369,8 +355,7 @@ export async function skipWorkout(
       duration_s: null,
       avg_hr_bpm: null,
       completed_at: null,
-      rating: null,
-      avg_pace_s_per_km: null
+      rating: null
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -403,6 +388,7 @@ export async function cancelWorkout(
     throw new Error("ALREADY_CANCELED");
   }
 
+  // Note: avg_pace_s_per_km will be NULL automatically when distance_m/duration_s are NULL
   const { data, error } = await supabase
     .from("workouts")
     .update({
@@ -411,8 +397,7 @@ export async function cancelWorkout(
       duration_s: null,
       avg_hr_bpm: null,
       completed_at: null,
-      rating: null,
-      avg_pace_s_per_km: null
+      rating: null
     })
     .eq("id", workoutId)
     .eq("user_id", userId)

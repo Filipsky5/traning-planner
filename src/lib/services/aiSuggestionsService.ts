@@ -34,6 +34,18 @@ export interface SuggestionWithEvents {
   events: AiSuggestionEventDto[];
 }
 
+export interface ListEventsFilters {
+  page: number;
+  per_page: number;
+}
+
+export interface ListEventsResult {
+  data: AiSuggestionEventDto[];
+  page: number;
+  perPage: number;
+  total: number;
+}
+
 const DAILY_LIMIT = 3;
 const EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
@@ -502,7 +514,7 @@ async function assertDailyLimitNotExceeded(supabase: SupabaseClient, userId: str
   }
 }
 
-async function fetchSuggestionRow(
+export async function fetchSuggestionRow(
   supabase: SupabaseClient,
   userId: string,
   id: string
@@ -547,6 +559,62 @@ async function fetchSuggestionEvents(
     occurred_at: event.occurred_at,
     metadata: event.metadata,
   }));
+}
+
+/**
+ * List AI suggestion events with pagination
+ * Used by GET /api/v1/ai/suggestions/{id}/events endpoint
+ *
+ * Note: Uses separate queries for count and data due to PostgREST bug with count + range
+ */
+export async function listSuggestionEvents(
+  supabase: SupabaseClient,
+  userId: string,
+  suggestionId: string,
+  filters: ListEventsFilters
+): Promise<ListEventsResult> {
+  const page = filters.page ?? 1;
+  const perPage = filters.per_page ?? 20;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+
+  // 1. COUNT QUERY (separate from data query to avoid PostgREST bug)
+  const { count, error: countError } = await supabase
+    .from("ai_suggestion_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("ai_suggestion_id", suggestionId);
+
+  if (countError) {
+    throw createApiError(500, "internal_error", "Failed to count events", { cause: countError });
+  }
+
+  // 2. DATA QUERY (with pagination)
+  const { data, error: dataError } = await supabase
+    .from("ai_suggestion_events")
+    .select(EVENT_SELECT)
+    .eq("user_id", userId)
+    .eq("ai_suggestion_id", suggestionId)
+    .order("occurred_at", { ascending: false })
+    .range(from, to);
+
+  if (dataError) {
+    throw createApiError(500, "internal_error", "Failed to load events", { cause: dataError });
+  }
+
+  const items = (data ?? []).map((event) => ({
+    id: event.id,
+    kind: event.kind,
+    occurred_at: event.occurred_at,
+    metadata: event.metadata,
+  }));
+
+  return {
+    data: items,
+    page,
+    perPage,
+    total: count ?? 0,
+  };
 }
 
 function parseSort(sort: string): { column: string; direction: "asc" | "desc" } {

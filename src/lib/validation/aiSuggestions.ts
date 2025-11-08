@@ -142,3 +142,36 @@ export const regenerateBodySchema = z.object({
 
 export type RegenerateBody = z.infer<typeof regenerateBodySchema>;
 
+// Query params schema for AI suggestion events pagination
+export const eventsQuerySchema = z.object({
+  page: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : Number(value)))
+    .pipe(
+      z
+        .number({
+          invalid_type_error: "page must be a number",
+        })
+        .int("page must be an integer")
+        .min(1, "page must be >= 1")
+    )
+    .default(1),
+  per_page: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : Number(value)))
+    .pipe(
+      z
+        .number({
+          invalid_type_error: "per_page must be a number",
+        })
+        .int("per_page must be an integer")
+        .min(1, "per_page must be >= 1")
+        .max(100, "per_page must be <= 100")
+    )
+    .default(20),
+});
+
+export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
+

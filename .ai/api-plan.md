@@ -309,6 +309,9 @@ Statuses: `shown`, `accepted`, `rejected`, `expired`
 
 Shared representation
 
+> **Implementation note (MVP)**  
+> Wszystkie metadane sugestii (planowana data, łączny dystans/czas, kontekst AI) są przechowywane wewnątrz pola `steps_jsonb` jako struktura `meta + steps`. Endpointy odczytują je z JSON i zwracają płaskie pola (np. `planned_date`) wyłącznie na poziomie DTO.
+
 ```json
 {
   "id": "uuid",

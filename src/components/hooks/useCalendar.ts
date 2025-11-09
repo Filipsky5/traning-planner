@@ -306,6 +306,7 @@ export function useCalendar(initialDate: Date = new Date()) {
     isLoading,
     error,
     range,
+    trainingTypes,
 
     // Stan drawerów
     isDayDrawerOpen,

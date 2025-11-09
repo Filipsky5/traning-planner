@@ -2,7 +2,7 @@ import { useCalendar } from "../hooks/useCalendar";
 import { CalendarHeader } from "../calendar/CalendarHeader";
 import { CalendarGrid } from "../calendar/CalendarGrid";
 import { DayDrawer } from "../calendar/DayDrawer";
-import { AISuggestionDrawer } from "../calendar/AISuggestionDrawer";
+import { AISuggestionDrawer } from "../suggestions/AISuggestionDrawer";
 
 /**
  * Główny komponent widoku kalendarza
@@ -15,6 +15,7 @@ export function CalendarView() {
     calendarDays,
     isLoading,
     error,
+    trainingTypes,
     setPeriod,
     setViewMode,
     setDate,
@@ -26,6 +27,7 @@ export function CalendarView() {
     isAiDrawerOpen,
     selectedDay,
     selectedDate,
+    refetch,
   } = useCalendar();
 
   // Obsługa błędów
@@ -79,11 +81,17 @@ export function CalendarView() {
         />
 
         {/* Panel generowania sugestii AI */}
-        <AISuggestionDrawer
-          isOpen={isAiDrawerOpen}
-          onClose={closeAiDrawer}
-          selectedDate={selectedDate}
-        />
+        {selectedDate && (
+          <AISuggestionDrawer
+            isOpen={isAiDrawerOpen}
+            onOpenChange={(open) => !open && closeAiDrawer()}
+            initialData={{
+              plannedDate: selectedDate,
+            }}
+            trainingTypes={trainingTypes}
+            onSuggestionAccepted={refetch}
+          />
+        )}
       </div>
     </div>
   );

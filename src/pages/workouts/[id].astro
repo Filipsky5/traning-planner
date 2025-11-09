@@ -1,0 +1,15 @@
+---
+import { WorkoutDetailView } from "../../components/views/WorkoutDetailView";
+import Layout from "../../layouts/Layout.astro";
+
+// Pobierz ID treningu z URL
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout title="Szczegóły treningu">
+  <WorkoutDetailView client:load workoutId={id} />
+</Layout>

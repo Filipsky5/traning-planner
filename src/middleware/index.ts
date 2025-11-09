@@ -27,6 +27,28 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     if (!error && data?.user) {
       context.locals.user = data.user;
+
+      // Check if user needs onboarding (has fewer than 3 workouts)
+      const pathname = new URL(context.request.url).pathname;
+      const shouldSkipOnboardingCheck =
+        pathname.startsWith('/onboarding') ||
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/_') ||
+        /\.(js|css|png|jpg|jpeg|svg|ico|webp)$/.test(pathname);
+
+      if (!shouldSkipOnboardingCheck) {
+        // Count user's completed workouts
+        const { count, error: countError } = await supabase
+          .from('workouts')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'completed');
+
+        if (!countError && count !== null && count < 3) {
+          // User needs onboarding - redirect to /onboarding
+          const nextUrl = pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';
+          return context.redirect(`/onboarding${nextUrl}`, 307);
+        }
+      }
     }
   }
 

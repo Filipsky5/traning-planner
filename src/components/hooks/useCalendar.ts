@@ -188,8 +188,8 @@ export function useCalendar(initialDate: Date = new Date()) {
   // Stan dla drawerów
   const [isDayDrawerOpen, setIsDayDrawerOpen] = useState<boolean>(false);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState<boolean>(false);
-  const [selectedDay, setSelectedDay] = useState<DayCellViewModel | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null); // YYYY-MM-DD dla DayDrawer
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null); // Date dla AISuggestionDrawer
 
   // Oblicz zakres dat na podstawie viewDate i viewMode
   const range = useMemo(() => {
@@ -274,13 +274,13 @@ export function useCalendar(initialDate: Date = new Date()) {
   }, []);
 
   const openDayDrawer = useCallback((day: DayCellViewModel) => {
-    setSelectedDay(day);
+    setSelectedDayDate(day.dateString); // Ustaw datę w formacie YYYY-MM-DD
     setIsDayDrawerOpen(true);
   }, []);
 
   const closeDayDrawer = useCallback(() => {
     setIsDayDrawerOpen(false);
-    setSelectedDay(null);
+    setSelectedDayDate(null);
   }, []);
 
   const openAiDrawer = useCallback((date: Date) => {
@@ -311,8 +311,8 @@ export function useCalendar(initialDate: Date = new Date()) {
     // Stan drawerów
     isDayDrawerOpen,
     isAiDrawerOpen,
-    selectedDay,
-    selectedDate,
+    selectedDayDate, // YYYY-MM-DD dla DayDrawer
+    selectedDate, // Date dla AISuggestionDrawer
 
     // Akcje
     setPeriod,

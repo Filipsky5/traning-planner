@@ -25,7 +25,7 @@ export function CalendarView() {
     closeAiDrawer,
     isDayDrawerOpen,
     isAiDrawerOpen,
-    selectedDay,
+    selectedDayDate,
     selectedDate,
     refetch,
   } = useCalendar();
@@ -74,10 +74,14 @@ export function CalendarView() {
 
         {/* Panel z treningami dnia */}
         <DayDrawer
-          isOpen={isDayDrawerOpen}
-          onClose={closeDayDrawer}
-          day={selectedDay}
-          onAddWorkout={openAiDrawer}
+          selectedDate={selectedDayDate}
+          trainingTypes={trainingTypes}
+          onOpenChange={(isOpen) => !isOpen && closeDayDrawer()}
+          onAddWorkout={(dateString) => {
+            // Konwertuj YYYY-MM-DD string na Date object
+            const date = new Date(dateString + "T00:00:00");
+            openAiDrawer(date);
+          }}
         />
 
         {/* Panel generowania sugestii AI */}

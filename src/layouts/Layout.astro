@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import { PaceUnitProvider } from "../components/providers/PaceUnitProvider";
+import Header from "../components/Header.astro";
 
 interface Props {
   title?: string;
@@ -18,7 +20,10 @@ const { title = "10x Astro Starter" } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    <slot />
+    <PaceUnitProvider client:load>
+      <Header />
+      <slot />
+    </PaceUnitProvider>
   </body>
 </html>
 

@@ -1,8 +1,8 @@
 ---
-import Welcome from "../components/Welcome.astro";
+import { CalendarView } from "../components/views/CalendarView";
 import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout>
-  <Welcome />
+  <CalendarView client:load />
 </Layout>

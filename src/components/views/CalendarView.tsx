@@ -1,0 +1,90 @@
+import { useCalendar } from "../hooks/useCalendar";
+import { CalendarHeader } from "../calendar/CalendarHeader";
+import { CalendarGrid } from "../calendar/CalendarGrid";
+import { DayDrawer } from "../calendar/DayDrawer";
+import { AISuggestionDrawer } from "../calendar/AISuggestionDrawer";
+
+/**
+ * Główny komponent widoku kalendarza
+ * Zarządza stanem za pomocą hooka useCalendar i renderuje komponenty podrzędne
+ */
+export function CalendarView() {
+  const {
+    viewDate,
+    viewMode,
+    calendarDays,
+    isLoading,
+    error,
+    setPeriod,
+    setViewMode,
+    setDate,
+    openDayDrawer,
+    closeDayDrawer,
+    openAiDrawer,
+    closeAiDrawer,
+    isDayDrawerOpen,
+    isAiDrawerOpen,
+    selectedDay,
+    selectedDate,
+  } = useCalendar();
+
+  // Obsługa błędów
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">
+            Wystąpił błąd
+          </h2>
+          <p className="text-gray-600">{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Odśwież stronę
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Nagłówek kalendarza */}
+        <CalendarHeader
+          currentDate={viewDate}
+          viewMode={viewMode}
+          onPeriodChange={setPeriod}
+          onViewModeChange={setViewMode}
+          onDateSelect={setDate}
+        />
+
+        {/* Siatka kalendarza */}
+        <div className="mt-4">
+          <CalendarGrid
+            days={calendarDays}
+            isLoading={isLoading}
+            onAddWorkout={(date) => openAiDrawer(date)}
+            onOpenDay={openDayDrawer}
+          />
+        </div>
+
+        {/* Panel z treningami dnia */}
+        <DayDrawer
+          isOpen={isDayDrawerOpen}
+          onClose={closeDayDrawer}
+          day={selectedDay}
+          onAddWorkout={openAiDrawer}
+        />
+
+        {/* Panel generowania sugestii AI */}
+        <AISuggestionDrawer
+          isOpen={isAiDrawerOpen}
+          onClose={closeAiDrawer}
+          selectedDate={selectedDate}
+        />
+      </div>
+    </div>
+  );
+}

@@ -56,6 +56,7 @@ export function OnboardingView({ nextUrl }: OnboardingViewProps) {
           </h2>
 
           <WorkoutOnboardingForm
+            key={currentStep}
             onSubmit={handleFormSubmit}
             isLoading={isLoading}
             stepNumber={currentStep}

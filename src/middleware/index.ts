@@ -105,6 +105,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const { count, error: countError } = await supabase
       .from("workouts")
       .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
       .eq("status", "completed");
 
     if (!countError && count !== null && count < 3) {

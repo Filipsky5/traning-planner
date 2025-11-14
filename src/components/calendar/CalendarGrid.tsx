@@ -1,4 +1,5 @@
-import { useRef, useCallback, KeyboardEvent } from "react";
+import { useRef, useCallback } from "react";
+import type React from "react";
 import type { DayCellViewModel } from "../../types/calendar";
 import { DayCell } from "./DayCell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +29,7 @@ export function CalendarGrid({
   /**
    * Obsługuje nawigację klawiaturą po siatce kalendarza
    */
-  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (!target || !target.hasAttribute('data-day-index')) return;
 

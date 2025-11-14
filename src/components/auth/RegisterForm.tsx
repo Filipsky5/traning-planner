@@ -376,7 +376,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
           </div>
         </CardContent>
 
-        <CardFooter className="flex-col gap-4">
+        <CardFooter className="flex-col gap-4" style={{ marginTop: '5px' }}>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <>

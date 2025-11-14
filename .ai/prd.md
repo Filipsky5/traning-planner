@@ -33,23 +33,43 @@
 * Użytkownik po rejestracji musi dodać **dokładnie 3 swoje ostatnie treningi**, aby AI miało dane startowe.
 * Interfejs udostępnia **przykładowe dane** (np. "Spacer 30 min", "Lekki trucht 15 min"), które można wpisać, aby obniżyć barierę wejścia.
 * Użytkownik opcjonalnie odpowiada na pytanie o cel (np. "Biegać dla zdrowia", "Przebiec X km"), z informacją, że dane te posłużą do ulepszenia aplikacji w przyszłości.
+* Funkcjonalność onboardinu wymaga aby uytkownik najpierw się zarejestrowal (Bezpieczny dostęp i uwierzytelnianie).
 
 ### Generowanie Treningu (AI)
 * **Tryb Kalibracji:** Pierwsze **3 treningi** wygenerowane przez AI służą "wyczuciu" użytkownika. Powinny być bardziej zachowawcze i zróżnicowane, aby zebrać dane na temat reakcji użytkownika.
 * **Logika Progresji:** Po trybie kalibracji, jeśli 3 ostatnie treningi danego typu (np. Bieg Spokojny) zostaną ocenione jako "W sam raz" lub "Za łatwy", kolejna propozycja tego typu będzie miała nieznacznie (np. o 10%) zwiększony dystans.
 * **Struktura i Treść:** AI zawsze generuje trening o strukturze: **Rozgrzewka, Część główna, Schłodzenie**. Sugerowane tempa są określane przez AI na podstawie analizy **średniego tempa** z historycznych biegów użytkownika.
 * **Interfejs:** Propozycja treningu pojawia się w **oknie modalnym** z przyciskami "Akceptuj i dodaj do planu" oraz "Odrzuć i wygeneruj nowy". Użytkownik ma limit **3 re-generacji** na dzień.
+* Funkcjonalność generowanie treningów nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
+
 
 ### Zarządzanie Treningami
 * Użytkownik ręcznie dodaje zrealizowane treningi, podając **dystans, czas trwania i średnie tętno**.
 * Zaplanowany trening jest potwierdzany przez otwarcie formularza z danymi planu, które użytkownik modyfikuje, wpisując faktyczne wyniki.
 * Użytkownik może **edytować i usuwać** historyczne treningi. Funkcja edycji zostanie usunięta po wprowadzeniu wsparcia dla plików .FIT w przyszłości.
 * Po potwierdzeniu wykonania treningu, użytkownik może go ocenić ("Za łatwy", "W sam raz", "Za trudny").
+* Funkcjonalność zarządzania treningami nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
 
 ### Kalendarz i Widok Detali
 * **Widok kalendarza** jest głównym ekranem aplikacji. Wyświetla treningi zróżnicowane za pomocą **kolorów lub ikon** odpowiadających typowi treningu.
 * Puste dni w kalendarzu mają ikonę **"+"** do inicjowania generowania treningu.
 * Widok szczegółów treningu **nie zawiera żadnych wykresów**. Prezentuje kluczowe metryki w formie **numerycznej** (dystans, czas, śr. tętno, śr. tempo) oraz ocenę wystawioną przez użytkownika.
+* Funkcjonalność kalendarza i widok detali nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
+
+
+### Bezpieczny dostęp i uwierzytelnianie
+
+* **Bezpieczny dostęp**
+* Jako użytkownik chcę mieć możliwość rejestracji i logowania się do systemu w sposób zapewniający bezpieczeństwo moich danych.
+- Kryteria akceptacji:
+  - Logowanie i rejestracja odbywają się na dedykowanych stronach.
+  - Logowanie wymaga podania adresu email i hasła.
+  - Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
+  - Użytkownik NIE MOŻE korzystać z funkcji Generowanie Treningu (AI), Zarządzanie Treningami, Kalendarz i Widok Detali bez logowania się do systemu.
+  - Użytkownik musi się zalogować i widok logowania jest pierwszym ekranem który widzi po wejściu na stronę jesli nie jest zalogowany
+  - Użytkownik może się wylogować z systemu poprzez przycisk w prawym górnym rogu w głównym @Layout.astro i jest od razu przekierowany na stronę logowania.
+  - Nie korzystamy z zewnętrznych serwisów logowania (np. Google, GitHub).
+  - Odzyskiwanie hasła powinno być możliwe.
 
 ---
 

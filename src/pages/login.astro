@@ -1,0 +1,13 @@
+---
+import { LoginForm } from "../components/auth/LoginForm";
+import Layout from "../layouts/Layout.astro";
+
+// Pobierz parametr redirectTo z query string (opcjonalnie)
+const redirectTo = Astro.url.searchParams.get("redirectTo") || undefined;
+---
+
+<Layout title="Logowanie">
+  <div class="flex min-h-screen items-center justify-center px-4 py-12">
+    <LoginForm client:load redirectTo={redirectTo} />
+  </div>
+</Layout>

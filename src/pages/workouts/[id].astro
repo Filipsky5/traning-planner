@@ -2,6 +2,23 @@
 import { WorkoutDetailView } from "../../components/views/WorkoutDetailView";
 import Layout from "../../layouts/Layout.astro";
 
+/**
+ * Strona szczegółów treningu.
+ *
+ * OCHRONA:
+ * - Middleware przekierowuje niezalogowanych na /login (pierwsza linia obrony)
+ * - Page-level guard poniżej (druga linia obrony - defense in depth)
+ *
+ * UWAGA: Astro.locals.user jest ustawiane przez middleware (src/middleware/index.ts)
+ */
+
+// Auth guard - weryfikacja że user jest zalogowany
+const { user } = Astro.locals;
+
+if (!user) {
+  return Astro.redirect("/login");
+}
+
 // Pobierz ID treningu z URL
 const { id } = Astro.params;
 

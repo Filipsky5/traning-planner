@@ -3,20 +3,41 @@ import "../styles/global.css";
 import { PaceUnitProvider } from "../components/providers/PaceUnitProvider";
 import Header from "../components/Header.astro";
 
+/**
+ * Layout główny aplikacji.
+ *
+ * Features:
+ * - Global styles
+ * - PaceUnitProvider (global state dla jednostki tempa)
+ * - Header z warunkowym renderowaniem (UserMenu vs AuthButtons)
+ * - Responsive viewport
+ * - Dynamic title
+ *
+ * Props:
+ * - title: Tytuł strony (opcjonalny, default: "Training Planner")
+ *
+ * UWAGA: Header automatycznie sprawdza Astro.locals.user (z middleware)
+ * i renderuje odpowiednie menu.
+ */
+
 interface Props {
   title?: string;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+const { title = "Training Planner" } = Astro.props;
+
+// Pobierz user z context.locals (do potencjalnego użycia w przyszłości)
+const user = Astro.locals.user;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="description" content="Training Planner - Aplikacja do planowania treningów biegowych z AI" />
     <title>{title}</title>
   </head>
   <body>

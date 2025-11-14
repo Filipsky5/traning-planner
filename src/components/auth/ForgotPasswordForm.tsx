@@ -65,23 +65,23 @@ export function ForgotPasswordForm() {
       setLoading(true);
 
       try {
-        // TODO: Wywołaj POST /api/v1/auth/forgot-password
-        // const response = await fetch('/api/v1/auth/forgot-password', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ email }),
-        // });
+        // Wywołaj POST /api/v1/auth/forgot-password
+        const response = await fetch('/api/v1/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // WAŻNE: Wyślij cookies
+          body: JSON.stringify({ email }),
+        });
 
-        // if (!response.ok) {
-        //   throw new Error('Błąd podczas wysyłania emaila');
-        // }
+        // Parse response
+        const data = await response.json();
 
-        // Placeholder: symulacja sukcesu
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!response.ok) {
+          // Server zwrócił error
+          throw new Error(data.error?.message || 'Błąd podczas wysyłania emaila');
+        }
 
-        console.log('Forgot password attempt:', { email });
-
-        // Zawsze pokazuj komunikat sukcesu (security best practice)
+        // Success - zawsze pokazuj komunikat sukcesu (security best practice)
         setSuccess(true);
       } catch (err) {
         setError('Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.');

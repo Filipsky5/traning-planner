@@ -168,28 +168,27 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
       setLoading(true);
 
       try {
-        // TODO: Wywołaj POST /api/v1/auth/register
-        // const response = await fetch('/api/v1/auth/register', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({
-        //     email,
-        //     password,
-        //     metadata: { acceptedTermsAt: new Date().toISOString() },
-        //   }),
-        // });
+        // Wywołaj POST /api/v1/auth/register
+        const response = await fetch('/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // WAŻNE: Wyślij cookies
+          body: JSON.stringify({
+            email,
+            password,
+            metadata: { acceptedTermsAt: new Date().toISOString() },
+          }),
+        });
 
-        // if (!response.ok) {
-        //   const data = await response.json();
-        //   throw new Error(data.error?.message || 'Błąd rejestracji');
-        // }
+        // Parse response
+        const data = await response.json();
 
-        // Placeholder: symulacja sukcesu
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!response.ok) {
+          // Server zwrócił error
+          throw new Error(data.error?.message || 'Błąd rejestracji');
+        }
 
-        console.log('Register attempt:', { email, redirectTo });
-
-        // Przejście do ekranu weryfikacji
+        // Success - przejście do ekranu weryfikacji email
         setStep('verification');
       } catch (err) {
         setError(

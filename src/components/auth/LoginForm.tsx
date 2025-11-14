@@ -108,31 +108,28 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         return;
       }
 
-      // Symulacja wywołania API
       setLoading(true);
 
       try {
-        // TODO: Wywołaj POST /api/v1/auth/login
-        // const response = await fetch('/api/v1/auth/login', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ email, password }),
-        // });
+        // Wywołaj POST /api/v1/auth/login
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // WAŻNE: Wyślij cookies
+          body: JSON.stringify({ email, password }),
+        });
 
-        // if (!response.ok) {
-        //   const data = await response.json();
-        //   throw new Error(data.error?.message || 'Błąd logowania');
-        // }
+        // Parse response
+        const data = await response.json();
 
-        // const data = await response.json();
-        // Zapisz token i przekieruj
-        // window.location.href = redirectTo;
+        if (!response.ok) {
+          // Server zwrócił error
+          throw new Error(data.error?.message || 'Błąd logowania');
+        }
 
-        // Placeholder: symulacja sukcesu po 1s
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        console.log('Login attempt:', { email, redirectTo });
-        alert('Formularz logowania działa! Backend będzie dodany w następnym kroku.');
+        // Success - session zapisany w cookies przez server
+        // Przekieruj na odpowiednią stronę
+        window.location.href = redirectTo;
       } catch (err) {
         setError(
           err instanceof Error

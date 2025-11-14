@@ -116,26 +116,24 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       setLoading(true);
 
       try {
-        // TODO: Wywołaj POST /api/v1/auth/reset-password
-        // const response = await fetch('/api/v1/auth/reset-password', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ token, newPassword }),
-        // });
+        // Wywołaj POST /api/v1/auth/reset-password
+        // UWAGA: Token nie jest przekazywany w body - pochodzi z cookies (ustawiony przez Supabase)
+        const response = await fetch('/api/v1/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // WAŻNE: Wyślij cookies z tokenem
+          body: JSON.stringify({ newPassword }),
+        });
 
-        // if (!response.ok) {
-        //   const data = await response.json();
-        //   if (data.error?.code === 'invalid_token') {
-        //     throw new Error('Link resetujący wygasł lub jest nieprawidłowy');
-        //   }
-        //   throw new Error(data.error?.message || 'Błąd resetowania hasła');
-        // }
+        // Parse response
+        const data = await response.json();
 
-        // Placeholder: symulacja sukcesu
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!response.ok) {
+          // Server zwrócił error
+          throw new Error(data.error?.message || 'Błąd resetowania hasła');
+        }
 
-        console.log('Reset password attempt:', { token });
-
+        // Success - user jest teraz zalogowany
         setSuccess(true);
       } catch (err) {
         setError(

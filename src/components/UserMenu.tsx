@@ -47,17 +47,23 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabaseClient.auth.signOut();
+      // Wywołaj POST /api/v1/auth/logout
+      const response = await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // WAŻNE: Wyślij cookies
+      });
 
-      if (error) {
-        console.error('Error signing out:', error);
-        return;
+      if (!response.ok) {
+        console.error('Error signing out:', await response.text());
+        // Przekieruj mimo błędu (sesja może być już nieważna)
       }
 
-      // Redirect to login page after successful logout
+      // Redirect to login page after logout
       window.location.href = '/login';
     } catch (error) {
       console.error('Unexpected error during logout:', error);
+      // Przekieruj mimo błędu
+      window.location.href = '/login';
     }
   };
 

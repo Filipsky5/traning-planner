@@ -10,6 +10,9 @@ export interface AiGeneratedSuggestion {
 const openrouter = new OpenRouterService({
   apiKey: import.meta.env.OPENROUTER_API_KEY,
   defaultModel: import.meta.env.OPENROUTER_DEFAULT_MODEL,
+  timeout: import.meta.env.OPENROUTER_TIMEOUT_MS
+    ? parseInt(import.meta.env.OPENROUTER_TIMEOUT_MS, 10)
+    : undefined,
 });
 
 /**

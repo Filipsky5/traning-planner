@@ -90,7 +90,7 @@ export function OptionalRealizationSection() {
 
           {/* Zrealizowany czas */}
           <div className="space-y-1">
-            <Label htmlFor="realizedDurationSec">
+            <Label>
               Czas (sekundy) <span className="text-red-600">*</span>
             </Label>
             <div className="flex gap-2">

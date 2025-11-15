@@ -91,7 +91,7 @@ export function StepsEditor() {
                 value={watch(`steps.${index}.part`)}
                 onValueChange={(value) => setValue(`steps.${index}.part`, value as StepPart)}
               >
-                <SelectTrigger>
+                <SelectTrigger id={`steps.${index}.part`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

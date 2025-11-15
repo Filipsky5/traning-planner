@@ -82,17 +82,17 @@ export default defineConfig({
     {
       name: "onboarding-flow",
       testMatch: /.*onboarding-flow\.spec\.ts/,
-      teardown: "onboarding-teardown",
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
         // NO storageState - tests fresh user experience
       },
     },
-    // Teardown project - cleans up onboarding test user workouts
+    // Teardown project - cleans up test user workouts after ALL tests
     {
-      name: "onboarding-teardown",
+      name: "teardown",
       testMatch: /.*onboarding\.teardown\.ts/,
+      dependencies: ["chromium-desktop", "chromium-mobile", "onboarding-flow"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },

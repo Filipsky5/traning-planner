@@ -35,19 +35,19 @@ E2E_PASSWORD=TestPassword123!
 - **Project**: `onboarding-flow`
 - **User**: `E2E_USERNAME` (fresh login each test)
 - **Dependencies**: None (runs independently)
-- **Teardown**: `onboarding-teardown` (cleans up workouts after tests)
 - **Assumption**: User has <3 workouts (ensured by teardown)
 
-### 4. Onboarding Teardown
+### 4. Global Teardown
 - **File**: `e2e/teardown/onboarding.teardown.ts`
-- **Project**: `onboarding-teardown`
+- **Project**: `teardown`
 - **User**: `E2E_USERNAME`
+- **Dependencies**: Runs AFTER all tests (chromium-desktop, chromium-mobile, onboarding-flow)
 - **Purpose**:
-  - Runs after all onboarding-flow tests complete
+  - Cleans up ALL test user workouts after entire test suite
   - Logs in as test user
   - Fetches all workouts
   - Deletes each workout via DELETE /api/v1/workouts/[id]
-  - Ensures user has <3 workouts for next test run
+  - Ensures clean state for next test run
 
 ## Test Execution Order
 
@@ -57,10 +57,10 @@ E2E_PASSWORD=TestPassword123!
 2. chromium-desktop (calendar.spec.ts) + chromium-mobile (calendar.spec.ts)
    + onboarding-flow (onboarding-flow.spec.ts) - runs in parallel
    ↓
-3. onboarding-teardown (onboarding.teardown.ts) - runs after onboarding-flow
+3. teardown (onboarding.teardown.ts) - runs AFTER ALL tests complete
 ```
 
-**Note**: Teardown only runs after `onboarding-flow` completes. Calendar tests don't have teardown (they use persistent auth state).
+**Note**: Teardown runs LAST, after all test projects complete. This ensures all workouts are cleaned up once, at the very end.
 
 ## Creating Test Users in Supabase
 

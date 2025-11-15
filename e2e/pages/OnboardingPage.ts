@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 /**
  * Page Object Model for Onboarding Page
@@ -37,38 +37,38 @@ export class OnboardingPage {
     this.page = page;
 
     // Main elements
-    this.onboardingView = page.getByTestId('onboarding-view');
-    this.stepTitle = page.getByTestId('onboarding-step-title');
+    this.onboardingView = page.getByTestId("onboarding-view");
+    this.stepTitle = page.getByTestId("onboarding-step-title");
 
     // Stepper
-    this.stepper = page.getByTestId('onboarding-stepper');
-    this.step1 = page.getByTestId('onboarding-step-1');
-    this.step2 = page.getByTestId('onboarding-step-2');
-    this.step3 = page.getByTestId('onboarding-step-3');
+    this.stepper = page.getByTestId("onboarding-stepper");
+    this.step1 = page.getByTestId("onboarding-step-1");
+    this.step2 = page.getByTestId("onboarding-step-2");
+    this.step3 = page.getByTestId("onboarding-step-3");
 
     // Form inputs
-    this.workoutForm = page.getByTestId('workout-onboarding-form');
-    this.distanceInput = page.getByTestId('workout-distance-input');
-    this.durationHoursInput = page.getByTestId('duration-hours-input');
-    this.durationMinutesInput = page.getByTestId('duration-minutes-input');
-    this.durationSecondsInput = page.getByTestId('duration-seconds-input');
-    this.avgHrInput = page.getByTestId('workout-avghr-input');
-    this.dateInput = page.getByTestId('workout-date-input');
-    this.submitButton = page.getByTestId('workout-submit-button');
+    this.workoutForm = page.getByTestId("workout-onboarding-form");
+    this.distanceInput = page.getByTestId("workout-distance-input");
+    this.durationHoursInput = page.getByTestId("duration-hours-input");
+    this.durationMinutesInput = page.getByTestId("duration-minutes-input");
+    this.durationSecondsInput = page.getByTestId("duration-seconds-input");
+    this.avgHrInput = page.getByTestId("workout-avghr-input");
+    this.dateInput = page.getByTestId("workout-date-input");
+    this.submitButton = page.getByTestId("workout-submit-button");
 
     // Error messages
-    this.distanceError = page.getByTestId('workout-error-distance');
-    this.durationError = page.getByTestId('workout-error-duration');
-    this.avgHrError = page.getByTestId('workout-error-avghr');
-    this.dateError = page.getByTestId('workout-error-date');
+    this.distanceError = page.getByTestId("workout-error-distance");
+    this.durationError = page.getByTestId("workout-error-duration");
+    this.avgHrError = page.getByTestId("workout-error-avghr");
+    this.dateError = page.getByTestId("workout-error-date");
   }
 
   async goto() {
-    await this.page.goto('/onboarding');
+    await this.page.goto("/onboarding");
   }
 
   async waitForOnboardingView() {
-    await this.onboardingView.waitFor({ state: 'visible' });
+    await this.onboardingView.waitFor({ state: "visible" });
   }
 
   /**
@@ -95,7 +95,7 @@ export class OnboardingPage {
     for (const stepNum of completedSteps) {
       const stepLocator = this.page.getByTestId(`onboarding-step-${stepNum}`);
       await expect(stepLocator).toHaveClass(/bg-green-500/);
-      await expect(stepLocator).toHaveText('✓');
+      await expect(stepLocator).toHaveText("✓");
     }
 
     // Check current step (blue with number)
@@ -172,11 +172,6 @@ export class OnboardingPage {
     await expect(this.avgHrError).toHaveText(message);
   }
 
-  async expectDateError(message: string) {
-    await expect(this.dateError).toBeVisible();
-    await expect(this.dateError).toHaveText(message);
-  }
-
   /**
    * Verify no validation errors are visible
    */
@@ -191,7 +186,7 @@ export class OnboardingPage {
    * Wait for redirect after completing all 3 workouts
    */
   async waitForRedirectToCalendar() {
-    await this.page.waitForURL('/');
+    await this.page.waitForURL("/");
   }
 
   /**

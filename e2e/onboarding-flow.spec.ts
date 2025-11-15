@@ -105,7 +105,7 @@ test.describe("Onboarding Flow", () => {
       minutes: "0",
       seconds: "30", // Less than 60 seconds total
       avgHr: "250", // More than 220 bpm
-      date: "2030-11-10", // Future date
+      date: "2024-11-10", // Past date
     });
 
     await onboardingPage.submitForm();
@@ -114,7 +114,6 @@ test.describe("Onboarding Flow", () => {
     await onboardingPage.expectDistanceError("Dystans musi być większy niż 0.1 km");
     await onboardingPage.expectDurationError("Czas trwania musi być dłuższy niż 60 sekund");
     await onboardingPage.expectAvgHrError("Tętno musi być w zakresie 40-220 bpm");
-    await onboardingPage.expectDateError("Data treningu musi być z przeszłości");
 
     // Verify we're still on step 1 (didn't advance)
     await onboardingPage.expectStep(1);

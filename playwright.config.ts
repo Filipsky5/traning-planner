@@ -64,14 +64,16 @@ export default defineConfig({
         storageState: "playwright/.auth/user.json",
       },
     },
-    // Mobile tests - use authenticated state
+    // Mobile tests - use authenticated state (Chromium with mobile viewport)
     {
       name: "chromium-mobile",
       dependencies: ["setup"],
       testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
       use: {
-        ...devices["iPhone 12"],
+        ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
         // Use saved auth state for calendar and other authenticated tests
         storageState: "playwright/.auth/user.json",
       },

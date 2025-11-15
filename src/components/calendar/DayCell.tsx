@@ -71,40 +71,38 @@ export function DayCell({
           {day.date.getDate()}
         </span>
 
-        {/* Dropdown dodawania treningu */}
-        {day.workouts.length === 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                aria-label="Dodaj trening"
-                onClick={(e) => e.stopPropagation()}
-              >
-                +
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddWorkout(day.date);
-                }}
-              >
-                Generuj z AI
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddWorkoutManual?.(day.date);
-                }}
-              >
-                Dodaj ręcznie
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {/* Dropdown dodawania treningu - zawsze widoczny */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+              aria-label="Dodaj trening"
+              onClick={(e) => e.stopPropagation()}
+            >
+              +
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddWorkout(day.date);
+              }}
+            >
+              Generuj z AI
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddWorkoutManual?.(day.date);
+              }}
+            >
+              Dodaj ręcznie
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Lista treningów */}

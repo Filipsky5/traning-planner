@@ -160,6 +160,12 @@
   - W razie 409 → ConflictDialog z przeplanowaniem pozycji.
 - Po akceptacji: invalidacja kalendarza + sugestii; brak opcji „Dostosuj” (MVP).
 
+2) Planowanie Reczne
+- Na `/` wybiera dzień → „+” → Drop down z opcją Dodaj recznie.
+- Mozliwość wyboru typu treningu (tabela `training_types`), oraz daty i czas trwania jest zliczany automatycznie
+- Sekcja plan treningu ma guzik + który dodaje segment w segmencie trzy wybrać jakiego jest typu `warmup` | `main` | `cooldown`, czas jego trwania, oraz ilosc kilometrów do przebiegnięcia
+- Po akceptacji: invalidacja kalendarza + sugestii; brak opcji „Dostosuj” (MVP).
+
 3) Realizacja i ocena
 - Po wykonaniu → z widoku szczegółów `/workouts/[id]` → Complete/Rate lub Skip/Cancel z kart w kalendarzu/Drawerze dnia.
 - Rate (too_easy/just_right/too_hard) → natychmiastowa aktualizacja i invalidacja last3, kalendarza.

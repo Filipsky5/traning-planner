@@ -85,7 +85,7 @@ export function DayDrawer({
       if (err instanceof ApiError) {
         if (err.isUnauthorized()) {
           alert("Sesja wygasła. Zaloguj się ponownie.");
-          // TODO: przekieruj do logowania
+          window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
         } else if (err.isNotFound()) {
           alert("Trening nie został znaleziony.");
         } else {
@@ -114,7 +114,7 @@ export function DayDrawer({
       if (err instanceof ApiError) {
         if (err.isUnauthorized()) {
           alert("Sesja wygasła. Zaloguj się ponownie.");
-          // TODO: przekieruj do logowania
+          window.location.href = `/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
         } else if (err.isNotFound()) {
           alert("Trening nie został znaleziony.");
         } else {

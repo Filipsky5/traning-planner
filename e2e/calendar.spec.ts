@@ -90,17 +90,4 @@ test.describe("Calendar View", () => {
     const buttonCount = await calendarPage.addWorkoutButtons.count();
     expect(buttonCount).toBeGreaterThan(0);
   });
-
-  // Visual regression test disabled - calendar has dynamic dates
-  // Use --update-snapshots to regenerate baseline if needed
-  test.skip("should take screenshot of calendar view", async ({ page }) => {
-    await calendarPage.waitForCalendarLoad();
-    // Wait for content to load
-    await page.waitForTimeout(500);
-    // Visual regression test (snapshot saved to test-results)
-    await expect(page).toHaveScreenshot("calendar-view.png", {
-      fullPage: true,
-      maxDiffPixels: 100,
-    });
-  });
 });

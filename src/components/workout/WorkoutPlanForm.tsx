@@ -321,7 +321,7 @@ export function WorkoutPlanForm({
         <OptionalRealizationSection />
 
         {/* Przyciski akcji */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4 pb-6">
           <Button
             type="button"
             variant="outline"

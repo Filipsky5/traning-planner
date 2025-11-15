@@ -155,7 +155,7 @@
 2) Planowanie z AI (główny przypadek)
 - Na `/` wybiera dzień → „+” → Drawer AI.
 - Wybiera typ (prefill z popularnych / last3), data prefill → POST `/ai/suggestions`.
-- Ogląda propozycję (steps, meta, badge AI). Jeśli za twarda → POST `/regenerate` (limit 3/dzień).
+- Ogląda propozycję (steps, meta, badge AI). Jeśli za trudna → POST `/regenerate` (limit 3/dzień per data).
 - Akceptuje z wyborem `position` (domyślnie najbliższe wolne) → POST `/accept`.
   - W razie 409 → ConflictDialog z przeplanowaniem pozycji.
 - Po akceptacji: invalidacja kalendarza + sugestii; brak opcji „Dostosuj” (MVP).
@@ -198,7 +198,7 @@
 - **CalendarGrid / DayCell**: role="grid"/"gridcell", obsługa klawiatury, wskaźniki stanu dnia.
 - **WorkoutCard**: status, typ, badge AI, skrótowe akcje (skip/cancel), ikony + tekst.
 - **DayDrawer**: lista treningów dnia, „+2 więcej”, dostęp do akcji i szczegółów.
-- **AISuggestionDrawer**: formularz (typ, data), podgląd steps, Accept/Regenerate (limit 3/dzień), ExpiredBadge, ConflictDialog.
+- **AISuggestionDrawer**: formularz (typ, data), podgląd steps, Accept/Regenerate (limit 3/dzień per data), ExpiredBadge, ConflictDialog.
 - **WorkoutPlanForm**: planowane pola, walidacje zakresów (zgodnie z API).
 - **WorkoutCompletedForm**: metryki realizacji, rating.
 - **StepsEditor**: prosty edytor kroków (warmup/main/cooldown/segment) zgodnie z minimalnym schematem.
@@ -218,7 +218,7 @@
 
 - Onboarding 3 treningów → `/onboarding` + Stepper + WorkoutCompletedForm.
 - Generowanie AI → AISuggestionDrawer (uruchamiany z DayCell „+”).
-- Akceptacja/Odrzucenie/Regeneracja → AcceptControls/RegenerateControls + limit 3/dzień.
+- Akceptacja/Odrzucenie/Regeneracja → AcceptControls/RegenerateControls + limit 3/dzień per planned_date.
 - Zarządzanie treningami → Drawer Dnia, `/workouts/[id]`, akcje domenowe (complete/skip/cancel/rate).
 - Kalendarz główny → `/` z tygodniem/miesiącem, ikony/kolory typów, „+” dla pustych dni.
 - System ocen → Rating w szczegółach/completed; wpływ na kolejne sugestie (backend).

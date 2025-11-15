@@ -348,7 +348,7 @@ Endpoints
 ```
 
 -- POST `/api/v1/ai/suggestions`
-  - Description: Generate a suggestion for a date and type. Enforces regeneration limit (3 per day). Applies calibration logic for the first 3 AI-generated workouts.
+  - Description: Generate a suggestion for a date and type. Enforces regeneration limit (3 per day per planned_date). Applies calibration logic for the first 3 AI-generated workouts.
   - Request JSON:
 
 ```json
@@ -401,7 +401,7 @@ Endpoints
   - Errors: 404, 409 already accepted, 410 expired, 403 user mismatch
 
 - POST `/api/v1/ai/suggestions/{id}/regenerate`
-  - Description: Regenerate a new suggestion (creates a new suggestion linked by event log). Enforces per-user daily limit (3/day).
+  - Description: Regenerate a new suggestion (creates a new suggestion linked by event log). Enforces per-user daily limit (3/day per planned_date).
   - Request JSON (optional):
 
 ```json
@@ -620,7 +620,7 @@ curl -X GET "http://localhost:3000/api/v1/internal/ai/logs?created_after=2025-11
 
 Global
 - All times are UTC. `planned_date` must be a valid date string `YYYY-MM-DD`.
-- Rate limiting: 60 req/min/user general; 3 regenerations per user per UTC day.
+- Rate limiting: 60 req/min/user general; 3 regenerations per user per UTC day per planned_date.
 
 Workouts
 - Plan constraints:
@@ -677,7 +677,7 @@ AI Suggestions
 - Rejection:
   - Allowed unless already accepted or expired; set `status='rejected'`.
 - Regeneration:
-  - Allowed up to 3/day per user. Log event in `ai_suggestion_events` with `kind='regenerate'` and `occurred_at=now()`; include `metadata` (optional) with hints.
+  - Allowed up to 3/day per user per planned_date. Log event in `ai_suggestion_events` with `kind='regenerate'` and `occurred_at=now()`; include `metadata` (optional) with hints.
   - Regeneration returns a new suggestion (`status='shown'`), the previous suggestion stays `rejected` (if user explicitly rejected) or remains `shown` (if user asked to regenerate without rejecting) — choose strategy: default to keeping previous as `rejected`.
 - Expiration:
   - Any operation on expired suggestions returns 410 Gone.
@@ -697,7 +697,7 @@ Security, Safety, and Performance
   - Progressive logic queries use `(user_id, training_type_code, completed_at DESC)`.
   - Suggestions list filtered by `(user_id, status, created_at DESC)`.
 - Rate limiting:
-  - Global per IP and per user (e.g., 60 req/min). For AI actions, stricter (e.g., 10 req/min) and 3 regenerations/day cap.
+  - Global per IP and per user (e.g., 60 req/min). For AI actions, stricter (e.g., 10 req/min) and 3 regenerations/day per planned_date cap.
   - Return `429 Too Many Requests` with `Retry-After` header.
 - Auditing/logging:
   - Write AI usage to `ai_logs` (service-only). Include request_id in all error responses.

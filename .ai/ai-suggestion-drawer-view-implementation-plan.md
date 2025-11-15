@@ -141,7 +141,7 @@ Zarządzanie stanem będzie scentralizowane w komponencie `AISuggestionDrawer` p
 - `suggestion: AISuggestionViewModel | null`: Przechowuje aktualnie wyświetlaną sugestię.
 - `isLoading: boolean`: Wskazuje na proces ładowania (generowania, akceptacji, etc.).
 - `error: Error | null`: Przechowuje błędy z API.
-- `regenerationCount: number`: Licznik wykonanych regeneracji (limit 3).
+- `regenerationCount: number`: Licznik wykonanych regeneracji dla danego planned_date (limit 3).
 - `isConflictDialogOpen: boolean`: Kontroluje widoczność modala konfliktu pozycji.
 
 Nie ma potrzeby tworzenia dedykowanego custom hooka (`useAISuggestion`), ponieważ logika jest związana bezpośrednio z cyklem życia pojedynczego komponentu `AISuggestionDrawer`.
@@ -173,7 +173,7 @@ Integracja z API będzie realizowana przez dedykowane funkcje-serwisy w `src/lib
 
 ## 9. Warunki i walidacja
 
-- **Limit regeneracji**: W `SuggestionControls`, przycisk regeneracji jest wyszarzony i nieaktywny, jeśli `regenerationCount >= 3`. Komponent `AISuggestionDrawer` weryfikuje ten stan przed wysłaniem żądania do API.
+- **Limit regeneracji**: W `SuggestionControls`, przycisk regeneracji jest wyszarzony i nieaktywny, jeśli `regenerationCount >= 3` dla danego planned_date. Komponent `AISuggestionDrawer` weryfikuje ten stan przed wysłaniem żądania do API.
 - **Wygasła sugestia**: Jeśli `suggestion.isExpired` jest `true`, `SuggestionControls` są ukryte, a `ExpiredSuggestionState` jest pokazywany z przyciskiem do generowania nowej sugestii. Wszystkie akcje (akceptacja, regeneracja) są zablokowane.
 - **Walidacja formularza**: `AISuggestionForm` waliduje, czy typ treningu i data zostały wybrane przed wysłaniem.
 

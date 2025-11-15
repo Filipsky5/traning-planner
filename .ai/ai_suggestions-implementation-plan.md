@@ -2,7 +2,7 @@
 
 ### 1. Przegląd punktu końcowego
 
-Zestaw endpointów do zarządzania propozycjami treningów generowanymi przez AI (AI Suggestions). Obejmuje listowanie, tworzenie, pobieranie detali oraz akcje: akceptacja (tworzy trening), odrzucenie i regeneracja (nowa propozycja na bazie istniejącej). Wygasanie propozycji jest obliczane jako `created_at + 24h` (bez kolumny w DB). Limit regeneracji/tworzenia wynosi 3/dzień na użytkownika.
+Zestaw endpointów do zarządzania propozycjami treningów generowanymi przez AI (AI Suggestions). Obejmuje listowanie, tworzenie, pobieranie detali oraz akcje: akceptacja (tworzy trening), odrzucenie i regeneracja (nowa propozycja na bazie istniejącej). Wygasanie propozycji jest obliczane jako `created_at + 24h` (bez kolumny w DB). Limit regeneracji/tworzenia wynosi 3/dzień na użytkownika per planned_date.
 
 Zakres:
 - GET `/api/v1/ai/suggestions` — listowanie (z filtrami)
@@ -75,7 +75,7 @@ Kody błędów (przykładowe): 400 (walidacja), 401 (brak auth), 404 (brak zasob
 Wspólne zasady:
 - Autentykacja: `const supabase = locals.supabase` i `const user = await supabase.auth.getUser()` (lub z helpers), RLS zapewnia izolację per `user_id`.
 - Wygasanie: `expires_at = created_at + 24h` obliczane w API. Operacje mutujące (accept/reject/regenerate) blokowane po wygaśnięciu (410).
-- Limity: 3/dzień na użytkownika (tworzenie i regeneracja liczone łącznie). Liczenie po `created_at::date = current_date`.
+- Limity: 3/dzień na użytkownika per planned_date (tworzenie i regeneracja liczone łącznie). Liczenie: COUNT gdzie `created_at::date = current_date` AND `planned_date = target_date`.
 - Zdarzenia: wpis do `ai_suggestion_events` dla `created|accepted|rejected|regenerated` (metadane).
 
 Per endpoint:
@@ -119,7 +119,7 @@ Per endpoint:
 - Autoryzacja: wszystkie operacje po stronie DB muszą filtrować po `user_id`. Brak możliwości enumeracji cudzych `id` (RLS).
 - Walidacja wejścia: Zod + biała lista sortowania, limity paginacji (max 100), sanity-check dat (`YYYY-MM-DD`, zakres ±2 lata).
 - Odporność na konflikt: transakcje dla accept/regenerate (atomowość), rely on DB constraints (UNIQUE, FK).
-- Rate limiting domenowy: limit 3/dzień na usera (429). Opcjonalnie w przyszłości per-IP (middleware).
+- Rate limiting domenowy: limit 3/dzień na usera per planned_date (429). Opcjonalnie w przyszłości per-IP (middleware).
 - Brak wycieków danych: odpowiedzi tylko z polami zdefiniowanymi w DTO. Brak surowych błędów DB w odpowiedzi.
 - CORS: dziedziczone z ustawień Astro (wewnętrzny SSR).
 
@@ -132,7 +132,7 @@ Mapowanie (przykłady):
 - 404: brak sugestii o podanym `id`
 - 409: już zaakceptowana, kolizja `(planned_date, position)`, status inny niż `shown`
 - 410: sugestia wygasła (dla GET detail bez `include_expired`, i dla mutacji)
-- 429: przekroczony limit 3/dzień
+- 429: przekroczony limit 3/dzień dla danego planned_date
 - 500: wyjątek serwerowy, błąd transakcji
 
 Format błędu (spójny):

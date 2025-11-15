@@ -39,7 +39,7 @@
 * **Tryb Kalibracji:** Pierwsze **3 treningi** wygenerowane przez AI służą "wyczuciu" użytkownika. Powinny być bardziej zachowawcze i zróżnicowane, aby zebrać dane na temat reakcji użytkownika.
 * **Logika Progresji:** Po trybie kalibracji, jeśli 3 ostatnie treningi danego typu (np. Bieg Spokojny) zostaną ocenione jako "W sam raz" lub "Za łatwy", kolejna propozycja tego typu będzie miała nieznacznie (np. o 10%) zwiększony dystans.
 * **Struktura i Treść:** AI zawsze generuje trening o strukturze: **Rozgrzewka, Część główna, Schłodzenie**. Sugerowane tempa są określane przez AI na podstawie analizy **średniego tempa** z historycznych biegów użytkownika.
-* **Interfejs:** Propozycja treningu pojawia się w **oknie modalnym** z przyciskami "Akceptuj i dodaj do planu" oraz "Odrzuć i wygeneruj nowy". Użytkownik ma limit **3 re-generacji** na dzień.
+* **Interfejs:** Propozycja treningu pojawia się w **oknie modalnym** z przyciskami "Akceptuj i dodaj do planu" oraz "Odrzuć i wygeneruj nowy". Użytkownik ma limit **3 re-generacji na dzień dla każdej daty**.
 * Funkcjonalność generowanie treningów nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
 
 

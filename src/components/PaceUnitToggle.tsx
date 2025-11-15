@@ -1,14 +1,19 @@
-import { usePaceUnit } from './providers/PaceUnitProvider';
 import { Label } from './ui/label';
 import { Switch } from './ui/switch';
+
+type PaceUnit = 'min/km' | 'km/h';
+
+interface PaceUnitToggleProps {
+  paceUnit: PaceUnit;
+  setPaceUnit: (unit: PaceUnit) => void;
+}
 
 /**
  * Komponent przełącznika jednostki tempa.
  * Wyświetla przełącznik Switch pozwalający wybierać między 'min/km' a 'km/h'.
- * Stan jest zarządzany globalnie przez PaceUnitProvider i synchronizowany z localStorage.
+ * Stan jest przekazywany przez props i synchronizowany z localStorage przez komponent rodzica.
  */
-export function PaceUnitToggle() {
-  const { paceUnit, setPaceUnit } = usePaceUnit();
+export function PaceUnitToggle({ paceUnit, setPaceUnit }: PaceUnitToggleProps) {
 
   // Switch będzie checked gdy jednostka to 'km/h'
   const isKmPerHour = paceUnit === 'km/h';

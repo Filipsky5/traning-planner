@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { User, LogOut, Target } from 'lucide-react';
 import {
   DropdownMenu,
@@ -15,13 +16,39 @@ interface UserMenuProps {
   userEmail: string | null;
 }
 
+type PaceUnit = 'min/km' | 'km/h';
+
 /**
  * Menu użytkownika wyświetlane w nagłówku aplikacji.
  * Zawiera nazwę użytkownika, link do celu, przełącznik jednostki tempa i przycisk wylogowania.
  *
  * Dane użytkownika (email) są przekazywane przez props z server-side (Astro.locals.user).
+ * Stan jednostki tempa (paceUnit) jest zarządzany lokalnie z synchronizacją do localStorage.
  */
 export function UserMenu({ userEmail }: UserMenuProps) {
+  const [paceUnit, setPaceUnitState] = useState<PaceUnit>('min/km');
+
+  // Odczytaj jednostkę tempa z localStorage przy montowaniu komponentu
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('paceUnit');
+      if (stored === 'min/km' || stored === 'km/h') {
+        setPaceUnitState(stored);
+      }
+    } catch (error) {
+      console.error('Failed to read paceUnit from localStorage:', error);
+    }
+  }, []);
+
+  // Funkcja do zmiany jednostki tempa z zapisem do localStorage
+  const setPaceUnit = (unit: PaceUnit) => {
+    setPaceUnitState(unit);
+    try {
+      localStorage.setItem('paceUnit', unit);
+    } catch (error) {
+      console.error('Failed to save paceUnit to localStorage:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -89,7 +116,7 @@ export function UserMenu({ userEmail }: UserMenuProps) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="px-2 py-1">
-          <PaceUnitToggle />
+          <PaceUnitToggle paceUnit={paceUnit} setPaceUnit={setPaceUnit} />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">

@@ -6,22 +6,22 @@ import { LoginPage } from '../pages/LoginPage';
  * Cleans up all workouts created by the onboarding test user
  * Runs after all onboarding-flow tests complete
  */
-teardown('cleanup onboarding test user workouts', async ({ page, request }) => {
+teardown('cleanup onboarding test user workouts', async ({ page }) => {
   console.log('Starting teardown: cleaning up onboarding test user workouts...');
 
   // Step 1: Login as onboarding test user
   const loginPage = new LoginPage(page);
   await loginPage.goto();
   await loginPage.login(
-    process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
-    process.env.E2E_ONBOARDING_PASSWORD || 'password123'
+    process.env.E2E_USERNAME || 'onboarding@example.com',
+    process.env.E2E_PASSWORD || 'password123'
   );
   await loginPage.waitForNavigation();
 
   console.log('✓ Logged in as onboarding test user');
 
-  // Step 2: Fetch all workouts for this user
-  const workoutsResponse = await request.get('/api/v1/workouts', {
+  // Step 2: Fetch all workouts for this user (use page.request to inherit cookies)
+  const workoutsResponse = await page.request.get('/api/v1/workouts', {
     failOnStatusCode: false,
   });
 
@@ -43,7 +43,7 @@ teardown('cleanup onboarding test user workouts', async ({ page, request }) => {
 
   for (const workout of workouts) {
     try {
-      const deleteResponse = await request.delete(`/api/v1/workouts/${workout.id}`, {
+      const deleteResponse = await page.request.delete(`/api/v1/workouts/${workout.id}`, {
         failOnStatusCode: false,
       });
 

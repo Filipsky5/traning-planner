@@ -62,12 +62,7 @@ export function StepsEditor() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-semibold">Kroki treningu</Label>
-        <Button type="button" onClick={handleAddStep} variant="outline" size="sm">
-          + Dodaj segment
-        </Button>
-      </div>
+      <Label className="text-base font-semibold">Kroki treningu</Label>
 
       {fields.map((field, index) => {
         const stepErrors = errors.steps?.[index];
@@ -209,6 +204,11 @@ export function StepsEditor() {
       {errors.steps && typeof errors.steps.message === "string" && (
         <p className="text-sm text-red-600">{errors.steps.message}</p>
       )}
+
+      {/* Przycisk dodawania segmentu */}
+      <Button type="button" onClick={handleAddStep} variant="outline" size="sm" className="w-full">
+        + Dodaj segment
+      </Button>
     </div>
   );
 }

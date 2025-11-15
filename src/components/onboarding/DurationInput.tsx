@@ -36,6 +36,7 @@ export function DurationInput({ value, onChange, disabled }: DurationInputProps)
           disabled={disabled}
           placeholder="GG"
           className="text-center"
+          data-testid="duration-hours-input"
         />
         <p className="text-xs text-gray-500 text-center mt-1">godziny</p>
       </div>
@@ -52,6 +53,7 @@ export function DurationInput({ value, onChange, disabled }: DurationInputProps)
           disabled={disabled}
           placeholder="MM"
           className="text-center"
+          data-testid="duration-minutes-input"
         />
         <p className="text-xs text-gray-500 text-center mt-1">minuty</p>
       </div>
@@ -68,6 +70,7 @@ export function DurationInput({ value, onChange, disabled }: DurationInputProps)
           disabled={disabled}
           placeholder="SS"
           className="text-center"
+          data-testid="duration-seconds-input"
         />
         <p className="text-xs text-gray-500 text-center mt-1">sekundy</p>
       </div>

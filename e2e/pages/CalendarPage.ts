@@ -6,6 +6,7 @@ import { Page, Locator } from '@playwright/test';
  */
 export class CalendarPage {
   readonly page: Page;
+  readonly calendarView: Locator;
   readonly calendarGrid: Locator;
   readonly dayCells: Locator;
   readonly addWorkoutButtons: Locator;
@@ -16,6 +17,7 @@ export class CalendarPage {
 
   constructor(page: Page) {
     this.page = page;
+    this.calendarView = page.getByTestId('calendar-view');
     this.calendarGrid = page.locator('[role="grid"]');
     this.dayCells = page.locator('[role="gridcell"]');
     this.addWorkoutButtons = page.locator('button:has-text("+")');
@@ -30,6 +32,7 @@ export class CalendarPage {
   }
 
   async waitForCalendarLoad() {
+    await this.calendarView.waitFor({ state: 'visible' });
     await this.calendarGrid.waitFor({ state: 'visible' });
   }
 

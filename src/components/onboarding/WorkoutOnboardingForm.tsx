@@ -109,7 +109,11 @@ export function WorkoutOnboardingForm({
         <CardTitle>Dane treningu #{stepNumber}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+          data-testid="workout-onboarding-form"
+        >
           {/* Distance */}
           <div className="space-y-2">
             <Label htmlFor="distance">
@@ -127,9 +131,12 @@ export function WorkoutOnboardingForm({
               disabled={isLoading}
               placeholder="np. 5.5"
               className={errors.distance ? "border-red-500" : ""}
+              data-testid="workout-distance-input"
             />
             {errors.distance && (
-              <p className="text-sm text-red-600">{errors.distance}</p>
+              <p className="text-sm text-red-600" data-testid="workout-error-distance">
+                {errors.distance}
+              </p>
             )}
           </div>
 
@@ -147,7 +154,9 @@ export function WorkoutOnboardingForm({
               disabled={isLoading}
             />
             {errors.duration && (
-              <p className="text-sm text-red-600">{errors.duration}</p>
+              <p className="text-sm text-red-600" data-testid="workout-error-duration">
+                {errors.duration}
+              </p>
             )}
           </div>
 
@@ -167,9 +176,12 @@ export function WorkoutOnboardingForm({
               disabled={isLoading}
               placeholder="np. 145"
               className={errors.avgHr ? "border-red-500" : ""}
+              data-testid="workout-avghr-input"
             />
             {errors.avgHr && (
-              <p className="text-sm text-red-600">{errors.avgHr}</p>
+              <p className="text-sm text-red-600" data-testid="workout-error-avghr">
+                {errors.avgHr}
+              </p>
             )}
           </div>
 
@@ -189,14 +201,22 @@ export function WorkoutOnboardingForm({
               disabled={isLoading}
               max={new Date().toISOString().split("T")[0]}
               className={errors.completedAt ? "border-red-500" : ""}
+              data-testid="workout-date-input"
             />
             {errors.completedAt && (
-              <p className="text-sm text-red-600">{errors.completedAt}</p>
+              <p className="text-sm text-red-600" data-testid="workout-error-date">
+                {errors.completedAt}
+              </p>
             )}
           </div>
 
           {/* Submit button */}
-          <Button type="submit" disabled={isLoading} className="w-full">
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full"
+            data-testid="workout-submit-button"
+          >
             {isLoading ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

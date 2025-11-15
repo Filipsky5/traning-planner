@@ -13,10 +13,10 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.locator('input[type="email"], input[name="email"]');
-    this.passwordInput = page.locator('input[type="password"]');
-    this.submitButton = page.locator('button[type="submit"]');
-    this.errorMessage = page.locator('[role="alert"], .error-message');
+    this.emailInput = page.getByTestId('login-email-input');
+    this.passwordInput = page.getByTestId('login-password-input');
+    this.submitButton = page.getByTestId('login-submit-button');
+    this.errorMessage = page.getByTestId('login-error-message');
   }
 
   async goto() {

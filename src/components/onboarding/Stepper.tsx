@@ -8,7 +8,7 @@ interface StepperProps {
  */
 export function Stepper({ currentStep, totalSteps }: StepperProps) {
   return (
-    <div className="flex items-center justify-center mb-8">
+    <div className="flex items-center justify-center mb-8" data-testid="onboarding-stepper">
       {Array.from({ length: totalSteps }, (_, index) => {
         const stepNumber = index + 1;
         const isCompleted = stepNumber < currentStep;
@@ -19,6 +19,7 @@ export function Stepper({ currentStep, totalSteps }: StepperProps) {
           <div key={stepNumber} className="flex items-center">
             {/* Step circle */}
             <div
+              data-testid={`onboarding-step-${stepNumber}`}
               className={`
                 flex items-center justify-center
                 w-10 h-10 rounded-full font-semibold

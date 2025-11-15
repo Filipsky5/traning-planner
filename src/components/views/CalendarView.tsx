@@ -79,7 +79,7 @@ export function CalendarView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4" data-testid="calendar-view">
       <div className="max-w-7xl mx-auto">
         {/* Nagłówek kalendarza */}
         <CalendarHeader

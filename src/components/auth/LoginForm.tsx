@@ -156,7 +156,10 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         <CardContent className="space-y-4">
           {/* Globalny błąd */}
           {error && (
-            <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+            <div
+              data-testid="login-error-message"
+              className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}
@@ -176,6 +179,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
               disabled={loading}
               autoComplete="email"
               autoFocus
+              data-testid="login-email-input"
             />
             {fieldErrors.email && (
               <p className="text-sm text-destructive">{fieldErrors.email}</p>
@@ -196,6 +200,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
               aria-invalid={!!fieldErrors.password}
               disabled={loading}
               autoComplete="current-password"
+              data-testid="login-password-input"
             />
             {fieldErrors.password && (
               <p className="text-sm text-destructive">{fieldErrors.password}</p>
@@ -214,7 +219,12 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         </CardContent>
 
         <CardFooter className="flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading}
+            data-testid="login-submit-button"
+          >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

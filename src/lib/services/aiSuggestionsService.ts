@@ -193,7 +193,11 @@ export async function acceptSuggestion(
   const plannedDuration = parsedPayload.meta.planned_duration_s ?? aggregates.duration;
 
   if (!plannedDistance || !plannedDuration) {
-    throw createApiError(500, "internal_error", "AI suggestion payload missing distance or duration");
+    throw createApiError(
+      500,
+      "internal_error",
+      `AI suggestion payload missing distance or duration (distance: ${plannedDistance}, duration: ${plannedDuration}). This should not happen with updated AI schema.`
+    );
   }
 
   const workoutInsert = {

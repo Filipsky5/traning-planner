@@ -369,6 +369,7 @@ Kluczowe zasady:
 - Schładzanie powinno stanowić 5-10% całkowitego czasu treningu
 - Dołącz konkretne wskazówki dla każdej części treningu
 - Weź pod uwagę ostatnie wyniki i opinie biegacza
+- WAŻNE: Każdy step MUSI zawierać zarówno distance_m jak i duration_s. Oszacuj dystans na podstawie tempa z ostatnich treningów lub użyj standardowego tempa (6:00 min/km) jeśli nie masz innych danych.
 
 Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
 
@@ -436,19 +437,19 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
                   },
                   distance_m: {
                     type: "integer",
-                    minimum: 0,
+                    minimum: 100,
                   },
                   duration_s: {
                     type: "integer",
-                    minimum: 0,
+                    minimum: 60,
                   },
                   notes: {
                     type: "string",
                     maxLength: 500,
                   },
                 },
-                required: ["part"],
-                anyOf: [{ required: ["distance_m"] }, { required: ["duration_s"] }],
+                required: ["part", "distance_m", "duration_s"],
+                additionalProperties: false,
               },
               minItems: 1,
               maxItems: 10,
@@ -555,14 +556,14 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
         throw new Error(`Krok ${index} nie ma wymaganego pola 'part'`);
       }
 
-      if (!step.distance_m && !step.duration_s) {
-        throw new Error(`Krok ${index} musi mieć distance_m lub duration_s`);
+      if (!step.distance_m || !step.duration_s) {
+        throw new Error(`Krok ${index} musi mieć zarówno distance_m jak i duration_s (otrzymano: distance_m=${step.distance_m}, duration_s=${step.duration_s})`);
       }
 
       return {
         part: step.part as StepPart,
-        distance_m: step.distance_m ? Number(step.distance_m) : undefined,
-        duration_s: step.duration_s ? Number(step.duration_s) : undefined,
+        distance_m: Number(step.distance_m),
+        duration_s: Number(step.duration_s),
         notes: step.notes ? String(step.notes) : undefined,
       };
     });

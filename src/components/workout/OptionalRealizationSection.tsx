@@ -96,6 +96,7 @@ export function OptionalRealizationSection() {
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input
+                  id="realizedDurationMinutes"
                   type="number"
                   min="0"
                   max="360"
@@ -111,6 +112,7 @@ export function OptionalRealizationSection() {
               </div>
               <div className="flex-1">
                 <Input
+                  id="realizedDurationSeconds"
                   type="number"
                   min="0"
                   max="59"
@@ -126,6 +128,7 @@ export function OptionalRealizationSection() {
               </div>
             </div>
             <input
+              id="realizedDurationSec"
               type="hidden"
               {...register("realizedDurationSec", {
                 required: isCompleted ? "Czas jest wymagany" : false,

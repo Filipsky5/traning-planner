@@ -155,20 +155,22 @@ const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'
 ---
 import { isAuthenticated } from '../lib/auth/server';
 const authenticated = await isAuthenticated(Astro);
+const userEmail = Astro.locals.user?.email ?? null;
 ---
 
 <!-- Warunkowe renderowanie elementów menu -->
 {authenticated ? (
-  <UserMenu client:load />
+  <UserMenu client:load userEmail={userEmail} />
 ) : (
   <AuthButtons />
 )}
 ```
 
 **`src/components/UserMenu.tsx`** (rozszerzenie)
+- Przyjmuje dane użytkownika (email) przez props z Astro.locals.user (server-side)
+- Logout przez fetch API (POST /api/v1/auth/logout)
 - Dodanie obsługi błędów sesji
 - Graceful degradation przy braku połączenia
-- Cache danych użytkownika w sessionStorage
 
 ### 1.4 Walidacja i Komunikaty Błędów
 

@@ -43,8 +43,9 @@ src/layouts/Layout.astro
     - Nawigacja po kliknięciu w element "Cel".
     - Wywołanie funkcji wylogowania po kliknięciu "Wyloguj".
 - **Obsługiwana walidacja**: Brak.
-- **Typy**: Brak specjalnych typów (opcjonalnie `user` z danymi do wyświetlenia).
-- **Propsy**: Brak.
+- **Typy**: `UserMenuProps`
+- **Propsy**:
+    - `userEmail: string | null` - email użytkownika przekazany z Header.astro (Astro.locals.user)
 
 ### `PaceUnitToggle`
 - **Opis komponentu**: Komponent osadzony w `UserMenu`, odpowiedzialny za przełączanie jednostki tempa. Wyświetla etykietę oraz przełącznik (`Switch` z `shadcn/ui`), który odzwierciedla i pozwala modyfikować bieżące ustawienie.

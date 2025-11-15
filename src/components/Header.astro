@@ -19,6 +19,7 @@ import { AuthButtons } from "./AuthButtons";
 // Pobierz user z context.locals (ustawiony przez middleware)
 const user = Astro.locals.user;
 const isAuthenticated = !!user;
+const userEmail = user?.email ?? null;
 ---
 
 <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -46,7 +47,7 @@ const isAuthenticated = !!user;
       {/* Warunkowe renderowanie: UserMenu (zalogowani) vs AuthButtons (niezalogowani) */}
       <div class="flex items-center">
         {isAuthenticated ? (
-          <UserMenu client:load />
+          <UserMenu client:load userEmail={userEmail} />
         ) : (
           <AuthButtons client:load />
         )}

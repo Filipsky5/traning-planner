@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { User, LogOut, Target } from 'lucide-react';
-import { supabaseClient } from '../db/supabase.client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,37 +11,17 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { PaceUnitToggle } from './PaceUnitToggle';
 
+interface UserMenuProps {
+  userEmail: string | null;
+}
+
 /**
  * Menu użytkownika wyświetlane w nagłówku aplikacji.
  * Zawiera nazwę użytkownika, link do celu, przełącznik jednostki tempa i przycisk wylogowania.
+ *
+ * Dane użytkownika (email) są przekazywane przez props z server-side (Astro.locals.user).
  */
-export function UserMenu() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Pobierz dane użytkownika z Supabase
-    const fetchUser = async () => {
-      try {
-        const { data, error } = await supabaseClient.auth.getUser();
-
-        if (error) {
-          console.error('Error fetching user:', error);
-          return;
-        }
-
-        if (data?.user) {
-          setUserEmail(data.user.email ?? null);
-        }
-      } catch (error) {
-        console.error('Unexpected error fetching user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+export function UserMenu({ userEmail }: UserMenuProps) {
 
   const handleLogout = async () => {
     try {
@@ -70,15 +48,6 @@ export function UserMenu() {
   const handleGoToGoal = () => {
     window.location.href = '/goal';
   };
-
-  // Wyświetl placeholder podczas ładowania
-  if (isLoading) {
-    return (
-      <Button variant="ghost" size="icon" disabled>
-        <User className="h-5 w-5" />
-      </Button>
-    );
-  }
 
   // Pierwsze litery email jako inicjały (np. "john.doe@example.com" -> "JD")
   const getInitials = (email: string | null): string => {

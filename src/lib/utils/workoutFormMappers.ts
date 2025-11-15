@@ -101,20 +101,23 @@ export function mapFormValuesToCreateWorkoutInput(
  * Oblicza łączny dystans (w km) ze wszystkich kroków
  */
 export function calculateTotalDistanceKm(steps: ManualWorkoutStepForm[]): number {
-  return steps.reduce((sum, step) => {
-    return sum + (step.distanceKm ?? 0);
+  const total = steps.reduce((sum, step) => {
+    const distance = step.distanceKm ?? 0;
+    return sum + (isNaN(distance) ? 0 : distance);
   }, 0);
+  return isNaN(total) ? 0 : total;
 }
 
 /**
  * Oblicza łączny czas (w sekundach) ze wszystkich kroków
  */
 export function calculateTotalDurationSec(steps: ManualWorkoutStepForm[]): number {
-  return steps.reduce((sum, step) => {
-    const minutes = step.durationMinutes ?? 0;
-    const seconds = step.durationSeconds ?? 0;
+  const total = steps.reduce((sum, step) => {
+    const minutes = isNaN(step.durationMinutes ?? 0) ? 0 : (step.durationMinutes ?? 0);
+    const seconds = isNaN(step.durationSeconds ?? 0) ? 0 : (step.durationSeconds ?? 0);
     return sum + (minutes * 60 + seconds);
   }, 0);
+  return isNaN(total) ? 0 : total;
 }
 
 /**

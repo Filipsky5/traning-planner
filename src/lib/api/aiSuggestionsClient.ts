@@ -12,19 +12,6 @@ import type {
  * Wywołuje endpointy HTTP z frontendu
  */
 
-interface GenerateSuggestionResponse {
-  suggestion: AiSuggestionDto;
-}
-
-interface AcceptSuggestionResponse {
-  suggestion: AiSuggestionDto;
-  workout: WorkoutDetailDto;
-}
-
-interface RegenerateSuggestionResponse {
-  suggestion: AiSuggestionDto;
-}
-
 /**
  * Generuje nową sugestię AI
  * POST /api/v1/ai/suggestions
@@ -44,8 +31,8 @@ export async function generateSuggestion(
     await handleApiError(response);
   }
 
-  const data: ApiResponse<GenerateSuggestionResponse> = await response.json();
-  return data.data.suggestion;
+  const data: ApiResponse<AiSuggestionDto> = await response.json();
+  return data.data;
 }
 
 /**
@@ -55,7 +42,7 @@ export async function generateSuggestion(
 export async function acceptSuggestion(
   suggestionId: string,
   command: AiSuggestionAcceptCommand
-): Promise<{ suggestion: AiSuggestionDto; workout: WorkoutDetailDto }> {
+): Promise<WorkoutDetailDto> {
   const response = await fetch(`/api/v1/ai/suggestions/${suggestionId}/accept`, {
     method: "POST",
     headers: {
@@ -68,7 +55,7 @@ export async function acceptSuggestion(
     await handleApiError(response);
   }
 
-  const data: ApiResponse<AcceptSuggestionResponse> = await response.json();
+  const data: ApiResponse<WorkoutDetailDto> = await response.json();
   return data.data;
 }
 
@@ -92,8 +79,8 @@ export async function regenerateSuggestion(
     await handleApiError(response);
   }
 
-  const data: ApiResponse<RegenerateSuggestionResponse> = await response.json();
-  return data.data.suggestion;
+  const data: ApiResponse<AiSuggestionDto> = await response.json();
+  return data.data;
 }
 
 /**

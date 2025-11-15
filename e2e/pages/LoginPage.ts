@@ -24,8 +24,15 @@ export class LoginPage {
   }
 
   async login(email: string, password: string) {
+    // Wait for inputs to be ready before filling
+    await this.emailInput.waitFor({ state: 'visible' });
+    await this.emailInput.clear();
     await this.emailInput.fill(email);
+
+    await this.passwordInput.waitFor({ state: 'visible' });
+    await this.passwordInput.clear();
     await this.passwordInput.fill(password);
+
     await this.submitButton.click();
   }
 

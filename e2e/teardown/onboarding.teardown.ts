@@ -13,8 +13,8 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
   const loginPage = new LoginPage(page);
   await loginPage.goto();
   await loginPage.login(
-    process.env.E2E_USERNAME || 'onboarding@example.com',
-    process.env.E2E_PASSWORD || 'password123'
+    process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
+    process.env.E2E_ONBOARDING_PASSWORD || 'password123'
   );
   await loginPage.waitForNavigation();
 

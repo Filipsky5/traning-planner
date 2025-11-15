@@ -33,6 +33,9 @@ export class LoginPage {
     await this.passwordInput.clear();
     await this.passwordInput.fill(password);
 
+    // Small delay to let React validation settle before submit
+    await this.page.waitForTimeout(300);
+
     await this.submitButton.click();
   }
 

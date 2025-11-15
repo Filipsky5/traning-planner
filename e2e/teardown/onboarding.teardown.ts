@@ -9,12 +9,12 @@ import { LoginPage } from '../pages/LoginPage';
 teardown('cleanup onboarding test user workouts', async ({ page }) => {
   console.log('Starting teardown: cleaning up onboarding test user workouts...');
 
-  // Step 1: Login as onboarding test user
+  // Step 1: Login as test user
   const loginPage = new LoginPage(page);
   await loginPage.goto();
   await loginPage.login(
-    process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
-    process.env.E2E_ONBOARDING_PASSWORD || 'password123'
+    process.env.E2E_USERNAME || 'test@example.com',
+    process.env.E2E_PASSWORD || 'password123'
   );
   await loginPage.waitForNavigation();
 

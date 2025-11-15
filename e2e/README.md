@@ -2,19 +2,15 @@
 
 ## Test Users Setup
 
-Testy E2E wymagają **2 różnych użytkowników** w `.env.test`:
+Testy E2E wymagają **jednego użytkownika** w `.env.test`:
 
 ```bash
-# Main test user - used for calendar and other authenticated tests
-# This user will complete onboarding (3 workouts) during setup
+# Test user credentials
 E2E_USERNAME=test@example.com
 E2E_PASSWORD=TestPassword123!
-
-# Onboarding test user - used ONLY for onboarding flow tests
-# This user should have <3 workouts (preferably 0) to test onboarding
-E2E_ONBOARDING_USERNAME=onboarding@example.com
-E2E_ONBOARDING_PASSWORD=TestPassword123!
 ```
+
+**Ważne**: Ten sam użytkownik jest używany przez wszystkie testy. Teardown automatycznie czyści dane między testami.
 
 ## How Tests Work
 
@@ -23,7 +19,7 @@ E2E_ONBOARDING_PASSWORD=TestPassword123!
 - **Project**: `setup`
 - **User**: `E2E_USERNAME`
 - **Purpose**:
-  - Logs in as main test user
+  - Logs in as test user
   - Completes onboarding if needed (creates 3 workouts)
   - Saves authenticated state to `playwright/.auth/user.json`
 
@@ -37,21 +33,21 @@ E2E_ONBOARDING_PASSWORD=TestPassword123!
 ### 3. Onboarding Flow Tests
 - **File**: `e2e/onboarding-flow.spec.ts`
 - **Project**: `onboarding-flow`
-- **User**: `E2E_ONBOARDING_USERNAME` (fresh login each test)
+- **User**: `E2E_USERNAME` (fresh login each test)
 - **Dependencies**: None (runs independently)
 - **Teardown**: `onboarding-teardown` (cleans up workouts after tests)
-- **Assumption**: User has <3 workouts
+- **Assumption**: User has <3 workouts (ensured by teardown)
 
 ### 4. Onboarding Teardown
 - **File**: `e2e/teardown/onboarding.teardown.ts`
 - **Project**: `onboarding-teardown`
-- **User**: `E2E_ONBOARDING_USERNAME`
+- **User**: `E2E_USERNAME`
 - **Purpose**:
   - Runs after all onboarding-flow tests complete
-  - Logs in as onboarding test user
+  - Logs in as test user
   - Fetches all workouts
   - Deletes each workout via DELETE /api/v1/workouts/[id]
-  - Ensures clean state for next test run
+  - Ensures user has <3 workouts for next test run
 
 ## Test Execution Order
 

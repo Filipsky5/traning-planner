@@ -172,21 +172,19 @@ export class OpenRouterService {
   /**
    * Tworzy instancję serwisu OpenRouter
    *
-   * @param options - Opcjonalna konfiguracja serwisu
+   * @param options - Konfiguracja serwisu (apiKey i defaultModel są wymagane)
    * @throws Error jeśli klucz API nie jest dostępny
    */
   constructor(options: OpenRouterOptions = {}) {
-    // Załaduj klucz API ze środowiska jeśli nie podano
-    this.apiKey = options.apiKey || import.meta.env.OPENROUTER_API_KEY;
-
     // Walidacja obecności klucza API
+    this.apiKey = options.apiKey || "";
     if (!this.apiKey) {
-      throw new Error("Klucz API OpenRouter jest wymagany");
+      throw new Error("Klucz API OpenRouter jest wymagany (przekaż przez options.apiKey)");
     }
 
-    // Ustaw domyślne wartości dla pozostałych opcji
+    // Ustaw pozostałe wartości z options lub użyj domyślnych
     this.baseUrl = options.baseUrl || "https://openrouter.ai/api/v1";
-    this.defaultModel = options.defaultModel || import.meta.env.OPENROUTER_DEFAULT_MODEL || "x-ai/grok-code-fast-1";
+    this.defaultModel = options.defaultModel || "x-ai/grok-code-fast-1";
     this.timeout = options.timeout || 30000;
     this.maxRetries = options.maxRetries || 3;
     this.retryDelay = options.retryDelay || 1000;

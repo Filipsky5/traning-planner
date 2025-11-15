@@ -6,8 +6,11 @@ export interface AiGeneratedSuggestion {
   metadata?: Record<string, unknown>;
 }
 
-// Singleton instancja serwisu OpenRouter
-const openrouter = new OpenRouterService();
+// Singleton instancja serwisu OpenRouter z konfiguracją z env
+const openrouter = new OpenRouterService({
+  apiKey: import.meta.env.OPENROUTER_API_KEY,
+  defaultModel: import.meta.env.OPENROUTER_DEFAULT_MODEL,
+});
 
 /**
  * Generuje sugestię treningu za pomocą AI (OpenRouter).

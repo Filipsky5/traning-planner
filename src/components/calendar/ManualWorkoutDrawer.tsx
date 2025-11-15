@@ -68,7 +68,7 @@ export function ManualWorkoutDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6">
+        <div className="mt-6 px-4">
           {/* Formularz z kluczem opartym o datę - wymusza remount przy zmianie daty */}
           <WorkoutPlanForm
             key={initialDate.toISOString()}

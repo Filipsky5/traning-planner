@@ -29,7 +29,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for tests (local dev server)
-    baseURL: "http://localhost:4321",
+    baseURL: "http://localhost:3000",
 
     // Collect trace on failure for debugging
     trace: "on-first-retry",
@@ -43,28 +43,61 @@ export default defineConfig({
 
   // Projects configuration - Chromium only per guidelines
   projects: [
+    // Setup project - prepares authenticated user with completed onboarding
     {
-      name: "chromium-desktop",
+      name: "setup",
+      testMatch: /.*auth\.setup\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
       },
     },
+    // Desktop tests - use authenticated state
+    {
+      name: "chromium-desktop",
+      dependencies: ["setup"],
+      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        // Use saved auth state for calendar and other authenticated tests
+        storageState: "playwright/.auth/user.json",
+      },
+    },
+    // Mobile tests - use authenticated state
     {
       name: "chromium-mobile",
+      dependencies: ["setup"],
+      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
       use: {
         ...devices["iPhone 12"],
         viewport: { width: 390, height: 844 },
+        // Use saved auth state for calendar and other authenticated tests
+        storageState: "playwright/.auth/user.json",
+      },
+    },
+    // Onboarding flow tests - test fresh user (no auth state)
+    {
+      name: "onboarding-flow",
+      testMatch: /.*onboarding-flow\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        // NO storageState - tests fresh user experience
       },
     },
   ],
 
   // Web server configuration
-  // Run production build before tests (npm run build + npm run preview)
+  // Run production build before tests (npm run build + npm run preview:test)
   webServer: {
-    command: "npm run preview",
-    url: "http://localhost:4321",
+    command: "npm run preview:test",
+    url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    // Pass environment variables from .env.test to the preview server
+    env: {
+      ...process.env,
+    },
   },
 });

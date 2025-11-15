@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:test": "astro build --mode test",
     "preview": "astro preview",
+    "preview:test": "astro preview --mode test",
     "astro": "astro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -23,7 +25,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "test:all": "npm run test:unit && npm run build && npm run test:e2e",
+    "test:all": "npm run test:unit && npm run build:test && npm run test:e2e",
     "dev:e2e": "astro dev --mode test"
   },
   "dependencies": {

@@ -16,11 +16,11 @@ test.describe('Onboarding Flow', () => {
     const onboardingPage = new OnboardingPage(page);
     const calendarPage = new CalendarPage(page);
 
-    // Step 1: Login
+    // Step 1: Login (use separate user for onboarding tests)
     await loginPage.goto();
     await loginPage.login(
-      process.env.E2E_USERNAME || 'test@example.com',
-      process.env.E2E_PASSWORD || 'password123'
+      process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
+      process.env.E2E_ONBOARDING_PASSWORD || 'password123'
     );
     await loginPage.waitForNavigation();
 
@@ -88,11 +88,11 @@ test.describe('Onboarding Flow', () => {
     const loginPage = new LoginPage(page);
     const onboardingPage = new OnboardingPage(page);
 
-    // Login
+    // Login (use separate user for onboarding tests)
     await loginPage.goto();
     await loginPage.login(
-      process.env.E2E_USERNAME || 'test@example.com',
-      process.env.E2E_PASSWORD || 'password123'
+      process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
+      process.env.E2E_ONBOARDING_PASSWORD || 'password123'
     );
     await loginPage.waitForNavigation();
 
@@ -124,11 +124,11 @@ test.describe('Onboarding Flow', () => {
     const loginPage = new LoginPage(page);
     const onboardingPage = new OnboardingPage(page);
 
-    // Login
+    // Login (use separate user for onboarding tests)
     await loginPage.goto();
     await loginPage.login(
-      process.env.E2E_USERNAME || 'test@example.com',
-      process.env.E2E_PASSWORD || 'password123'
+      process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
+      process.env.E2E_ONBOARDING_PASSWORD || 'password123'
     );
     await loginPage.waitForNavigation();
 
@@ -155,11 +155,11 @@ test.describe('Onboarding Flow', () => {
     const loginPage = new LoginPage(page);
     const onboardingPage = new OnboardingPage(page);
 
-    // Login
+    // Login (use separate user for onboarding tests)
     await loginPage.goto();
     await loginPage.login(
-      process.env.E2E_USERNAME || 'test@example.com',
-      process.env.E2E_PASSWORD || 'password123'
+      process.env.E2E_ONBOARDING_USERNAME || 'onboarding@example.com',
+      process.env.E2E_ONBOARDING_PASSWORD || 'password123'
     );
     await loginPage.waitForNavigation();
 

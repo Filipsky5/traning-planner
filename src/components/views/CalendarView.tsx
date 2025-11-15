@@ -5,6 +5,7 @@ import { CalendarGrid } from "../calendar/CalendarGrid";
 import { DayDrawer } from "../calendar/DayDrawer";
 import { AISuggestionDrawer } from "../suggestions/AISuggestionDrawer";
 import { WorkoutDetailDrawer } from "../calendar/WorkoutDetailDrawer";
+import { ManualWorkoutDrawer } from "../calendar/ManualWorkoutDrawer";
 
 /**
  * Główny komponent widoku kalendarza
@@ -43,9 +44,18 @@ export function CalendarView() {
     setSelectedWorkoutId(null);
   };
 
+  // State dla manual workout drawer
+  const [isManualDrawerOpen, setIsManualDrawerOpen] = useState(false);
+  const [selectedManualDate, setSelectedManualDate] = useState<Date | null>(null);
+
   const handleAddWorkoutManual = (date: Date) => {
-    // TODO: Implement manual workout creation form
-    alert(`Ręczne dodawanie treningu dla ${date.toLocaleDateString("pl-PL")} - funkcjonalność w trakcie implementacji`);
+    setSelectedManualDate(date);
+    setIsManualDrawerOpen(true);
+  };
+
+  const closeManualDrawer = () => {
+    setIsManualDrawerOpen(false);
+    setSelectedManualDate(null);
   };
 
   // Obsługa błędów
@@ -124,6 +134,20 @@ export function CalendarView() {
           onOpenChange={(open) => !open && closeWorkoutDrawer()}
           onWorkoutCompleted={refetch}
         />
+
+        {/* Panel ręcznego dodawania treningu */}
+        {selectedManualDate && (
+          <ManualWorkoutDrawer
+            isOpen={isManualDrawerOpen}
+            onOpenChange={(open) => !open && closeManualDrawer()}
+            initialDate={selectedManualDate}
+            trainingTypes={trainingTypes}
+            onWorkoutCreated={() => {
+              // Odśwież dane kalendarza po dodaniu treningu
+              refetch();
+            }}
+          />
+        )}
       </div>
     </div>
   );

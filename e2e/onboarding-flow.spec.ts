@@ -105,7 +105,7 @@ test.describe("Onboarding Flow", () => {
       minutes: "0",
       seconds: "30", // Less than 60 seconds total
       avgHr: "250", // More than 220 bpm
-      date: "2025-11-10", // Past date
+      date: "2030-11-10", // Future date
     });
 
     await onboardingPage.submitForm();

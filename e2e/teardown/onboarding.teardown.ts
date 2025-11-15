@@ -37,27 +37,27 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
 
   console.log(`Found ${workouts.length} workout(s) to delete`);
 
-  // Step 3: Delete each workout (best-effort cleanup)
+  // Step 3: Delete each workout
   let deletedCount = 0;
-  let skippedCount = 0;
   let failedCount = 0;
 
   for (const workout of workouts) {
     try {
+      // Add header to bypass Astro CSRF protection for API requests
       const deleteResponse = await page.request.delete(`/api/v1/workouts/${workout.id}`, {
+        headers: {
+          'x-requested-with': 'XMLHttpRequest',
+        },
         failOnStatusCode: false,
       });
 
       if (deleteResponse.ok()) {
         deletedCount++;
         console.log(`  ✓ Deleted workout ${workout.id}`);
-      } else if (deleteResponse.status() === 403) {
-        // 403 = workout belongs to different user (from previous test run)
-        skippedCount++;
-        console.log(`  ⊘ Skipped workout ${workout.id} (belongs to different user)`);
       } else {
         failedCount++;
-        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${deleteResponse.status()}`);
+        const body = await deleteResponse.text().catch(() => 'no body');
+        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${deleteResponse.status()} - ${body}`);
       }
     } catch (error) {
       failedCount++;
@@ -65,11 +65,11 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
     }
   }
 
-  console.log(`Teardown complete: ${deletedCount} deleted, ${skippedCount} skipped (other user), ${failedCount} failed`);
+  console.log(`Teardown complete: ${deletedCount} deleted, ${failedCount} failed`);
 
   // Don't fail the teardown if some deletions failed
   // (tests already passed, cleanup is best-effort)
-  if (deletedCount > 0 || skippedCount > 0) {
-    console.log('✓ Teardown finished (workouts from other users were skipped)');
+  if (deletedCount > 0) {
+    console.log('✓ Test user workouts cleaned up successfully');
   }
 });

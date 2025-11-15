@@ -50,7 +50,7 @@ const DAILY_LIMIT = 3;
 const EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 const SUGGESTION_SELECT =
-  "id,user_id,training_type_code,status,steps_jsonb,accepted_workout_id,created_at,updated_at";
+  "id,user_id,training_type_code,status,planned_date,steps_jsonb,accepted_workout_id,created_at,updated_at";
 const EVENT_SELECT = "id,kind,occurred_at,metadata";
 const WORKOUT_SELECT =
   "id,user_id,training_type_code,planned_date,position,planned_distance_m,planned_duration_s,status,origin,rating,avg_pace_s_per_km,distance_m,duration_s,avg_hr_bpm,completed_at,created_at,updated_at,ai_suggestion_id,steps_jsonb";
@@ -112,7 +112,7 @@ export async function createSuggestion(
   command: AiSuggestionCreateCommand
 ): Promise<SuggestionWithEvents> {
   await assertTrainingTypeExists(supabase, command.training_type_code);
-  await assertDailyLimitNotExceeded(supabase, userId);
+  await assertDailyLimitNotExceeded(supabase, userId, command.planned_date);
 
   const aiOutput = await generateSuggestion(userId, command);
   const steps = aiOutput.steps ?? [];
@@ -128,6 +128,7 @@ export async function createSuggestion(
     user_id: userId,
     training_type_code: command.training_type_code,
     status: "shown",
+    planned_date: command.planned_date,
     steps_jsonb: buildSuggestionStepsPayload(meta, steps),
   };
 
@@ -171,10 +172,7 @@ export async function acceptSuggestion(
 ): Promise<{ suggestion: AiSuggestionDto; workout: WorkoutDetailDto }> {
   const suggestionRow = await fetchSuggestionRow(supabase, userId, id);
   const parsedPayload = parseSuggestionPayload(suggestionRow.steps_jsonb);
-  const plannedDate = parsedPayload.meta.planned_date;
-  if (!plannedDate) {
-    throw createApiError(500, "internal_error", "AI suggestion payload missing planned_date");
-  }
+  const plannedDate = suggestionRow.planned_date;
 
   if (suggestionRow.status !== "shown") {
     throw createApiError(409, "conflict", "AI suggestion is no longer available for acceptance", {
@@ -306,10 +304,10 @@ export async function regenerateSuggestion(
     throw createApiError(410, "gone", "AI suggestion has expired");
   }
 
-  await assertDailyLimitNotExceeded(supabase, userId);
+  await assertDailyLimitNotExceeded(supabase, userId, baseSuggestion.planned_date);
 
   const aiInput: AiSuggestionCreateCommand = {
-    planned_date: basePayload.meta.planned_date ?? new Date().toISOString().slice(0, 10),
+    planned_date: baseSuggestion.planned_date,
     training_type_code: baseSuggestion.training_type_code,
     context: {
       ...(basePayload.meta.context ?? {}),
@@ -333,6 +331,7 @@ export async function regenerateSuggestion(
     user_id: userId,
     training_type_code: baseSuggestion.training_type_code,
     status: "shown",
+    planned_date: baseSuggestion.planned_date,
     steps_jsonb: buildSuggestionStepsPayload(meta, steps),
   };
 
@@ -377,16 +376,12 @@ export async function regenerateSuggestion(
 function mapSuggestionRow(row: SuggestionRow): AiSuggestionDto {
   const { steps_jsonb, ...rest } = row;
   const parsed = parseSuggestionPayload(steps_jsonb);
-  const plannedDate = parsed.meta.planned_date;
-  if (!plannedDate) {
-    throw createApiError(500, "internal_error", "AI suggestion payload missing planned_date");
-  }
 
   return {
     ...rest,
     steps: parsed.steps,
     expires_at: computeExpiresAt(row.created_at),
-    planned_date: plannedDate,
+    planned_date: row.planned_date,
   };
 }
 
@@ -493,7 +488,11 @@ async function assertTrainingTypeExists(supabase: SupabaseClient, code: string):
   }
 }
 
-async function assertDailyLimitNotExceeded(supabase: SupabaseClient, userId: string): Promise<void> {
+async function assertDailyLimitNotExceeded(
+  supabase: SupabaseClient,
+  userId: string,
+  plannedDate: string
+): Promise<void> {
   const now = new Date();
   const start = startOfDay(now);
   const end = endOfDay(now);
@@ -502,6 +501,7 @@ async function assertDailyLimitNotExceeded(supabase: SupabaseClient, userId: str
     .from("ai_suggestions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
+    .eq("planned_date", plannedDate)
     .gte("created_at", start.toISOString())
     .lt("created_at", end.toISOString());
 
@@ -510,7 +510,11 @@ async function assertDailyLimitNotExceeded(supabase: SupabaseClient, userId: str
   }
 
   if ((count ?? 0) >= DAILY_LIMIT) {
-    throw createApiError(429, "too_many_requests", "Daily limit for AI suggestions reached");
+    throw createApiError(
+      429,
+      "too_many_requests",
+      `Daily limit (${DAILY_LIMIT}) for AI suggestions reached for date ${plannedDate}`
+    );
   }
 }
 

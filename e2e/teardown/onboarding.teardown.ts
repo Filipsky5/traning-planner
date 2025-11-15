@@ -37,8 +37,9 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
 
   console.log(`Found ${workouts.length} workout(s) to delete`);
 
-  // Step 3: Delete each workout
+  // Step 3: Delete each workout (best-effort cleanup)
   let deletedCount = 0;
+  let skippedCount = 0;
   let failedCount = 0;
 
   for (const workout of workouts) {
@@ -50,6 +51,10 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
       if (deleteResponse.ok()) {
         deletedCount++;
         console.log(`  ✓ Deleted workout ${workout.id}`);
+      } else if (deleteResponse.status() === 403) {
+        // 403 = workout belongs to different user (from previous test run)
+        skippedCount++;
+        console.log(`  ⊘ Skipped workout ${workout.id} (belongs to different user)`);
       } else {
         failedCount++;
         console.warn(`  ✗ Failed to delete workout ${workout.id}: ${deleteResponse.status()}`);
@@ -60,11 +65,11 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
     }
   }
 
-  console.log(`Teardown complete: ${deletedCount} deleted, ${failedCount} failed`);
+  console.log(`Teardown complete: ${deletedCount} deleted, ${skippedCount} skipped (other user), ${failedCount} failed`);
 
   // Don't fail the teardown if some deletions failed
   // (tests already passed, cleanup is best-effort)
-  if (deletedCount > 0) {
-    console.log('✓ Onboarding test user is ready for next test run');
+  if (deletedCount > 0 || skippedCount > 0) {
+    console.log('✓ Teardown finished (workouts from other users were skipped)');
   }
 });

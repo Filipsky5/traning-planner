@@ -1,9 +1,10 @@
 /**
  * Klient API dla operacji na treningach
- * Obsługuje akcje: get, skip, cancel, complete
+ * Obsługuje akcje: create, get, skip, cancel, complete
  */
 
 import type { ApiResponse, WorkoutDetailDto } from "../../types";
+import type { CreateWorkoutInput } from "../validation/workouts";
 
 /**
  * Klasa błędu API z dodatkowymi informacjami
@@ -37,6 +38,44 @@ export class ApiError extends Error {
    */
   isServerError(): boolean {
     return this.status >= 500;
+  }
+}
+
+/**
+ * Tworzy nowy trening (planned lub completed)
+ * @param data - Dane treningu zgodne z CreateWorkoutInput
+ * @returns Utworzony trening ze wszystkimi szczegółami
+ */
+export async function createWorkout(data: CreateWorkoutInput): Promise<WorkoutDetailDto> {
+  try {
+    const response = await fetch(`/api/v1/workouts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.error?.message || `Failed to create workout: ${response.status}`,
+        response.status,
+        errorData.error?.code
+      );
+    }
+
+    const result: ApiResponse<WorkoutDetailDto> = await response.json();
+    return result.data;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw err;
+    }
+    // Obsługa błędów sieciowych (offline, timeout, etc.)
+    if (err instanceof TypeError && err.message === "Failed to fetch") {
+      throw new Error("Brak połączenia z internetem. Sprawdź swoje połączenie i spróbuj ponownie.");
+    }
+    throw new Error(`Unexpected error while creating workout: ${err}`);
   }
 }
 

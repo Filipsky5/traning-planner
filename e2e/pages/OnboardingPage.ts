@@ -134,6 +134,8 @@ export class OnboardingPage {
    * Submit the workout form (click "Dalej" or "Zakończ")
    */
   async submitForm() {
+    // Small delay to let React validation settle before submit
+    await this.page.waitForTimeout(300);
     await this.submitButton.click();
   }
 

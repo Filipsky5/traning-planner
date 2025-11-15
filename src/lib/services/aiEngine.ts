@@ -13,6 +13,9 @@ const openrouter = new OpenRouterService({
   timeout: import.meta.env.OPENROUTER_TIMEOUT_MS
     ? parseInt(import.meta.env.OPENROUTER_TIMEOUT_MS, 10)
     : undefined,
+  maxRetries: import.meta.env.OPENROUTER_MAX_RETRIES
+    ? parseInt(import.meta.env.OPENROUTER_MAX_RETRIES, 10)
+    : undefined,
 });
 
 /**

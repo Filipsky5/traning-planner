@@ -83,11 +83,41 @@
   - Ręczny trigger przez `workflow_dispatch`
 
 ### Testing
+
+#### E2E Tests
 - **Playwright**
-  - Testy E2E
-  - Cross-browser testing
-  - TypeScript support
-  - Minimum 1 test weryfikujący flow użytkownika
+  - End-to-end testing framework
+  - Cross-browser testing (Chromium, WebKit, opcjonalnie Firefox)
+  - Multi-viewport testing (desktop: 1440×900, mobile: 390×844)
+  - TypeScript support out of the box
+  - Uruchamiane przeciwko production build (`npm run build` + `npm run preview`)
+  - Minimum 1 test weryfikujący główny flow użytkownika (wymagane dla certyfikatu)
+  - Scenariusze: autentykacja, onboarding, kalendarz, AI suggestions, cele użytkownika
+
+#### Unit & Integration Tests
+- **Vitest** (rekomendowane) lub **Jest**
+  - Unit tests dla utils, walidacji, services
+  - Fast, Vite-native test runner (Vitest)
+  - Compatible z ekosystemem Jest
+  - Pokrycie: min. 60–70% dla `src/lib/utils`, `src/lib/validation`, `src/lib/services`
+
+- **React Testing Library**
+  - Component integration tests
+  - Testing hooks (`useCalendar`, `useDayWorkouts`, `useWorkoutDetail`)
+  - User-centric testing approach
+
+#### API Tests
+- **supertest** lub **node-fetch**
+  - HTTP endpoint testing dla `src/pages/api/v1/*`
+  - Uruchamiane przeciwko testowemu serwerowi Astro (Node adapter)
+  - Weryfikacja RLS i filtrów bazodanowych
+  - Alternatywnie: Playwright APIRequestContext
+
+#### Mocking & Helpers
+- **MSW** (Mock Service Worker) - opcjonalnie
+  - Mockowanie API responses w testach komponentów
+  - Deterministyczne odpowiedzi AI dla testów
+  - Izolacja testów od zewnętrznych serwisów (OpenRouter.ai)
 
 ## Development Tools
 

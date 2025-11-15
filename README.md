@@ -52,7 +52,10 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
   - DigitalOcean (Droplet or App Platform)
   - GitHub Actions for CI/CD
 - Testing & DX
-  - Playwright for E2E
+  - **E2E Tests**: Playwright (Chromium, WebKit, desktop + mobile viewports)
+  - **Unit/Integration Tests**: Vitest + React Testing Library
+  - **API Tests**: supertest or node-fetch (for Astro API endpoints)
+  - **Mocking** (optional): MSW (Mock Service Worker)
   - TypeScript 5
   - ESLint 9, Prettier, Husky, lint-staged
 

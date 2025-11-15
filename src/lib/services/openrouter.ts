@@ -27,13 +27,13 @@ export interface GenerateTrainingParams {
     targetDistanceM?: number;
     dueDate?: string;
   };
-  recentWorkouts?: Array<{
+  recentWorkouts?: {
     trainingTypeCode: string;
     completedAt: string;
     distanceM: number;
     durationS: number;
     rating?: "too_easy" | "just_right" | "too_hard";
-  }>;
+  }[];
   context?: Record<string, unknown>;
   model?: string; // Nadpisuje domyślny model
   temperature?: number; // Kontrola kreatywności (0.0-1.0)
@@ -89,10 +89,10 @@ interface OpenRouterResponseFormat {
  */
 interface OpenRouterRequest {
   model: string;
-  messages: Array<{
+  messages: {
     role: "system" | "user" | "assistant";
     content: string;
-  }>;
+  }[];
   response_format?: OpenRouterResponseFormat;
   temperature?: number;
   max_tokens?: number;
@@ -104,13 +104,13 @@ interface OpenRouterRequest {
 interface OpenRouterResponse {
   id: string;
   model: string;
-  choices: Array<{
+  choices: {
     message: {
       role: string;
       content: string;
     };
     finish_reason: string;
-  }>;
+  }[];
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -186,7 +186,7 @@ export class OpenRouterService {
 
     // Ustaw domyślne wartości dla pozostałych opcji
     this.baseUrl = options.baseUrl || "https://openrouter.ai/api/v1";
-    this.defaultModel = options.defaultModel || "x-ai/grok-beta";
+    this.defaultModel = options.defaultModel || import.meta.env.OPENROUTER_DEFAULT_MODEL || "x-ai/grok-code-fast-1";
     this.timeout = options.timeout || 30000;
     this.maxRetries = options.maxRetries || 3;
     this.retryDelay = options.retryDelay || 1000;
@@ -201,9 +201,7 @@ export class OpenRouterService {
    * @returns Wygenerowana sugestia treningowa z metadanymi
    * @throws Error w przypadku niepowodzenia generowania
    */
-  async generateTrainingSuggestion(
-    params: GenerateTrainingParams
-  ): Promise<TrainingSuggestionResponse> {
+  async generateTrainingSuggestion(params: GenerateTrainingParams): Promise<TrainingSuggestionResponse> {
     const startTime = Date.now();
 
     try {
@@ -329,10 +327,7 @@ export class OpenRouterService {
       });
 
       if (!response.ok) {
-        throw new OpenRouterError(
-          "Nie udało się pobrać listy modeli",
-          response.status
-        );
+        throw new OpenRouterError("Nie udało się pobrać listy modeli", response.status);
       }
 
       const data = await response.json();
@@ -386,15 +381,11 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
     const parts: string[] = [];
 
     // Podstawowe żądanie
-    parts.push(
-      `Stwórz sesję treningową typu ${params.trainingTypeCode} na ${params.plannedDate}.`
-    );
+    parts.push(`Stwórz sesję treningową typu ${params.trainingTypeCode} na ${params.plannedDate}.`);
 
     // Dodaj kontekst celu
     if (params.userGoal) {
-      parts.push(
-        `Cel biegacza: ${params.userGoal.goalType} w dniu ${params.userGoal.dueDate}.`
-      );
+      parts.push(`Cel biegacza: ${params.userGoal.goalType} w dniu ${params.userGoal.dueDate}.`);
     }
 
     // Dodaj kontekst ostatnich treningów
@@ -474,9 +465,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
   /**
    * Wykonuje wywołanie API z logiką ponawiania z wykładniczym cofaniem
    */
-  private async callOpenRouterWithRetry(
-    params: OpenRouterRequest
-  ): Promise<OpenRouterResponse> {
+  private async callOpenRouterWithRetry(params: OpenRouterRequest): Promise<OpenRouterResponse> {
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
@@ -486,12 +475,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
         lastError = error as Error;
 
         // Nie ponawiaj przy błędach klienta (4xx oprócz 429)
-        if (
-          error instanceof OpenRouterError &&
-          error.status >= 400 &&
-          error.status < 500 &&
-          error.status !== 429
-        ) {
+        if (error instanceof OpenRouterError && error.status >= 400 && error.status < 500 && error.status !== 429) {
           throw error;
         }
 
@@ -507,9 +491,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
   /**
    * Wykonuje bezpośrednie wywołanie API OpenRouter
    */
-  private async callOpenRouter(
-    params: OpenRouterRequest
-  ): Promise<OpenRouterResponse> {
+  private async callOpenRouter(params: OpenRouterRequest): Promise<OpenRouterResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -531,11 +513,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
 
       if (!response.ok) {
         const error = await response.json();
-        throw new OpenRouterError(
-          error.error?.message || "Błąd API OpenRouter",
-          response.status,
-          error.error?.code
-        );
+        throw new OpenRouterError(error.error?.message || "Błąd API OpenRouter", response.status, error.error?.code);
       }
 
       return await response.json();
@@ -602,7 +580,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
       "google/gemini-flash-1.5": { prompt: 0.075, completion: 0.3 },
       "google/gemini-flash-1.5-8b": { prompt: 0.0375, completion: 0.15 },
       "meta-llama/llama-3.1-8b-instruct": { prompt: 0.06, completion: 0.06 },
-      "x-ai/grok-beta": { prompt: 5.0, completion: 15.0 },
+      "x-ai/grok-code-fast-1": { prompt: 5.0, completion: 15.0 },
     };
 
     const modelPricing = pricing[model] || { prompt: 0.5, completion: 1.5 }; // Domyślny fallback
@@ -628,9 +606,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
         case 500:
         case 502:
         case 503:
-          return new Error(
-            "Usługa OpenRouter tymczasowo niedostępna. Spróbuj ponownie później."
-          );
+          return new Error("Usługa OpenRouter tymczasowo niedostępna. Spróbuj ponownie później.");
         default:
           return new Error(`Błąd OpenRouter: ${error.message}`);
       }

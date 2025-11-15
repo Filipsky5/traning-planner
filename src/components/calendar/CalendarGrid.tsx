@@ -8,6 +8,7 @@ interface CalendarGridProps {
   days: DayCellViewModel[];
   isLoading: boolean;
   onAddWorkout: (date: Date) => void;
+  onAddWorkoutManual?: (date: Date) => void;
   onOpenDay: (day: DayCellViewModel) => void;
   onWorkoutClick?: (workoutId: string) => void;
 }
@@ -21,6 +22,7 @@ export function CalendarGrid({
   days,
   isLoading,
   onAddWorkout,
+  onAddWorkoutManual,
   onOpenDay,
   onWorkoutClick,
 }: CalendarGridProps) {
@@ -127,6 +129,7 @@ export function CalendarGrid({
             day={day}
             index={index}
             onAddWorkout={onAddWorkout}
+            onAddWorkoutManual={onAddWorkoutManual}
             onOpenDay={onOpenDay}
             onWorkoutClick={onWorkoutClick}
           />

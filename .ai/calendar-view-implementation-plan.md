@@ -23,7 +23,9 @@ src/pages/index.astro
     │   └── Switch (Tydzień/Miesiąc)
     ├── CalendarGrid.tsx
     │   └── DayCell.tsx[]
-    │       ├── Button (+)
+    │       ├── DropdownMenu (+)
+    │       │   ├── MenuItem (Generuj z AI)
+    │       │   └── MenuItem (Dodaj ręcznie)
     │       └── WorkoutCard.tsx[]
     ├── DayDrawer.tsx (renderowany warunkowo)
     │   └── WorkoutCard.tsx[]
@@ -71,15 +73,18 @@ src/pages/index.astro
   interface CalendarGridProps {
     days: DayCellViewModel[];
     onAddWorkout: (date: Date) => void;
+    onAddWorkoutManual?: (date: Date) => void;
     onOpenDay: (day: DayCellViewModel) => void;
   }
   ```
 
 ### `DayCell.tsx`
-- **Opis komponentu**: Reprezentuje pojedynczy dzień w siatce. Wyświetla karty treningów (`WorkoutCard`) lub przycisk `+` do dodawania nowego treningu.
-- **Główne elementy**: `<div>` z rolą `gridcell`, lista `<WorkoutCard />`, przycisk `<Button />` (`+`), wskaźnik `+N więcej`.
+- **Opis komponentu**: Reprezentuje pojedynczy dzień w siatce. Wyświetla karty treningów (`WorkoutCard`) lub menu `+` do wyboru sposobu dodawania nowego treningu.
+- **Główne elementy**: `<div>` z rolą `gridcell`, lista `<WorkoutCard />`, `<DropdownMenu />` (`+`) z opcjami "Generuj z AI" i "Dodaj ręcznie", wskaźnik `+N więcej`.
 - **Obsługiwane interakcje**:
-  - Kliknięcie przycisku `+` (`onAddWorkout`).
+  - Kliknięcie przycisku `+` otwiera menu dropdown z opcjami:
+    - "Generuj z AI" (`onAddWorkout`) - otwiera panel sugestii AI
+    - "Dodaj ręcznie" (`onAddWorkoutManual`) - otwiera formularz ręcznego dodawania (w trakcie implementacji)
   - Kliknięcie komórki lub wskaźnika `+N więcej` w celu otwarcia `DayDrawer` (`onOpenDay`).
 - **Obsługiwana walidacja**: Sprawdza liczbę treningów, aby zdecydować, czy wyświetlić wskaźnik `+N więcej`.
 - **Typy**: `DayCellViewModel`.
@@ -88,6 +93,7 @@ src/pages/index.astro
   interface DayCellProps {
     day: DayCellViewModel;
     onAddWorkout: (date: Date) => void;
+    onAddWorkoutManual?: (date: Date) => void;
     onOpenDay: (day: DayCellViewModel) => void;
   }
   ```
@@ -168,14 +174,16 @@ Do zarządzania logiką i stanem widoku kalendarza zostanie stworzony customowy 
 ## 8. Interakcje użytkownika
 - **Zmiana okresu**: Kliknięcie strzałek w `CalendarHeader` wywołuje `setPeriod` z `useCalendar`, co powoduje przeliczenie zakresu dat i ponowne pobranie danych.
 - **Zmiana widoku**: Wybór "Tydzień" lub "Miesiąc" w `CalendarHeader` wywołuje `setViewMode`, zmieniając tryb i pobierając dane dla nowego zakresu.
-- **Dodawanie treningu**: Kliknięcie przycisku `+` w `DayCell` wywołuje `openAiDrawer` z `useCalendar`, otwierając `AISuggestionDrawer` dla wybranej daty.
+- **Dodawanie treningu**: Kliknięcie przycisku `+` w `DayCell` otwiera menu dropdown z dwoma opcjami:
+  - **"Generuj z AI"**: Wywołuje `openAiDrawer` z `useCalendar`, otwierając `AISuggestionDrawer` dla wybranej daty.
+  - **"Dodaj ręcznie"**: Wywołuje `handleAddWorkoutManual`, która obecnie wyświetla placeholder alert (formularz ręcznego dodawania w trakcie implementacji).
 - **Przeglądanie dnia**: Kliknięcie komórki dnia z wieloma treningami (`+N więcej`) wywołuje `openDayDrawer`, co otwiera `DayDrawer` z listą wszystkich treningów danego dnia.
 - **Nawigacja klawiaturą**: Użycie klawiszy strzałek w `CalendarGrid` powoduje zmianę focusu na sąsiednie komórki `DayCell`.
 
 ## 9. Warunki i walidacja
 - **Zakres dat**: Hook `useCalendar` jest odpowiedzialny za generowanie poprawnego zakresu dat (`start`, `end` w formacie `YYYY-MM-DD`) na podstawie `viewDate` i `viewMode`.
 - **Wyświetlanie `+N więcej`**: Komponent `DayCell` sprawdza, czy `workouts.length` przekracza zdefiniowany limit (np. 2). Jeśli tak, renderuje skróconą listę i wskaźnik.
-- **Puste dni**: `DayCell` renderuje przycisk `+`, jeśli `workouts.length === 0`.
+- **Puste dni**: `DayCell` renderuje menu dropdown `+` z opcjami dodawania treningu, jeśli `workouts.length === 0`.
 - **Dni poza miesiącem**: `DayCell` otrzymuje flagę `isCurrentMonth` i na jej podstawie renderuje się w stylu "wyszarzonym".
 - **Dzisiejszy dzień**: `DayCell` otrzymuje flagę `isToday` i na jej podstawie renderuje wyróżnienie (np. obwódka lub tło).
 

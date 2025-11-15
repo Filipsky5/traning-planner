@@ -43,6 +43,11 @@ export function CalendarView() {
     setSelectedWorkoutId(null);
   };
 
+  const handleAddWorkoutManual = (date: Date) => {
+    // TODO: Implement manual workout creation form
+    alert(`Ręczne dodawanie treningu dla ${date.toLocaleDateString("pl-PL")} - funkcjonalność w trakcie implementacji`);
+  };
+
   // Obsługa błędów
   if (error) {
     return (
@@ -81,6 +86,7 @@ export function CalendarView() {
             days={calendarDays}
             isLoading={isLoading}
             onAddWorkout={(date) => openAiDrawer(date)}
+            onAddWorkoutManual={handleAddWorkoutManual}
             onOpenDay={openDayDrawer}
             onWorkoutClick={handleWorkoutClick}
           />

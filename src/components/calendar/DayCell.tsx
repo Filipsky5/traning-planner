@@ -1,11 +1,18 @@
 import type { DayCellViewModel } from "../../types/calendar";
 import { WorkoutCard } from "./WorkoutCard";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DayCellProps {
   day: DayCellViewModel;
   index: number;
   onAddWorkout: (date: Date) => void;
+  onAddWorkoutManual?: (date: Date) => void;
   onOpenDay: (day: DayCellViewModel) => void;
   onWorkoutClick?: (workoutId: string) => void;
 }
@@ -19,6 +26,7 @@ export function DayCell({
   day,
   index,
   onAddWorkout,
+  onAddWorkoutManual,
   onOpenDay,
   onWorkoutClick,
 }: DayCellProps) {
@@ -63,20 +71,39 @@ export function DayCell({
           {day.date.getDate()}
         </span>
 
-        {/* Przycisk dodawania treningu */}
+        {/* Dropdown dodawania treningu */}
         {day.workouts.length === 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddWorkout(day.date);
-            }}
-            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-            aria-label="Dodaj trening"
-          >
-            +
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                aria-label="Dodaj trening"
+                onClick={(e) => e.stopPropagation()}
+              >
+                +
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddWorkout(day.date);
+                }}
+              >
+                Generuj z AI
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddWorkoutManual?.(day.date);
+                }}
+              >
+                Dodaj ręcznie
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

@@ -43,21 +43,27 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
 
   for (const workout of workouts) {
     try {
-      // Add header to bypass Astro CSRF protection for API requests
-      const deleteResponse = await page.request.delete(`/api/v1/workouts/${workout.id}`, {
-        headers: {
-          'x-requested-with': 'XMLHttpRequest',
-        },
-        failOnStatusCode: false,
-      });
+      // Use page.evaluate to call DELETE from page context (same-origin)
+      const result = await page.evaluate(async (workoutId) => {
+        const response = await fetch(`/api/v1/workouts/${workoutId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        return {
+          ok: response.ok,
+          status: response.status,
+          body: response.ok ? null : await response.text(),
+        };
+      }, workout.id);
 
-      if (deleteResponse.ok()) {
+      if (result.ok) {
         deletedCount++;
         console.log(`  ✓ Deleted workout ${workout.id}`);
       } else {
         failedCount++;
-        const body = await deleteResponse.text().catch(() => 'no body');
-        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${deleteResponse.status()} - ${body}`);
+        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${result.status} - ${result.body || 'no body'}`);
       }
     } catch (error) {
       failedCount++;

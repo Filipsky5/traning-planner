@@ -29,6 +29,9 @@ export class LoginPage {
     await this.emailInput.clear();
     await this.emailInput.fill(email);
 
+    // Small delay between email and password fields
+    await this.page.waitForTimeout(100);
+
     await this.passwordInput.waitFor({ state: 'visible' });
     await this.passwordInput.clear();
     await this.passwordInput.fill(password);

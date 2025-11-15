@@ -9,6 +9,7 @@ interface CalendarGridProps {
   isLoading: boolean;
   onAddWorkout: (date: Date) => void;
   onOpenDay: (day: DayCellViewModel) => void;
+  onWorkoutClick?: (workoutId: string) => void;
 }
 
 /**
@@ -21,6 +22,7 @@ export function CalendarGrid({
   isLoading,
   onAddWorkout,
   onOpenDay,
+  onWorkoutClick,
 }: CalendarGridProps) {
   // Nazwy dni tygodnia
   const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'];
@@ -126,6 +128,7 @@ export function CalendarGrid({
             index={index}
             onAddWorkout={onAddWorkout}
             onOpenDay={onOpenDay}
+            onWorkoutClick={onWorkoutClick}
           />
         ))}
       </div>

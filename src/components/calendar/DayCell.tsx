@@ -7,6 +7,7 @@ interface DayCellProps {
   index: number;
   onAddWorkout: (date: Date) => void;
   onOpenDay: (day: DayCellViewModel) => void;
+  onWorkoutClick?: (workoutId: string) => void;
 }
 
 /**
@@ -19,6 +20,7 @@ export function DayCell({
   index,
   onAddWorkout,
   onOpenDay,
+  onWorkoutClick,
 }: DayCellProps) {
   const MAX_VISIBLE_WORKOUTS = 2;
   const hasMoreWorkouts = day.workouts.length > MAX_VISIBLE_WORKOUTS;
@@ -81,7 +83,11 @@ export function DayCell({
       {/* Lista treningów */}
       <div className="space-y-1">
         {visibleWorkouts.map((workout) => (
-          <WorkoutCard key={workout.id} workout={workout} />
+          <WorkoutCard
+            key={workout.id}
+            workout={workout}
+            onWorkoutClick={onWorkoutClick}
+          />
         ))}
 
         {/* Wskaźnik "+N więcej" */}

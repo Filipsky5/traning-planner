@@ -206,7 +206,7 @@ export function AISuggestionDrawer({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-6 space-y-6">
+          <div className="mt-6 space-y-6 px-4">
             {/* Error state */}
             {error && (
               <div className="rounded-md bg-red-50 p-4">

@@ -1,7 +1,9 @@
 /**
  * Klient API dla operacji na treningach
- * Obsługuje akcje: skip, cancel, complete
+ * Obsługuje akcje: get, skip, cancel, complete
  */
+
+import type { ApiResponse, WorkoutDetailDto } from "../../types";
 
 /**
  * Klasa błędu API z dodatkowymi informacjami
@@ -35,6 +37,43 @@ export class ApiError extends Error {
    */
   isServerError(): boolean {
     return this.status >= 500;
+  }
+}
+
+/**
+ * Pobiera szczegóły pojedynczego treningu
+ * @param workoutId - ID treningu do pobrania
+ * @returns Szczegóły treningu
+ */
+export async function getWorkoutById(workoutId: string): Promise<WorkoutDetailDto> {
+  try {
+    const response = await fetch(`/api/v1/workouts/${workoutId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(
+        errorData.error?.message || `Failed to fetch workout: ${response.status}`,
+        response.status,
+        errorData.error?.code
+      );
+    }
+
+    const data: ApiResponse<WorkoutDetailDto> = await response.json();
+    return data.data;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw err;
+    }
+    // Obsługa błędów sieciowych (offline, timeout, etc.)
+    if (err instanceof TypeError && err.message === "Failed to fetch") {
+      throw new Error("Brak połączenia z internetem. Sprawdź swoje połączenie i spróbuj ponownie.");
+    }
+    throw new Error(`Unexpected error while fetching workout: ${err}`);
   }
 }
 
@@ -107,14 +146,26 @@ export async function cancelWorkout(workoutId: string): Promise<void> {
 /**
  * Oznacza trening jako ukończony (zmienia status na 'completed')
  * @param workoutId - ID treningu do oznaczenia jako ukończony
+ * @param data - Dane z wykonania treningu
+ * @returns Zaktualizowany trening
  */
-export async function completeWorkout(workoutId: string): Promise<void> {
+export async function completeWorkout(
+  workoutId: string,
+  data: {
+    distance_m: number;
+    duration_s: number;
+    avg_hr_bpm: number;
+    completed_at: string;
+    rating?: "too_easy" | "just_right" | "too_hard";
+  }
+): Promise<WorkoutDetailDto> {
   try {
     const response = await fetch(`/api/v1/workouts/${workoutId}/complete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -125,6 +176,9 @@ export async function completeWorkout(workoutId: string): Promise<void> {
         errorData.error?.code
       );
     }
+
+    const result: ApiResponse<WorkoutDetailDto> = await response.json();
+    return result.data;
   } catch (err) {
     if (err instanceof ApiError) {
       throw err;

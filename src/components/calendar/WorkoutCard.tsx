@@ -4,13 +4,14 @@ import { Badge } from "@/components/ui/badge";
 
 interface WorkoutCardProps {
   workout: WorkoutViewModel;
+  onWorkoutClick?: (workoutId: string) => void;
 }
 
 /**
  * Mała karta reprezentująca pojedynczy trening
  * Pokazuje typ treningu (za pomocą koloru i nazwy), status oraz odznakę AI
  */
-export function WorkoutCard({ workout }: WorkoutCardProps) {
+export function WorkoutCard({ workout, onWorkoutClick }: WorkoutCardProps) {
   // Mapowanie statusu na czytelną nazwę i styl
   const statusConfig = {
     planned: { label: '', variant: 'outline' as const },
@@ -26,7 +27,13 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
   const isAiGenerated = false; // workout.origin === 'ai';
 
   return (
-    <Card className="p-2 text-xs cursor-pointer hover:shadow-md transition-all duration-200">
+    <Card
+      className="p-2 text-xs cursor-pointer hover:shadow-md transition-all duration-200"
+      onClick={(e) => {
+        e.stopPropagation();
+        onWorkoutClick?.(workout.id);
+      }}
+    >
       <div className="flex items-start gap-2">
         {/* Pasek koloru typu treningu */}
         <div className={`w-1 ${workout.color} rounded flex-shrink-0 self-stretch`} />

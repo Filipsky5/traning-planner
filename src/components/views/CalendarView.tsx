@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useCalendar } from "../hooks/useCalendar";
 import { CalendarHeader } from "../calendar/CalendarHeader";
 import { CalendarGrid } from "../calendar/CalendarGrid";
 import { DayDrawer } from "../calendar/DayDrawer";
 import { AISuggestionDrawer } from "../suggestions/AISuggestionDrawer";
+import { WorkoutDetailDrawer } from "../calendar/WorkoutDetailDrawer";
 
 /**
  * Główny komponent widoku kalendarza
@@ -29,6 +31,17 @@ export function CalendarView() {
     selectedDate,
     refetch,
   } = useCalendar();
+
+  // State dla workout detail drawer
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+
+  const handleWorkoutClick = (workoutId: string) => {
+    setSelectedWorkoutId(workoutId);
+  };
+
+  const closeWorkoutDrawer = () => {
+    setSelectedWorkoutId(null);
+  };
 
   // Obsługa błędów
   if (error) {
@@ -69,6 +82,7 @@ export function CalendarView() {
             isLoading={isLoading}
             onAddWorkout={(date) => openAiDrawer(date)}
             onOpenDay={openDayDrawer}
+            onWorkoutClick={handleWorkoutClick}
           />
         </div>
 
@@ -96,6 +110,14 @@ export function CalendarView() {
             onSuggestionAccepted={refetch}
           />
         )}
+
+        {/* Panel szczegółów treningu */}
+        <WorkoutDetailDrawer
+          workoutId={selectedWorkoutId}
+          trainingTypes={trainingTypes}
+          onOpenChange={(open) => !open && closeWorkoutDrawer()}
+          onWorkoutCompleted={refetch}
+        />
       </div>
     </div>
   );

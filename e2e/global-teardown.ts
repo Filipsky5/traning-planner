@@ -10,49 +10,47 @@ async function globalTeardown(config: FullConfig) {
   console.log("\n🧹 Global Teardown: Cleaning up test data...");
 
   const baseURL = config.projects[0].use.baseURL || "http://localhost:3000";
-  const username = process.env.E2E_USERNAME || "test@example.com";
-  const password = process.env.E2E_PASSWORD || "password123";
+  const authFile = "playwright/.auth/user.json";
 
-  // Launch browser for cleanup
+  // Launch browser for cleanup with saved auth state
   const browser = await chromium.launch();
-  const context = await browser.newContext({ baseURL });
+  const context = await browser.newContext({
+    baseURL,
+    storageState: authFile, // Use the same auth state as tests
+  });
   const page = await context.newPage();
 
   try {
-    // Step 1: Login to get auth cookies
-    console.log("  Logging in as test user...");
-    await page.goto("/auth/login");
-    await page.fill('input[type="email"]', username);
-    await page.fill('input[type="password"]', password);
-    await page.click('button[type="submit"]');
-
-    // Wait for navigation after login
-    await page.waitForURL((url) => !url.pathname.includes("/auth/login"), {
-      timeout: 10000,
-    });
-
-    console.log("  ✓ Logged in successfully");
+    // Step 1: Navigate to any page to establish page context for fetch
+    console.log("  Using saved authentication state...");
+    await page.goto("/");
 
     // Step 2: Fetch all workouts
-    const workoutsResponse = await page.request.get("/api/v1/workouts", {
-      failOnStatusCode: false,
+    const fetchResult = await page.evaluate(async () => {
+      const response = await fetch("/api/v1/workouts");
+      const contentType = response.headers.get("content-type") || "";
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        contentType,
+        data: response.ok && contentType.includes("application/json") ? await response.json() : null,
+        preview: !contentType.includes("application/json") ? (await response.text()).substring(0, 100) : null,
+      };
     });
 
-    if (!workoutsResponse.ok()) {
-      console.log(`  ⚠ Failed to fetch workouts (status ${workoutsResponse.status()})`);
+    if (!fetchResult.ok) {
+      console.log(`  ⚠ Failed to fetch workouts (status ${fetchResult.status})`);
       return;
     }
 
-    // Check if response is JSON before parsing
-    const contentType = workoutsResponse.headers()["content-type"] || "";
-    if (!contentType.includes("application/json")) {
-      console.log(`  ⚠ Unexpected response format: ${contentType}. Skipping cleanup.`);
-      console.log(`  Response preview: ${(await workoutsResponse.text()).substring(0, 100)}...`);
+    if (!fetchResult.contentType.includes("application/json")) {
+      console.log(`  ⚠ Unexpected response format: ${fetchResult.contentType}. Skipping cleanup.`);
+      console.log(`  Response preview: ${fetchResult.preview}...`);
       return;
     }
 
-    const workoutsData = await workoutsResponse.json();
-    const workouts = workoutsData.data || [];
+    const workouts = fetchResult.data?.data || [];
 
     console.log(`  Found ${workouts.length} workout(s) to delete`);
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { test as teardown, expect } from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
 

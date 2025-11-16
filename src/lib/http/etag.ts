@@ -23,7 +23,7 @@ export async function computeEtag(value: unknown): Promise<string> {
 
   // Convert ArrayBuffer to hex string
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
   return `"${hash}"`; // strong ETag (w cudzysłowie zgodnie ze standardem HTTP)
 }

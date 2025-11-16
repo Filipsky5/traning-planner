@@ -14,6 +14,7 @@ export class CalendarPage {
   readonly nextMonthButton: Locator;
   readonly prevMonthButton: Locator;
   readonly todayButton: Locator;
+  readonly todayCell: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -25,6 +26,7 @@ export class CalendarPage {
     this.nextMonthButton = page.locator('button[aria-label*="Następny"]');
     this.prevMonthButton = page.locator('button[aria-label*="Poprzedni"]');
     this.todayButton = page.locator('button:has-text("Dzisiaj")');
+    this.todayCell = page.locator('[role="gridcell"].ring-blue-500');
   }
 
   async goto() {
@@ -34,6 +36,32 @@ export class CalendarPage {
   async waitForCalendarLoad() {
     await this.calendarView.waitFor({ state: "visible" });
     await this.calendarGrid.waitFor({ state: "visible" });
+    // Wait for skeleton loaders to disappear (loading complete)
+    await this.waitForSkeletonsToDisappear();
+  }
+
+  /**
+   * Wait for all skeleton loading animations to disappear
+   * This indicates that the calendar data has finished loading
+   */
+  async waitForSkeletonsToDisappear() {
+    // First wait for skeleton to appear (loading starts)
+    await this.page
+      .locator('[data-slot="skeleton"]')
+      .first()
+      .waitFor({ state: "attached", timeout: 2000 })
+      .catch(() => {
+        // If no skeletons appear, loading was instant - that's fine
+      });
+
+    // Then wait for all skeletons to disappear (loading complete)
+    await this.page
+      .locator('[data-slot="skeleton"]')
+      .first()
+      .waitFor({ state: "detached", timeout: 5000 })
+      .catch(() => {
+        // If no skeletons found, that's fine - already loaded
+      });
   }
 
   async clickAddWorkout(dayIndex: number) {

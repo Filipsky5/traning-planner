@@ -16,6 +16,7 @@ interface ResetPasswordFormProps {
  *
  * TODO: Po implementacji backendu, podłączyć do POST /api/v1/auth/reset-password
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -134,7 +135,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         setLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [newPassword, confirmPassword, validatePassword, validateConfirmPassword]
   );
 

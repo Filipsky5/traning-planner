@@ -295,7 +295,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
 
     try {
       // Zod schema validates that distance_m and duration_s are required numbers
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
       await onSubmit({
         distance_m: values.distance_m!,
         duration_s: values.duration_s!,

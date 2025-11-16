@@ -18,6 +18,7 @@ type Step = "form" | "verification";
  *
  * TODO: Po implementacji backendu, podłączyć do POST /api/v1/auth/register
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function RegisterForm({ redirectTo = "/onboarding" }: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -189,7 +190,7 @@ export function RegisterForm({ redirectTo = "/onboarding" }: RegisterFormProps) 
         setLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [
       email,
       password,

@@ -17,8 +17,8 @@ interface DayDrawerContentProps {
  * Zawartość drawera - renderuje stan ładowania, błędu lub listę treningów
  * Wyświetla odpowiedni komunikat w zależności od stanu
  */
+
 export function DayDrawerContent({
-  date: _date,
   workouts,
   trainingTypes,
   isLoading,

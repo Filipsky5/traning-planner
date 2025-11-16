@@ -44,16 +44,17 @@ E2E_PASSWORD=TestPassword123!
   - Uses the 3 workouts created by onboarding-flow
 
 ### 4. Global Teardown
-- **File**: `e2e/teardown/onboarding.teardown.ts`
-- **Project**: `teardown`
+- **File**: `e2e/global-teardown.ts`
+- **Type**: `globalTeardown` function (NOT a test project)
 - **User**: `E2E_USERNAME`
-- **Dependencies**: Runs AFTER all tests (chromium-desktop, chromium-mobile, onboarding-flow)
+- **When**: Runs ALWAYS after all tests complete (even if tests fail!)
 - **Purpose**:
   - Cleans up ALL test user workouts after entire test suite
-  - Logs in as test user
-  - Fetches all workouts
+  - Launches browser, logs in as test user
+  - Fetches all workouts via GET /api/v1/workouts
   - Deletes each workout via DELETE /api/v1/workouts/[id]
   - Ensures clean state for next test run
+  - **Guaranteed execution** - runs even if tests fail
 
 ## Test Execution Order
 
@@ -67,15 +68,17 @@ E2E_PASSWORD=TestPassword123!
 3. chromium-desktop (calendar.spec.ts) + chromium-mobile (calendar.spec.ts)
    └─ Use the 3 workouts from onboarding-flow (run in parallel)
    ↓
-4. teardown (onboarding.teardown.ts)
-   └─ Deletes all 3 workouts (cleanup for next test run)
+4. globalTeardown (global-teardown.ts)
+   └─ ALWAYS runs after all tests (even if they fail!)
+   └─ Deletes all workouts (cleanup for next test run)
 ```
 
 **Key Points**:
 - Onboarding-flow creates workouts that are **reused** by calendar tests
 - Setup does **NOT** delete workouts - it verifies they exist
-- Teardown runs **LAST** to clean up for the next test run
-- If teardown fails, the next run may have stale data (re-run teardown manually)
+- **Global teardown ALWAYS runs** - even if tests fail or timeout
+- This ensures clean state for next run, preventing flaky tests from stale data
+- Uses `globalTeardown` config option (not a test project with dependencies)
 
 ## Creating Test Users in Supabase
 
@@ -131,11 +134,17 @@ npm run test:e2e:headed
 - Run onboarding tests manually: `npx playwright test --project=onboarding-flow`
 
 ### "Onboarding tests fail - user already has workouts"
-- Previous test run's teardown failed (workouts not cleaned up)
-- Run teardown manually to clean up: `npx playwright test e2e/teardown/onboarding.teardown.ts`
-- Or manually delete workouts via Supabase Studio
+- Global teardown failed on previous run (workouts not cleaned up)
+- Manually delete workouts via Supabase Studio (Authentication → Users → select user)
+- Or delete via API:
+  ```bash
+  # Login to get cookies, then:
+  curl -X DELETE http://localhost:3000/api/v1/workouts/{workout_id} \
+    --cookie "your-session-cookie"
+  ```
 
 ### "Teardown fails to delete workouts"
-- Check if user is authenticated (401 error)
+- Check global teardown output in test logs (after all tests complete)
 - Verify DELETE /api/v1/workouts/[id] endpoint works
-- Teardown failures won't fail the test suite (best-effort cleanup)
+- Teardown failures won't fail the test suite (logged as warnings)
+- Global teardown runs regardless of test results

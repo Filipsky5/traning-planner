@@ -14,6 +14,9 @@ export default defineConfig({
   // Test directory
   testDir: "./e2e",
 
+  // Global teardown - runs ALWAYS after all tests (even on failure)
+  globalTeardown: "./e2e/global-teardown.ts",
+
   // Maximum time one test can run
   timeout: 30 * 1000,
 
@@ -87,16 +90,6 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
         // Use saved auth state for calendar and other authenticated tests
         storageState: "playwright/.auth/user.json",
-      },
-    },
-    // Teardown project - cleans up test user workouts after ALL tests
-    {
-      name: "teardown",
-      testMatch: /.*onboarding\.teardown\.ts/,
-      dependencies: ["chromium-mobile", "chromium-desktop"],
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 1440, height: 900 },
       },
     },
   ],

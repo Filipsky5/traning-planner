@@ -98,8 +98,12 @@ export function mapFormValuesToCreateWorkoutInput(values: ManualWorkoutFormValue
  */
 export function calculateTotalDistanceKm(steps: ManualWorkoutStepForm[]): number {
   const total = steps.reduce((sum, step) => {
-    const distance = step.distanceKm ?? 0;
-    return sum + (isNaN(distance) ? 0 : distance);
+    // valueAsNumber może zwrócić NaN, więc najpierw sprawdź isNaN
+    const distance = step.distanceKm;
+    if (distance === undefined || distance === null || isNaN(distance)) {
+      return sum;
+    }
+    return sum + distance;
   }, 0);
   return isNaN(total) ? 0 : total;
 }
@@ -109,8 +113,18 @@ export function calculateTotalDistanceKm(steps: ManualWorkoutStepForm[]): number
  */
 export function calculateTotalDurationSec(steps: ManualWorkoutStepForm[]): number {
   const total = steps.reduce((sum, step) => {
-    const minutes = isNaN(step.durationMinutes ?? 0) ? 0 : (step.durationMinutes ?? 0);
-    const seconds = isNaN(step.durationSeconds ?? 0) ? 0 : (step.durationSeconds ?? 0);
+    // valueAsNumber może zwrócić NaN, więc najpierw sprawdź isNaN dla każdej wartości
+    let minutes = 0;
+    let seconds = 0;
+
+    if (step.durationMinutes !== undefined && step.durationMinutes !== null && !isNaN(step.durationMinutes)) {
+      minutes = step.durationMinutes;
+    }
+
+    if (step.durationSeconds !== undefined && step.durationSeconds !== null && !isNaN(step.durationSeconds)) {
+      seconds = step.durationSeconds;
+    }
+
     return sum + (minutes * 60 + seconds);
   }, 0);
   return isNaN(total) ? 0 : total;

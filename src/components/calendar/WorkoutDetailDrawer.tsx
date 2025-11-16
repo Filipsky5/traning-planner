@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { memo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -299,25 +300,18 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
 
   useEffect(() => {
     reset(getCompletionDefaults(workout));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workout]);
+  }, [workout, reset]);
 
   const ratingValue = watch("rating");
 
   const onFormSubmit = async (values: CompletionFormValues) => {
     setServerError(null);
 
-    // Runtime validation (should never happen due to Zod, but adds type safety)
-    if (!values.distance_m || !values.duration_s || !values.avg_hr_bpm) {
-      setServerError("Wszystkie pola są wymagane");
-      return;
-    }
-
     try {
       await onSubmit({
-        distance_m: values.distance_m,
-        duration_s: values.duration_s,
-        avg_hr_bpm: values.avg_hr_bpm,
+        distance_m: values.distance_m!,
+        duration_s: values.duration_s!,
+        avg_hr_bpm: values.avg_hr_bpm!,
         completed_at: new Date().toISOString(),
         rating: values.rating,
       });

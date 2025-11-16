@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { memo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +13,6 @@ import type {
   TrainingTypeDto,
   WorkoutCompleteCommand,
   WorkoutDetailDto,
-  WorkoutRateCommand,
 } from "../../types";
 import {
   formatDistance,
@@ -63,7 +61,7 @@ export function WorkoutDetailDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="overflow-y-auto pb-6">
         <SheetHeader>
           <SheetTitle>Szczegóły treningu</SheetTitle>
           {formattedDate && <SheetDescription className="capitalize">{formattedDate}</SheetDescription>}
@@ -262,7 +260,7 @@ const completionSchema = z.object({
   avg_hr_bpm: numericField(1, 240, {
     min: "Tętno musi być większe od 0",
     max: "Tętno nie może przekraczać 240 bpm",
-  }),
+  }).optional(),
   rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
 });
 
@@ -311,7 +309,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
       await onSubmit({
         distance_m: values.distance_m!,
         duration_s: values.duration_s!,
-        avg_hr_bpm: values.avg_hr_bpm!,
+        avg_hr_bpm: values.avg_hr_bpm,
         completed_at: new Date().toISOString(),
         rating: values.rating,
       });
@@ -326,7 +324,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
     }
   };
 
-  const handleRatingSubmit = async ({ rating }: WorkoutRateCommand) => {
+  const handleRatingSubmit = async ({ rating }: { rating: 'too_easy' | 'just_right' | 'too_hard' }) => {
     setValue("rating", rating);
   };
 
@@ -438,7 +436,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
       <RateWorkoutDialog
         open={isRateDialogOpen}
         onOpenChange={setIsRateDialogOpen}
-        onSubmit={async (data: WorkoutRateCommand) => {
+        onSubmit={async (data) => {
           await handleRatingSubmit(data);
           setIsRateDialogOpen(false);
         }}

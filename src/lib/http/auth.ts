@@ -1,4 +1,5 @@
 import type { APIContext } from "astro";
+import { SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
 
 import { createApiError } from "./errors";
 
@@ -48,7 +49,7 @@ export async function requireUserId(context: APIContext): Promise<{ userId: stri
  * Bezpieczeństwo:
  * - Service-role key ma pełny dostęp do bazy danych (omija RLS)
  * - NIE wolno używać service-role key w kodzie client-side (tylko server-side!)
- * - Token jest porównywany z import.meta.env.SUPABASE_SERVICE_ROLE_KEY
+ * - Token jest porównywany z SUPABASE_SERVICE_ROLE_KEY z astro:env
  *
  * Analogia do iOS: Podobne do weryfikacji API key w backend-only endpoints
  * (np. admin panel, internal tools). W Swift nie ma odpowiednika, bo to koncept
@@ -58,7 +59,6 @@ export async function requireUserId(context: APIContext): Promise<{ userId: stri
  * @returns void - Funkcja nic nie zwraca, tylko rzuca błąd jeśli auth niepoprawny
  * @throws ApiError(401) - Jeśli brak Authorization header
  * @throws ApiError(403) - Jeśli service-role key niepoprawny
- * @throws ApiError(500) - Jeśli SUPABASE_SERVICE_ROLE_KEY nie ustawiony w environment
  *
  * @example
  * ```typescript
@@ -80,17 +80,9 @@ export function requireServiceRole(context: APIContext): void {
   // Wyciągnij token z header'a (format: "Bearer <token>")
   const token = authHeader.replace("Bearer ", "");
 
-  // Guard clause 2: Sprawdź czy SUPABASE_SERVICE_ROLE_KEY jest ustawiony
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!serviceRoleKey) {
-    // To powinno być wykryte na etapie deploymentu, ale lepiej być bezpiecznym
-    console.error("SUPABASE_SERVICE_ROLE_KEY not set in environment");
-    throw createApiError(500, "internal_error", "Server configuration error");
-  }
-
-  // Guard clause 3: Sprawdź czy token zgadza się z service-role key
-  if (token !== serviceRoleKey) {
+  // Guard clause 2: Sprawdź czy token zgadza się z service-role key
+  // astro:env zapewnia że SUPABASE_SERVICE_ROLE_KEY jest ustawiony (validateSecrets: true)
+  if (token !== SUPABASE_SERVICE_ROLE_KEY) {
     throw createApiError(403, "forbidden", "Invalid service-role key");
   }
 

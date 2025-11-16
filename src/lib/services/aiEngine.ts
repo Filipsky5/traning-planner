@@ -1,4 +1,10 @@
 import type { AiSuggestionCreateCommand, WorkoutStepDto } from "../../types";
+import {
+  OPENROUTER_API_KEY,
+  OPENROUTER_DEFAULT_MODEL,
+  OPENROUTER_TIMEOUT_MS,
+  OPENROUTER_MAX_RETRIES,
+} from "astro:env/server";
 import { OpenRouterService } from "./openrouter";
 
 export interface AiGeneratedSuggestion {
@@ -6,13 +12,27 @@ export interface AiGeneratedSuggestion {
   metadata?: Record<string, unknown>;
 }
 
-// Singleton instancja serwisu OpenRouter z konfiguracją z env
-const openrouter = new OpenRouterService({
-  apiKey: import.meta.env.OPENROUTER_API_KEY,
-  defaultModel: import.meta.env.OPENROUTER_DEFAULT_MODEL,
-  timeout: import.meta.env.OPENROUTER_TIMEOUT_MS ? parseInt(import.meta.env.OPENROUTER_TIMEOUT_MS, 10) : undefined,
-  maxRetries: import.meta.env.OPENROUTER_MAX_RETRIES ? parseInt(import.meta.env.OPENROUTER_MAX_RETRIES, 10) : undefined,
-});
+/**
+ * Lazy-initialized OpenRouter service singleton.
+ * Instancja jest tworzona dopiero przy pierwszym wywołaniu getOpenRouterService().
+ *
+ * Dlaczego lazy initialization:
+ * - W Cloudflare Workers zmienne środowiskowe nie są dostępne w module scope
+ * - Muszą być odczytane w runtime (gdy wywołujesz funkcję)
+ */
+let _openrouter: OpenRouterService | null = null;
+
+function getOpenRouterService(): OpenRouterService {
+  if (!_openrouter) {
+    _openrouter = new OpenRouterService({
+      apiKey: OPENROUTER_API_KEY,
+      defaultModel: OPENROUTER_DEFAULT_MODEL,
+      timeout: OPENROUTER_TIMEOUT_MS,
+      maxRetries: OPENROUTER_MAX_RETRIES,
+    });
+  }
+  return _openrouter;
+}
 
 /**
  * Generuje sugestię treningu za pomocą AI (OpenRouter).
@@ -29,7 +49,8 @@ export async function generateSuggestion(
   userId: string,
   input: AiSuggestionCreateCommand
 ): Promise<AiGeneratedSuggestion> {
-  // Wywołaj serwis OpenRouter
+  // Wywołaj serwis OpenRouter (lazy initialization)
+  const openrouter = getOpenRouterService();
   const result = await openrouter.generateTrainingSuggestion({
     userId,
     trainingTypeCode: input.training_type_code,

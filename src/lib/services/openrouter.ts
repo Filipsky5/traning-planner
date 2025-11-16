@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { WorkoutStepDto, StepPart } from "../../types";
+import { PUBLIC_SITE_URL } from "astro:env/client";
 import { logAiSuccess, logAiError } from "./aiLogsClient";
 
 // ==================== TYPY I INTERFEJSY ====================
@@ -302,7 +303,7 @@ export class OpenRouterService {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
-            "HTTP-Referer": import.meta.env.PUBLIC_SITE_URL || "http://localhost:3000",
+            "HTTP-Referer": PUBLIC_SITE_URL,
           },
         });
         return response.ok;

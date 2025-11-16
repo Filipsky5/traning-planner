@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient, type CookieOptionsWithName } from "@supabase/ssr";
 import type { AstroCookies } from "astro";
+import { SUPABASE_URL, SUPABASE_KEY } from "astro:env/server";
 
 import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
 
@@ -8,17 +9,37 @@ import type { Database } from "./database.types";
 
 export type SupabaseClient = SupabaseJsClient<Database>;
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+/**
+ * Lazy-initialized Supabase client singleton.
+ * Client jest tworzony dopiero przy pierwszym wywołaniu getSupabaseClient().
+ *
+ * Dlaczego lazy initialization:
+ * - W Cloudflare Workers zmienne środowiskowe nie są dostępne w module scope
+ * - Muszą być odczytane w runtime (gdy wywołujesz funkcję)
+ * - Singleton pattern cache'uje klienta dla wydajności
+ */
+let _supabaseClient: SupabaseClient | null = null;
 
 /**
- * Client-side Supabase client.
+ * Pobiera Supabase client (tworzy przy pierwszym wywołaniu).
  * Używany w komponentach React do operacji browser-side.
  *
  * UWAGA: Ten client będzie wkrótce używany tylko do odczytu public data.
  * Autentykacja będzie zarządzana przez server-side cookies.
+ *
+ * @returns Supabase client instance
+ *
+ * @example
+ * import { getSupabaseClient } from "@/db/supabase.client";
+ * const supabase = getSupabaseClient();
+ * const { data } = await supabase.from('workouts').select('*');
  */
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export function getSupabaseClient(): SupabaseClient {
+  if (!_supabaseClient) {
+    _supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return _supabaseClient;
+}
 
 /**
  * Cookie options dla Supabase Auth.
@@ -79,7 +100,7 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
  * }
  */
 export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
-  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
     cookieOptions,
     cookies: {
       /**

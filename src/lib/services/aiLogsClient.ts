@@ -7,6 +7,8 @@
  * WAŻNE: Funkcje w tym module wywołują internal endpoint z service-role key.
  * NIE wolno używać tych funkcji w kodzie client-side (tylko server-side)!
  */
+import { SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
+import { PUBLIC_SITE_URL } from "astro:env/client";
 
 import type { AiLogIngestCommand } from "../../types";
 
@@ -44,22 +46,12 @@ import type { AiLogIngestCommand } from "../../types";
  */
 export async function logAiInteraction(command: AiLogIngestCommand): Promise<void> {
   try {
-    // Pobierz service-role key z environment
-    const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!serviceRoleKey) {
-      console.error("[aiLogsClient] SUPABASE_SERVICE_ROLE_KEY not set - skipping AI log");
-      return;
-    }
-
-    // Pobierz base URL (localhost dla dev, production URL dla prod)
-    const baseUrl = import.meta.env.PUBLIC_API_URL || "http://localhost:3000";
-
+    // astro:env zapewnia że SUPABASE_SERVICE_ROLE_KEY jest ustawiony (validateSecrets: true)
     // Wyślij POST do internal endpoint
-    const response = await fetch(`${baseUrl}/api/v1/internal/ai/logs`, {
+    const response = await fetch(`${PUBLIC_SITE_URL}/api/v1/internal/ai/logs`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${serviceRoleKey}`,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(command),

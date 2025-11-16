@@ -16,6 +16,7 @@
 export const prerender = false;
 
 import type { APIContext } from "astro";
+import { INTERNAL_ADMIN_TOKEN } from "astro:env/server";
 import { listQuerySchema } from "../../../lib/validation/trainingTypes";
 import { listTrainingTypes } from "../../../lib/services/trainingTypesService";
 import { computeEtag } from "../../../lib/http/etag";
@@ -50,7 +51,8 @@ export async function GET(context: APIContext) {
       }
 
       // Guard clause: niepoprawny token → 403 Forbidden
-      const allowed = token === import.meta.env.INTERNAL_ADMIN_TOKEN;
+      // astro:env zapewnia że INTERNAL_ADMIN_TOKEN jest ustawiony (validateSecrets: true)
+      const allowed = token === INTERNAL_ADMIN_TOKEN;
       if (!allowed) {
         return new Response(
           JSON.stringify({

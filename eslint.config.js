@@ -56,11 +56,28 @@ const reactConfig = tseslint.config({
   },
 });
 
+// Allow console.log in specific contexts where logging is appropriate
+const consoleOverrides = tseslint.config({
+  files: [
+    "src/pages/api/**/*.{js,ts}", // API routes (server-side logging)
+    "e2e/**/*.{js,ts}", // E2E tests (test debugging)
+    "src/lib/errors/**/*.{js,ts}", // Error handlers (error logging)
+    "src/lib/services/**/*.{js,ts}", // Services (service logging)
+    "src/lib/hooks/**/*.{js,ts}", // Hooks (debugging - lib)
+    "src/components/hooks/**/*.{js,ts}", // Hooks (debugging - components)
+    "src/components/**/*.{jsx,tsx}", // Components (temporary - TODO: replace with proper logging)
+  ],
+  rules: {
+    "no-console": "off",
+  },
+});
+
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
   baseConfig,
   jsxA11yConfig,
   reactConfig,
+  consoleOverrides, // Apply console overrides
   eslintPluginAstro.configs["flat/recommended"],
   eslintPluginPrettier
 );

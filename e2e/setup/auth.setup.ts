@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { test as setup, expect, type Page } from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
 import { OnboardingPage } from "../pages/OnboardingPage";

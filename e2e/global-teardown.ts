@@ -39,21 +39,15 @@ async function globalTeardown(config: FullConfig) {
     });
 
     if (!workoutsResponse.ok()) {
-      console.log(
-        `  ⚠ Failed to fetch workouts (status ${workoutsResponse.status()})`
-      );
+      console.log(`  ⚠ Failed to fetch workouts (status ${workoutsResponse.status()})`);
       return;
     }
 
     // Check if response is JSON before parsing
     const contentType = workoutsResponse.headers()["content-type"] || "";
     if (!contentType.includes("application/json")) {
-      console.log(
-        `  ⚠ Unexpected response format: ${contentType}. Skipping cleanup.`
-      );
-      console.log(
-        `  Response preview: ${(await workoutsResponse.text()).substring(0, 100)}...`
-      );
+      console.log(`  ⚠ Unexpected response format: ${contentType}. Skipping cleanup.`);
+      console.log(`  Response preview: ${(await workoutsResponse.text()).substring(0, 100)}...`);
       return;
     }
 

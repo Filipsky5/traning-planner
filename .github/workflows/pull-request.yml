@@ -55,6 +55,10 @@ jobs:
     needs: lint
     permissions:
       contents: read
+    # Queue E2E tests to prevent concurrent runs (shared test environment)
+    concurrency:
+      group: e2e-tests
+      cancel-in-progress: false
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

@@ -207,3 +207,4 @@ Do zarządzania logiką i stanem widoku kalendarza zostanie stworzony customowy 
 8. **Styling i UX**: Zastosuj style TailwindCSS, dodaj skeletony ładowania, wyróżnienie dzisiejszego dnia oraz dni spoza miesiąca.
 9. **Nawigacja klawiaturą**: Zaimplementuj obsługę klawiszy strzałek do poruszania się po `CalendarGrid`.
 10. **Testowanie i poprawki**: Przetestuj wszystkie interakcje, obsługę błędów i przypadki brzegowe (np. miesiąc bez treningów, dzień z dużą liczbą treningów).
+

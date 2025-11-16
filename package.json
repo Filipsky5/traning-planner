@@ -9,8 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "build:test": "astro build --mode test",
+    "build:cloudflare": "astro build --config astro.config.cloudflare.mjs",
     "preview": "astro preview",
     "preview:test": "astro preview --mode test",
+    "preview:cloudflare": "wrangler pages dev ./dist",
     "astro": "astro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -63,6 +65,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@astrojs/cloudflare": "^12.6.10",
     "@eslint/compat": "1.2.7",
     "@eslint/js": "9.23.0",
     "@playwright/test": "^1.56.1",
@@ -91,7 +94,8 @@
     "lint-staged": "15.5.0",
     "prettier-plugin-astro": "0.14.1",
     "typescript-eslint": "8.28.0",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.9",
+    "wrangler": "^4.47.0"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [

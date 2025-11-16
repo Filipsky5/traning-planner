@@ -14,6 +14,9 @@ export default defineConfig({
   // Test directory
   testDir: "./e2e",
 
+  // Global teardown - runs ALWAYS after all tests (even on failure)
+  globalTeardown: "./e2e/global-teardown.ts",
+
   // Maximum time one test can run
   timeout: 30 * 1000,
 
@@ -43,25 +46,24 @@ export default defineConfig({
 
   // Projects configuration - Chromium only per guidelines
   projects: [
+    // Onboarding flow tests - test fresh user (no auth state)
+    {
+      name: "onboarding-flow",
+      testMatch: /.*onboarding-flow\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        // NO storageState - tests fresh user experience
+      },
+    },
     // Setup project - prepares authenticated user with completed onboarding
     {
       name: "setup",
+      dependencies: ["onboarding-flow"],
       testMatch: /.*auth\.setup\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-      },
-    },
-    // Desktop tests - use authenticated state
-    {
-      name: "chromium-desktop",
-      dependencies: ["setup"],
-      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 1440, height: 900 },
-        // Use saved auth state for calendar and other authenticated tests
-        storageState: "playwright/.auth/user.json",
       },
     },
     // Mobile tests - use authenticated state (Chromium with mobile viewport)
@@ -78,24 +80,16 @@ export default defineConfig({
         storageState: "playwright/.auth/user.json",
       },
     },
-    // Onboarding flow tests - test fresh user (no auth state)
+    // Desktop tests - use authenticated state
     {
-      name: "onboarding-flow",
-      testMatch: /.*onboarding-flow\.spec\.ts/,
+      name: "chromium-desktop",
+      dependencies: ["setup"],
+      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-        // NO storageState - tests fresh user experience
-      },
-    },
-    // Teardown project - cleans up test user workouts after ALL tests
-    {
-      name: "teardown",
-      testMatch: /.*onboarding\.teardown\.ts/,
-      dependencies: ["chromium-desktop", "chromium-mobile", "onboarding-flow"],
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 1440, height: 900 },
+        // Use saved auth state for calendar and other authenticated tests
+        storageState: "playwright/.auth/user.json",
       },
     },
   ],

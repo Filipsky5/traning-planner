@@ -111,33 +111,18 @@ jobs:
           PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
           INTERNAL_ADMIN_TOKEN: ${{ secrets.INTERNAL_ADMIN_TOKEN }}
 
-      - name: Add deployment comment
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const deploymentUrl = '${{ steps.deploy.outputs.url }}';
-            const environment = '${{ github.event.inputs.environment || 'production' }}';
-            const sha = context.sha.substring(0, 7);
+      - name: Add deployment summary
+        if: success()
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🚀 Deployment Successful
 
-            const commentBody = [
-              `## 🚀 Deployment Successful`,
-              ``,
-              `**Environment:** ${environment}`,
-              `**Commit:** \`${sha}\``,
-              `**URL:** ${deploymentUrl}`,
-              ``,
-              `Deployment completed at ${new Date().toISOString()}`
-            ].join('\n');
+          **Environment:** ${{ github.event.inputs.environment || 'production' }}
+          **Commit:** \`${GITHUB_SHA:0:7}\`
+          **URL:** ${{ steps.deploy.outputs.url }}
 
-            // Create a deployment status comment on the latest commit
-            github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: commentBody
-            });
+          Deployment completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          EOF
 
   status:
     name: Deployment status

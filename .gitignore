@@ -34,3 +34,4 @@ test-results/
 playwright/.cache/
 .vitest/
 playwright/.auth/
+.env.prod

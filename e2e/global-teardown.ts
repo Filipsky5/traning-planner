@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { chromium, type FullConfig } from "@playwright/test";
 
 /**
@@ -55,29 +54,24 @@ async function globalTeardown(config: FullConfig) {
 
     for (const workout of workouts) {
       try {
-        const result = await page.evaluate(
-          async (workoutId: string) => {
-            const response = await fetch(`/api/v1/workouts/${workoutId}`, {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-            });
-            return {
-              ok: response.ok,
-              status: response.status,
-              body: response.ok ? null : await response.text(),
-            };
-          },
-          workout.id
-        );
+        const result = await page.evaluate(async (workoutId: string) => {
+          const response = await fetch(`/api/v1/workouts/${workoutId}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+          });
+          return {
+            ok: response.ok,
+            status: response.status,
+            body: response.ok ? null : await response.text(),
+          };
+        }, workout.id);
 
         if (result.ok) {
           deletedCount++;
           console.log(`    ✓ Deleted workout ${workout.id}`);
         } else {
           failedCount++;
-          console.warn(
-            `    ✗ Failed to delete workout ${workout.id}: ${result.status}`
-          );
+          console.warn(`    ✗ Failed to delete workout ${workout.id}: ${result.status}`);
         }
       } catch (error) {
         failedCount++;
@@ -85,9 +79,7 @@ async function globalTeardown(config: FullConfig) {
       }
     }
 
-    console.log(
-      `\n✅ Teardown complete: ${deletedCount} deleted, ${failedCount} failed`
-    );
+    console.log(`\n✅ Teardown complete: ${deletedCount} deleted, ${failedCount} failed`);
   } catch (error) {
     console.error("❌ Global teardown failed (non-critical):", error);
     // Don't throw - teardown failures should not fail the test run

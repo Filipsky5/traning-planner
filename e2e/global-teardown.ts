@@ -34,12 +34,8 @@ async function globalTeardown(config: FullConfig) {
         ok: response.ok,
         status: response.status,
         contentType,
-        data: response.ok && contentType.includes("application/json")
-          ? await response.json()
-          : null,
-        preview: !contentType.includes("application/json")
-          ? (await response.text()).substring(0, 100)
-          : null,
+        data: response.ok && contentType.includes("application/json") ? await response.json() : null,
+        preview: !contentType.includes("application/json") ? (await response.text()).substring(0, 100) : null,
       };
     });
 

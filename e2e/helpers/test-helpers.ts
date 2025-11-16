@@ -48,6 +48,7 @@ export async function takeTimestampedScreenshot(page: Page, name: string) {
 /**
  * Mock API response
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function mockApiResponse(page: Page, endpoint: string, response: any, status = 200) {
   await page.route(endpoint, (route) => {
     route.fulfill({

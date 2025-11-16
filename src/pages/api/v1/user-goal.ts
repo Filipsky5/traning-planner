@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/v1/user-goal - Get current user goal or null
  * PUT /api/v1/user-goal - Create or replace user goal

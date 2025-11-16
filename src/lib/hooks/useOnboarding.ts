@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import type { WorkoutOnboardingFormViewModel, CreateCompletedWorkoutDto } from "../../types/onboarding";
-import type { ApiResponse } from "../../types";
 
 interface UseOnboardingReturn {
   currentStep: number;

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Unit Tests for CalendarHeader Component
  * Priority: HIGH - Title formatting and week number calculation

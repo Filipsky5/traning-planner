@@ -39,6 +39,7 @@ export const test = base.extend<AuthFixtures>({
     await page.goto("/");
 
     // Use the authenticated page
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });

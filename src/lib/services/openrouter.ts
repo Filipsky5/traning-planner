@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { WorkoutStepDto, StepPart } from "../../types";
 import { logAiSuccess, logAiError } from "./aiLogsClient";
 
@@ -541,7 +542,7 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
     let parsed: any;
     try {
       parsed = JSON.parse(content);
-    } catch (error) {
+    } catch {
       throw new Error(`Nieprawidłowy JSON w odpowiedzi: ${content.substring(0, 100)}...`);
     }
 

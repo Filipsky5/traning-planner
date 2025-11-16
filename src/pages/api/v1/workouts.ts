@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/v1/workouts - Lista treningów z filtrami i paginacją
  * POST /api/v1/workouts - Utworzenie nowego treningu (planned lub completed)

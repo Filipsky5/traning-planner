@@ -295,10 +295,9 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
 
     try {
       // Zod schema validates that distance_m and duration_s are required numbers
-
       await onSubmit({
-        distance_m: values.distance_m!,
-        duration_s: values.duration_s!,
+        distance_m: values.distance_m!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
+        duration_s: values.duration_s!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
         avg_hr_bpm: values.avg_hr_bpm,
         completed_at: new Date().toISOString(),
         rating: values.rating,

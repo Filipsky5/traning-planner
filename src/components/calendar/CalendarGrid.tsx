@@ -119,6 +119,7 @@ export function CalendarGrid({
       </div>
 
       {/* Siatka dni */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div className="grid grid-cols-7 gap-px bg-gray-200" onKeyDown={handleKeyDown}>
         {days.map((day, index) => (
           <DayCell

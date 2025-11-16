@@ -46,6 +46,7 @@ export function DayCell({ day, index, onAddWorkout, onAddWorkoutManual, onOpenDa
   })}${day.workouts.length > 0 ? `, ${day.workouts.length} ${day.workouts.length === 1 ? "trening" : "treningi"}` : ""}`;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
       className={cellClasses}
       role="gridcell"

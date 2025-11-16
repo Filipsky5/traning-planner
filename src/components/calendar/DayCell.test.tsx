@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 /**
  * Unit Tests for DayCell Component
  * Priority: HIGH - Core calendar cell logic and interactions

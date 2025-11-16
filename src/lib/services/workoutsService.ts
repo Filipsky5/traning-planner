@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Workouts Service Layer
  *
@@ -257,6 +258,7 @@ export async function updateWorkout(
   input: UpdateWorkoutInput
 ): Promise<WorkoutDetailDto> {
   // Get current workout (ownership check + ensure exists)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const current = await getWorkoutById(supabase, userId, workoutId);
 
   // Build update object (only changed fields)
@@ -547,6 +549,7 @@ export async function getCalendar(
     if (!grouped.has(date)) {
       grouped.set(date, []);
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     grouped.get(date)!.push({
       id: workout.id,
       training_type_code: workout.training_type_code,

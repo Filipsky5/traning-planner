@@ -115,6 +115,7 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
     const data: UserGoalUpsertCommand = {
       goal_type: "distance_by_date",
       target_distance_m: parseFloat(targetDistanceKm) * 1000,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       due_date: dueDate!.toISOString().split("T")[0],
       notes: notes.trim() || undefined,
     };

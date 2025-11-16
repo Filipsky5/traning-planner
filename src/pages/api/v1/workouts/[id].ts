@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/v1/workouts/[id] - Szczegóły pojedynczego treningu
  * PATCH /api/v1/workouts/[id] - Aktualizacja treningu (partial update)

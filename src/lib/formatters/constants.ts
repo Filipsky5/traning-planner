@@ -22,13 +22,13 @@ export const workoutStepPartLabels: Record<StepPart, string> = {
 };
 
 export const formatDistance = (meters?: number | null): string => {
-  if (!meters || meters <= 0) return "—";
+  if (meters == null || meters < 0) return "—";
   const km = meters / 1000;
   return `${km.toFixed(2)} km`;
 };
 
 export const formatDuration = (seconds?: number | null): string => {
-  if (!seconds || seconds <= 0) return "—";
+  if (seconds == null || seconds < 0) return "—";
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
@@ -41,7 +41,7 @@ export const formatDuration = (seconds?: number | null): string => {
 };
 
 export const formatPace = (secondsPerKm?: number | null): string => {
-  if (!secondsPerKm || secondsPerKm <= 0) return "—";
+  if (secondsPerKm == null || secondsPerKm < 0) return "—";
   const minutes = Math.floor(secondsPerKm / 60);
   const seconds = Math.floor(secondsPerKm % 60);
   return `${minutes}:${seconds.toString().padStart(2, "0")} min/km`;

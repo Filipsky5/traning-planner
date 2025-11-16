@@ -61,13 +61,12 @@ export function WorkoutDetailDrawer({
   };
 
   return (
-    <>
-      <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Szczegóły treningu</SheetTitle>
-            {formattedDate && <SheetDescription className="capitalize">{formattedDate}</SheetDescription>}
-          </SheetHeader>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Szczegóły treningu</SheetTitle>
+          {formattedDate && <SheetDescription className="capitalize">{formattedDate}</SheetDescription>}
+        </SheetHeader>
 
           <div className="mt-6 space-y-6 px-4">
             {isLoading && (
@@ -103,7 +102,6 @@ export function WorkoutDetailDrawer({
           </div>
         </SheetContent>
       </Sheet>
-    </>
   );
 }
 
@@ -214,7 +212,7 @@ const WorkoutSteps = memo(function WorkoutSteps({ steps }: WorkoutStepsProps) {
       <h4 className="text-sm font-medium text-gray-700">Plan treningu</h4>
       <div className="space-y-2">
         {steps.map((step, index) => (
-          <div key={`${step.part}-${index}`} className="rounded-md border bg-gray-50 p-3 text-sm">
+          <div key={index} className="rounded-md border bg-gray-50 p-3 text-sm">
             <div className="font-medium text-gray-900">
               {workoutStepPartLabels[step.part] || step.part}
             </div>
@@ -301,18 +299,25 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
 
   useEffect(() => {
     reset(getCompletionDefaults(workout));
-  }, [workout, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workout]);
 
   const ratingValue = watch("rating");
 
   const onFormSubmit = async (values: CompletionFormValues) => {
     setServerError(null);
 
+    // Runtime validation (should never happen due to Zod, but adds type safety)
+    if (!values.distance_m || !values.duration_s || !values.avg_hr_bpm) {
+      setServerError("Wszystkie pola są wymagane");
+      return;
+    }
+
     try {
       await onSubmit({
-        distance_m: values.distance_m!,
-        duration_s: values.duration_s!,
-        avg_hr_bpm: values.avg_hr_bpm!,
+        distance_m: values.distance_m,
+        duration_s: values.duration_s,
+        avg_hr_bpm: values.avg_hr_bpm,
         completed_at: new Date().toISOString(),
         rating: values.rating,
       });

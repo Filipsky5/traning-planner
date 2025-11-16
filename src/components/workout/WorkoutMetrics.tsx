@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import type { WorkoutViewModel } from '../hooks/useWorkoutDetail';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import type { WorkoutViewModel } from "../hooks/useWorkoutDetail";
 
 interface WorkoutMetricsProps {
   workout: WorkoutViewModel;
@@ -10,29 +10,29 @@ interface WorkoutMetricsProps {
  * Porównuje wartości planowane z rzeczywistymi (jeśli dostępne)
  */
 export function WorkoutMetrics({ workout }: WorkoutMetricsProps) {
-  const isCompleted = workout.status === 'completed';
+  const isCompleted = workout.status === "completed";
 
   // Mapowanie statusów na polskie etykiety
   const statusLabels: Record<string, string> = {
-    planned: 'Zaplanowany',
-    completed: 'Ukończony',
-    skipped: 'Pominięty',
-    canceled: 'Anulowany',
+    planned: "Zaplanowany",
+    completed: "Ukończony",
+    skipped: "Pominięty",
+    canceled: "Anulowany",
   };
 
   // Mapowanie ocen na polskie etykiety
   const ratingLabels: Record<string, string> = {
-    too_easy: 'Za łatwy',
-    just_right: 'W sam raz',
-    too_hard: 'Za trudny',
+    too_easy: "Za łatwy",
+    just_right: "W sam raz",
+    too_hard: "Za trudny",
   };
 
   // Kolory dla statusów
   const statusColors: Record<string, string> = {
-    planned: 'text-blue-600 bg-blue-50',
-    completed: 'text-green-600 bg-green-50',
-    skipped: 'text-gray-600 bg-gray-50',
-    canceled: 'text-red-600 bg-red-50',
+    planned: "text-blue-600 bg-blue-50",
+    completed: "text-green-600 bg-green-50",
+    skipped: "text-gray-600 bg-gray-50",
+    canceled: "text-red-600 bg-red-50",
   };
 
   return (
@@ -86,16 +86,12 @@ export function WorkoutMetrics({ workout }: WorkoutMetricsProps) {
 
                   <div>
                     <p className="text-sm text-gray-500">Dystans</p>
-                    <p className="text-xl font-bold text-green-600">
-                      {workout.distanceFormatted || '-'}
-                    </p>
+                    <p className="text-xl font-bold text-green-600">{workout.distanceFormatted || "-"}</p>
                   </div>
 
                   <div>
                     <p className="text-sm text-gray-500">Czas</p>
-                    <p className="text-xl font-bold text-green-600">
-                      {workout.durationFormatted || '-'}
-                    </p>
+                    <p className="text-xl font-bold text-green-600">{workout.durationFormatted || "-"}</p>
                   </div>
 
                   {workout.avgPaceFormatted && (
@@ -128,10 +124,11 @@ export function WorkoutMetrics({ workout }: WorkoutMetricsProps) {
           {/* Sekcja: Pochodzenie treningu */}
           <div className="border-t pt-4">
             <p className="text-sm text-gray-500">
-              Źródło: <span className="font-medium text-gray-900">
-                {workout.origin === 'ai' && 'Sugestia AI'}
-                {workout.origin === 'manual' && 'Ręczne'}
-                {workout.origin === 'import' && 'Import'}
+              Źródło:{" "}
+              <span className="font-medium text-gray-900">
+                {workout.origin === "ai" && "Sugestia AI"}
+                {workout.origin === "manual" && "Ręczne"}
+                {workout.origin === "import" && "Import"}
               </span>
             </p>
           </div>

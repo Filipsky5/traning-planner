@@ -157,9 +157,7 @@ describe("calendarQuerySchema", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(ZodError);
         const zodError = err as ZodError;
-        const rangeError = zodError.issues.find((issue) =>
-          issue.message.includes("End date must be >= start date")
-        );
+        const rangeError = zodError.issues.find((issue) => issue.message.includes("End date must be >= start date"));
         expect(rangeError).toBeDefined();
       }
     });
@@ -179,9 +177,7 @@ describe("calendarQuerySchema", () => {
         expect(err).toBeInstanceOf(ZodError);
         const zodError = err as ZodError;
         // Błąd z refine
-        const rangeError = zodError.issues.find((issue) =>
-          issue.message.includes("End date must be >= start date")
-        );
+        const rangeError = zodError.issues.find((issue) => issue.message.includes("End date must be >= start date"));
         expect(rangeError).toBeDefined();
       }
     });

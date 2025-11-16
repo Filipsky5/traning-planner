@@ -10,14 +10,14 @@
  * - Edge cases (unknown status, missing callback)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
-import { WorkoutCard } from './WorkoutCard';
-import type { WorkoutViewModel } from '../../types/calendar';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
+import { WorkoutCard } from "./WorkoutCard";
+import type { WorkoutViewModel } from "../../types/calendar";
 
 // Mock UI components
-vi.mock('@/components/ui/card', () => ({
+vi.mock("@/components/ui/card", () => ({
   Card: ({ children, className, onClick }: any) => (
     <div data-testid="card" className={className} onClick={onClick}>
       {children}
@@ -25,7 +25,7 @@ vi.mock('@/components/ui/card', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/badge', () => ({
+vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children, variant, className }: any) => (
     <span data-testid="badge" data-variant={variant} className={className}>
       {children}
@@ -33,23 +33,21 @@ vi.mock('@/components/ui/badge', () => ({
   ),
 }));
 
-describe('WorkoutCard', () => {
+describe("WorkoutCard", () => {
   // Helper to create mock WorkoutViewModel
-  const createMockWorkout = (
-    overrides?: Partial<WorkoutViewModel>
-  ): WorkoutViewModel => ({
-    id: 'workout-123',
-    status: 'planned',
-    training_type_code: 'easy_run',
-    planned_date: '2024-01-15',
+  const createMockWorkout = (overrides?: Partial<WorkoutViewModel>): WorkoutViewModel => ({
+    id: "workout-123",
+    status: "planned",
+    training_type_code: "easy_run",
+    planned_date: "2024-01-15",
     trainingType: {
-      id: '1',
-      code: 'easy_run',
-      name: 'Easy Run',
-      description: '',
-      default_color: '#3B82F6',
+      id: "1",
+      code: "easy_run",
+      name: "Easy Run",
+      description: "",
+      default_color: "#3B82F6",
     },
-    color: 'bg-blue-500',
+    color: "bg-blue-500",
     ...overrides,
   });
 
@@ -62,169 +60,165 @@ describe('WorkoutCard', () => {
     vi.clearAllMocks();
   });
 
-  describe('Rendering - Basic Structure', () => {
-    it('should render workout card with training type name', () => {
+  describe("Rendering - Basic Structure", () => {
+    it("should render workout card with training type name", () => {
       render(<WorkoutCard {...defaultProps} />);
 
-      expect(screen.getByText('Easy Run')).toBeInTheDocument();
+      expect(screen.getByText("Easy Run")).toBeInTheDocument();
     });
 
-    it('should render with cursor-pointer and hover styles', () => {
+    it("should render with cursor-pointer and hover styles", () => {
       render(<WorkoutCard {...defaultProps} />);
 
-      const card = screen.getByTestId('card');
-      expect(card.className).toContain('cursor-pointer');
-      expect(card.className).toContain('hover:shadow-md');
+      const card = screen.getByTestId("card");
+      expect(card.className).toContain("cursor-pointer");
+      expect(card.className).toContain("hover:shadow-md");
     });
 
-    it('should render color bar with workout color', () => {
-      const workout = createMockWorkout({ color: 'bg-red-500' });
+    it("should render color bar with workout color", () => {
+      const workout = createMockWorkout({ color: "bg-red-500" });
       const { container } = render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const colorBar = container.querySelector('.bg-red-500');
+      const colorBar = container.querySelector(".bg-red-500");
       expect(colorBar).toBeInTheDocument();
-      expect(colorBar?.className).toContain('w-1');
+      expect(colorBar?.className).toContain("w-1");
     });
 
-    it('should display training type name truncated', () => {
+    it("should display training type name truncated", () => {
       render(<WorkoutCard {...defaultProps} />);
 
-      const nameElement = screen.getByText('Easy Run');
-      expect(nameElement.className).toContain('truncate');
-      expect(nameElement.className).toContain('font-medium');
+      const nameElement = screen.getByText("Easy Run");
+      expect(nameElement.className).toContain("truncate");
+      expect(nameElement.className).toContain("font-medium");
     });
   });
 
-  describe('Status Mapping - Labels and Variants', () => {
+  describe("Status Mapping - Labels and Variants", () => {
     it('should not show badge for "planned" status', () => {
-      const workout = createMockWorkout({ status: 'planned' });
+      const workout = createMockWorkout({ status: "planned" });
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
       // planned has empty label, so no badge should be rendered
-      const badges = screen.queryAllByTestId('badge');
+      const badges = screen.queryAllByTestId("badge");
       expect(badges).toHaveLength(0);
     });
 
     it('should show "Ukończony" badge with default variant for "completed" status', () => {
-      const workout = createMockWorkout({ status: 'completed' });
+      const workout = createMockWorkout({ status: "completed" });
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const badge = screen.getByText('Ukończony');
+      const badge = screen.getByText("Ukończony");
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveAttribute('data-variant', 'default');
+      expect(badge).toHaveAttribute("data-variant", "default");
     });
 
     it('should show "Pominięty" badge with secondary variant for "skipped" status', () => {
-      const workout = createMockWorkout({ status: 'skipped' });
+      const workout = createMockWorkout({ status: "skipped" });
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const badge = screen.getByText('Pominięty');
+      const badge = screen.getByText("Pominięty");
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveAttribute('data-variant', 'secondary');
+      expect(badge).toHaveAttribute("data-variant", "secondary");
     });
 
     it('should show "Anulowany" badge with destructive variant for "cancelled" status', () => {
-      const workout = createMockWorkout({ status: 'cancelled' });
+      const workout = createMockWorkout({ status: "cancelled" });
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const badge = screen.getByText('Anulowany');
+      const badge = screen.getByText("Anulowany");
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveAttribute('data-variant', 'destructive');
+      expect(badge).toHaveAttribute("data-variant", "destructive");
     });
 
-    it('should handle unknown status by falling back to planned (no badge)', () => {
-      const workout = createMockWorkout({ status: 'unknown_status' as any });
+    it("should handle unknown status by falling back to planned (no badge)", () => {
+      const workout = createMockWorkout({ status: "unknown_status" as any });
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const badges = screen.queryAllByTestId('badge');
+      const badges = screen.queryAllByTestId("badge");
       expect(badges).toHaveLength(0);
     });
   });
 
-  describe('AI Badge Display', () => {
-    it('should not show AI badge when isAiGenerated is false', () => {
+  describe("AI Badge Display", () => {
+    it("should not show AI badge when isAiGenerated is false", () => {
       // Currently hardcoded to false in component
       render(<WorkoutCard {...defaultProps} />);
 
-      expect(screen.queryByText('AI')).not.toBeInTheDocument();
+      expect(screen.queryByText("AI")).not.toBeInTheDocument();
     });
 
     // Future test when origin field is added to WorkoutViewModel
     it.skip('should show AI badge when workout.origin === "ai"', () => {
-      const workout = createMockWorkout({ status: 'planned' } as any);
+      const workout = createMockWorkout({ status: "planned" } as any);
       // @ts-ignore - origin field doesn't exist yet
-      workout.origin = 'ai';
+      workout.origin = "ai";
 
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      const aiBadge = screen.getByText('AI');
+      const aiBadge = screen.getByText("AI");
       expect(aiBadge).toBeInTheDocument();
-      expect(aiBadge).toHaveAttribute('data-variant', 'outline');
-      expect(aiBadge.className).toContain('border-purple-300');
-      expect(aiBadge.className).toContain('text-purple-700');
+      expect(aiBadge).toHaveAttribute("data-variant", "outline");
+      expect(aiBadge.className).toContain("border-purple-300");
+      expect(aiBadge.className).toContain("text-purple-700");
     });
 
-    it.skip('should show both status and AI badge when both apply', () => {
-      const workout = createMockWorkout({ status: 'completed' } as any);
+    it.skip("should show both status and AI badge when both apply", () => {
+      const workout = createMockWorkout({ status: "completed" } as any);
       // @ts-ignore
-      workout.origin = 'ai';
+      workout.origin = "ai";
 
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      expect(screen.getByText('Ukończony')).toBeInTheDocument();
-      expect(screen.getByText('AI')).toBeInTheDocument();
+      expect(screen.getByText("Ukończony")).toBeInTheDocument();
+      expect(screen.getByText("AI")).toBeInTheDocument();
     });
   });
 
-  describe('Click Interactions', () => {
-    it('should call onWorkoutClick with correct workout.id when clicked', async () => {
+  describe("Click Interactions", () => {
+    it("should call onWorkoutClick with correct workout.id when clicked", async () => {
       const user = userEvent.setup();
       const onWorkoutClick = vi.fn();
-      const workout = createMockWorkout({ id: 'workout-456' });
+      const workout = createMockWorkout({ id: "workout-456" });
 
       render(<WorkoutCard {...defaultProps} workout={workout} onWorkoutClick={onWorkoutClick} />);
 
-      const card = screen.getByTestId('card');
+      const card = screen.getByTestId("card");
       await user.click(card);
 
       expect(onWorkoutClick).toHaveBeenCalledTimes(1);
-      expect(onWorkoutClick).toHaveBeenCalledWith('workout-456');
+      expect(onWorkoutClick).toHaveBeenCalledWith("workout-456");
     });
 
-    it('should call onWorkoutClick for different workouts', async () => {
+    it("should call onWorkoutClick for different workouts", async () => {
       const user = userEvent.setup();
       const onWorkoutClick = vi.fn();
 
-      const workout1 = createMockWorkout({ id: 'workout-1' });
-      const workout2 = createMockWorkout({ id: 'workout-2' });
+      const workout1 = createMockWorkout({ id: "workout-1" });
+      const workout2 = createMockWorkout({ id: "workout-2" });
 
-      const { rerender } = render(
-        <WorkoutCard {...defaultProps} workout={workout1} onWorkoutClick={onWorkoutClick} />
-      );
+      const { rerender } = render(<WorkoutCard {...defaultProps} workout={workout1} onWorkoutClick={onWorkoutClick} />);
 
-      await user.click(screen.getByTestId('card'));
-      expect(onWorkoutClick).toHaveBeenCalledWith('workout-1');
+      await user.click(screen.getByTestId("card"));
+      expect(onWorkoutClick).toHaveBeenCalledWith("workout-1");
 
-      rerender(
-        <WorkoutCard {...defaultProps} workout={workout2} onWorkoutClick={onWorkoutClick} />
-      );
+      rerender(<WorkoutCard {...defaultProps} workout={workout2} onWorkoutClick={onWorkoutClick} />);
 
-      await user.click(screen.getByTestId('card'));
-      expect(onWorkoutClick).toHaveBeenCalledWith('workout-2');
+      await user.click(screen.getByTestId("card"));
+      expect(onWorkoutClick).toHaveBeenCalledWith("workout-2");
       expect(onWorkoutClick).toHaveBeenCalledTimes(2);
     });
 
-    it('should not call onWorkoutClick when callback is undefined', async () => {
+    it("should not call onWorkoutClick when callback is undefined", async () => {
       const user = userEvent.setup();
       render(<WorkoutCard {...defaultProps} onWorkoutClick={undefined} />);
 
-      const card = screen.getByTestId('card');
+      const card = screen.getByTestId("card");
 
       // Should not throw error
       await expect(user.click(card)).resolves.not.toThrow();
     });
 
-    it('should stop event propagation on click', async () => {
+    it("should stop event propagation on click", async () => {
       const user = userEvent.setup();
       const onWorkoutClick = vi.fn();
       const onParentClick = vi.fn();
@@ -235,7 +229,7 @@ describe('WorkoutCard', () => {
         </div>
       );
 
-      const card = screen.getByTestId('card');
+      const card = screen.getByTestId("card");
       await user.click(card);
 
       expect(onWorkoutClick).toHaveBeenCalledTimes(1);
@@ -244,73 +238,73 @@ describe('WorkoutCard', () => {
     });
   });
 
-  describe('Visual Styling', () => {
-    it('should apply correct badge height for all status badges', () => {
-      const statuses = ['completed', 'skipped', 'cancelled'] as const;
+  describe("Visual Styling", () => {
+    it("should apply correct badge height for all status badges", () => {
+      const statuses = ["completed", "skipped", "cancelled"] as const;
 
       statuses.forEach((status) => {
         const workout = createMockWorkout({ status });
         const { container } = render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-        const badge = screen.getByTestId('badge');
-        expect(badge.className).toContain('text-xs');
-        expect(badge.className).toContain('h-5');
+        const badge = screen.getByTestId("badge");
+        expect(badge.className).toContain("text-xs");
+        expect(badge.className).toContain("h-5");
 
         container.remove();
       });
     });
 
-    it('should render color bar with flex-shrink-0 and self-stretch', () => {
+    it("should render color bar with flex-shrink-0 and self-stretch", () => {
       const { container } = render(<WorkoutCard {...defaultProps} />);
 
-      const colorBar = container.querySelector('.w-1');
-      expect(colorBar?.className).toContain('flex-shrink-0');
-      expect(colorBar?.className).toContain('self-stretch');
+      const colorBar = container.querySelector(".w-1");
+      expect(colorBar?.className).toContain("flex-shrink-0");
+      expect(colorBar?.className).toContain("self-stretch");
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle very long training type names with truncation', () => {
+  describe("Edge Cases", () => {
+    it("should handle very long training type names with truncation", () => {
       const workout = createMockWorkout({
         trainingType: {
-          id: '1',
-          code: 'custom',
-          name: 'Very Long Training Type Name That Should Be Truncated Because It Is Too Long',
-          description: '',
-          default_color: '#000000',
+          id: "1",
+          code: "custom",
+          name: "Very Long Training Type Name That Should Be Truncated Because It Is Too Long",
+          description: "",
+          default_color: "#000000",
         },
       });
 
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
       const nameElement = screen.getByText(/Very Long Training Type/);
-      expect(nameElement.className).toContain('truncate');
+      expect(nameElement.className).toContain("truncate");
     });
 
-    it('should handle missing trainingType name gracefully', () => {
+    it("should handle missing trainingType name gracefully", () => {
       const workout = createMockWorkout({
         trainingType: {
-          id: '1',
-          code: 'test',
-          name: '',
-          description: '',
-          default_color: '#000000',
+          id: "1",
+          code: "test",
+          name: "",
+          description: "",
+          default_color: "#000000",
         },
       });
 
       render(<WorkoutCard {...defaultProps} workout={workout} />);
 
       // Should render without error, empty name should be in DOM
-      expect(screen.getByTestId('card')).toBeInTheDocument();
+      expect(screen.getByTestId("card")).toBeInTheDocument();
     });
 
-    it('should handle rapid consecutive clicks', async () => {
+    it("should handle rapid consecutive clicks", async () => {
       const user = userEvent.setup();
       const onWorkoutClick = vi.fn();
 
       render(<WorkoutCard {...defaultProps} onWorkoutClick={onWorkoutClick} />);
 
-      const card = screen.getByTestId('card');
+      const card = screen.getByTestId("card");
 
       // Click 5 times rapidly
       await user.click(card);
@@ -320,35 +314,35 @@ describe('WorkoutCard', () => {
       await user.click(card);
 
       expect(onWorkoutClick).toHaveBeenCalledTimes(5);
-      expect(onWorkoutClick).toHaveBeenCalledWith('workout-123');
+      expect(onWorkoutClick).toHaveBeenCalledWith("workout-123");
     });
 
-    it('should maintain correct status mapping after re-renders', () => {
-      const workout = createMockWorkout({ status: 'planned' });
+    it("should maintain correct status mapping after re-renders", () => {
+      const workout = createMockWorkout({ status: "planned" });
       const { rerender } = render(<WorkoutCard {...defaultProps} workout={workout} />);
 
-      expect(screen.queryByTestId('badge')).not.toBeInTheDocument();
+      expect(screen.queryByTestId("badge")).not.toBeInTheDocument();
 
-      const completedWorkout = createMockWorkout({ status: 'completed' });
+      const completedWorkout = createMockWorkout({ status: "completed" });
       rerender(<WorkoutCard {...defaultProps} workout={completedWorkout} />);
 
-      expect(screen.getByText('Ukończony')).toBeInTheDocument();
-      expect(screen.getByTestId('badge')).toHaveAttribute('data-variant', 'default');
+      expect(screen.getByText("Ukończony")).toBeInTheDocument();
+      expect(screen.getByTestId("badge")).toHaveAttribute("data-variant", "default");
     });
   });
 
-  describe('Accessibility', () => {
-    it('should have appropriate interactive styles', () => {
+  describe("Accessibility", () => {
+    it("should have appropriate interactive styles", () => {
       render(<WorkoutCard {...defaultProps} />);
 
-      const card = screen.getByTestId('card');
-      expect(card.className).toContain('cursor-pointer');
-      expect(card.className).toContain('transition-all');
+      const card = screen.getByTestId("card");
+      expect(card.className).toContain("cursor-pointer");
+      expect(card.className).toContain("transition-all");
     });
 
-    it('should be clickable for all status types', async () => {
+    it("should be clickable for all status types", async () => {
       const user = userEvent.setup();
-      const statuses = ['planned', 'completed', 'skipped', 'cancelled'] as const;
+      const statuses = ["planned", "completed", "skipped", "cancelled"] as const;
 
       for (const status of statuses) {
         const onWorkoutClick = vi.fn();
@@ -358,7 +352,7 @@ describe('WorkoutCard', () => {
           <WorkoutCard {...defaultProps} workout={workout} onWorkoutClick={onWorkoutClick} />
         );
 
-        await user.click(screen.getByTestId('card'));
+        await user.click(screen.getByTestId("card"));
 
         expect(onWorkoutClick).toHaveBeenCalledWith(`workout-${status}`);
 

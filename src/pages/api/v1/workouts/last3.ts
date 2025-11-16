@@ -31,10 +31,10 @@ export async function GET(context: APIContext) {
     // 1. Auth check - guard clause
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Validate query params przez Zod
@@ -43,11 +43,7 @@ export async function GET(context: APIContext) {
     const { training_type_code } = last3QuerySchema.parse(params);
 
     // 3. Fetch last 3 completed workouts
-    const data = await getLastThreeWorkouts(
-      context.locals.supabase,
-      user.id,
-      training_type_code
-    );
+    const data = await getLastThreeWorkouts(context.locals.supabase, user.id, training_type_code);
 
     // 4. Build response envelope
     // page=1, per_page=3 (always), total=count (ale max 3)
@@ -55,13 +51,13 @@ export async function GET(context: APIContext) {
       data,
       page: 1,
       per_page: 3,
-      total: data.length
+      total: data.length,
     };
 
     // 5. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Obsługa błędów walidacji Zod
@@ -74,8 +70,8 @@ export async function GET(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid query parameters",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -83,9 +79,9 @@ export async function GET(context: APIContext) {
 
     // Błędy serwerowe/DB
     console.error("GET /api/v1/workouts/last3 failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

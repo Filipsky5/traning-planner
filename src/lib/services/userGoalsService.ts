@@ -21,10 +21,7 @@ import type { UserGoalUpsertInput } from "../validation/userGoals";
  * @param userId - ID użytkownika z auth.users
  * @returns UserGoalDto | null
  */
-export async function getUserGoal(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<UserGoalDto | null> {
+export async function getUserGoal(supabase: SupabaseClient, userId: string): Promise<UserGoalDto | null> {
   const { data, error } = await supabase
     .from("user_goals")
     .select("goal_type, target_distance_m, due_date, notes")
@@ -54,13 +51,16 @@ export async function upsertUserGoal(
 ): Promise<UserGoalDto> {
   const { data, error } = await supabase
     .from("user_goals")
-    .upsert({
-      user_id: userId,
-      goal_type: command.goal_type,
-      target_distance_m: command.target_distance_m,
-      due_date: command.due_date,
-      notes: command.notes || null
-    }, { onConflict: 'user_id' })
+    .upsert(
+      {
+        user_id: userId,
+        goal_type: command.goal_type,
+        target_distance_m: command.target_distance_m,
+        due_date: command.due_date,
+        notes: command.notes || null,
+      },
+      { onConflict: "user_id" }
+    )
     .select("goal_type, target_distance_m, due_date, notes")
     .single();
 
@@ -79,25 +79,16 @@ export async function upsertUserGoal(
  * @param userId - ID użytkownika z auth.users
  * @throws Error("GOAL_NOT_FOUND") jeśli cel nie istnieje
  */
-export async function deleteUserGoal(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<void> {
+export async function deleteUserGoal(supabase: SupabaseClient, userId: string): Promise<void> {
   // Check if goal exists
-  const { count } = await supabase
-    .from("user_goals")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId);
+  const { count } = await supabase.from("user_goals").select("*", { count: "exact", head: true }).eq("user_id", userId);
 
   if (count === 0) {
     throw new Error("GOAL_NOT_FOUND");
   }
 
   // Delete goal
-  const { error } = await supabase
-    .from("user_goals")
-    .delete()
-    .eq("user_id", userId);
+  const { error } = await supabase.from("user_goals").delete().eq("user_id", userId);
 
   if (error) throw error;
 }

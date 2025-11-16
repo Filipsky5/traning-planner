@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { CompleteWorkoutDialog } from './CompleteWorkoutDialog';
-import { RateWorkoutDialog } from './RateWorkoutDialog';
-import type { WorkoutViewModel } from '../hooks/useWorkoutDetail';
-import type { WorkoutCompleteCommand, WorkoutRateCommand } from '../../types';
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { CompleteWorkoutDialog } from "./CompleteWorkoutDialog";
+import { RateWorkoutDialog } from "./RateWorkoutDialog";
+import type { WorkoutViewModel } from "../hooks/useWorkoutDetail";
+import type { WorkoutCompleteCommand, WorkoutRateCommand } from "../../types";
 
 interface WorkoutActionsProps {
   workout: WorkoutViewModel;
@@ -19,13 +19,7 @@ interface WorkoutActionsProps {
  * Panel z przyciskami akcji treningu
  * Przyciski są renderowane warunkowo w zależności od statusu treningu
  */
-export function WorkoutActions({
-  workout,
-  onComplete,
-  onRate,
-  onSkip,
-  onCancel,
-}: WorkoutActionsProps) {
+export function WorkoutActions({ workout, onComplete, onRate, onSkip, onCancel }: WorkoutActionsProps) {
   // State dla dialogów
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [isRateDialogOpen, setIsRateDialogOpen] = useState(false);
@@ -36,13 +30,9 @@ export function WorkoutActions({
   const handleComplete = async (data: WorkoutCompleteCommand) => {
     try {
       await onComplete(data);
-      toast.success('Trening został ukończony!');
+      toast.success("Trening został ukończony!");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Nie udało się ukończyć treningu'
-      );
+      toast.error(error instanceof Error ? error.message : "Nie udało się ukończyć treningu");
       throw error; // Re-throw aby dialog wiedział o błędzie
     }
   };
@@ -53,13 +43,9 @@ export function WorkoutActions({
   const handleRate = async (data: WorkoutRateCommand) => {
     try {
       await onRate(data);
-      toast.success('Ocena została zapisana!');
+      toast.success("Ocena została zapisana!");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Nie udało się zapisać oceny'
-      );
+      toast.error(error instanceof Error ? error.message : "Nie udało się zapisać oceny");
       throw error; // Re-throw aby dialog wiedział o błędzie
     }
   };
@@ -68,19 +54,15 @@ export function WorkoutActions({
    * Obsługa pominięcia treningu
    */
   const handleSkip = async () => {
-    if (!confirm('Czy na pewno chcesz pominąć ten trening?')) {
+    if (!confirm("Czy na pewno chcesz pominąć ten trening?")) {
       return;
     }
 
     try {
       await onSkip();
-      toast.success('Trening został pominięty');
+      toast.success("Trening został pominięty");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Nie udało się pominąć treningu'
-      );
+      toast.error(error instanceof Error ? error.message : "Nie udało się pominąć treningu");
     }
   };
 
@@ -88,36 +70,26 @@ export function WorkoutActions({
    * Obsługa anulowania treningu
    */
   const handleCancel = async () => {
-    if (!confirm('Czy na pewno chcesz anulować ten trening?')) {
+    if (!confirm("Czy na pewno chcesz anulować ten trening?")) {
       return;
     }
 
     try {
       await onCancel();
-      toast.success('Trening został anulowany');
+      toast.success("Trening został anulowany");
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Nie udało się anulować treningu'
-      );
+      toast.error(error instanceof Error ? error.message : "Nie udało się anulować treningu");
     }
   };
 
   // Sprawdź czy są dostępne jakiekolwiek akcje
-  const hasAnyAction =
-    workout.canBeCompleted ||
-    workout.canBeRated ||
-    workout.canBeSkipped ||
-    workout.canBeCanceled;
+  const hasAnyAction = workout.canBeCompleted || workout.canBeRated || workout.canBeSkipped || workout.canBeCanceled;
 
   if (!hasAnyAction) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-gray-500">
-            Brak dostępnych akcji dla tego treningu
-          </p>
+          <p className="text-center text-gray-500">Brak dostępnych akcji dla tego treningu</p>
         </CardContent>
       </Card>
     );
@@ -132,11 +104,7 @@ export function WorkoutActions({
         <div className="flex flex-wrap gap-3">
           {/* Przycisk: Ukończ (tylko dla statusu 'planned') */}
           {workout.canBeCompleted && (
-            <Button
-              onClick={() => setIsCompleteDialogOpen(true)}
-              size="lg"
-              className="flex-1 min-w-[150px]"
-            >
+            <Button onClick={() => setIsCompleteDialogOpen(true)} size="lg" className="flex-1 min-w-[150px]">
               ✓ Ukończ trening
             </Button>
           )}
@@ -155,24 +123,14 @@ export function WorkoutActions({
 
           {/* Przycisk: Pomiń (tylko dla statusu 'planned') */}
           {workout.canBeSkipped && (
-            <Button
-              onClick={handleSkip}
-              size="lg"
-              variant="outline"
-              className="flex-1 min-w-[150px]"
-            >
+            <Button onClick={handleSkip} size="lg" variant="outline" className="flex-1 min-w-[150px]">
               ⏩ Pomiń
             </Button>
           )}
 
           {/* Przycisk: Anuluj (tylko dla statusu 'planned') */}
           {workout.canBeCanceled && (
-            <Button
-              onClick={handleCancel}
-              size="lg"
-              variant="destructive"
-              className="flex-1 min-w-[150px]"
-            >
+            <Button onClick={handleCancel} size="lg" variant="destructive" className="flex-1 min-w-[150px]">
               ✕ Anuluj
             </Button>
           )}
@@ -185,21 +143,13 @@ export function WorkoutActions({
           onSubmit={handleComplete}
         />
 
-        <RateWorkoutDialog
-          open={isRateDialogOpen}
-          onOpenChange={setIsRateDialogOpen}
-          onSubmit={handleRate}
-        />
+        <RateWorkoutDialog open={isRateDialogOpen} onOpenChange={setIsRateDialogOpen} onSubmit={handleRate} />
 
         {/* Informacja pomocnicza */}
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600">
-            {workout.canBeCompleted && (
-              <span>💡 Ukończ trening, aby zapisać swoje wyniki i metryki.</span>
-            )}
-            {workout.canBeRated && (
-              <span>💡 Oceń trening, aby pomóc AI w lepszym dostosowaniu przyszłych planów.</span>
-            )}
+            {workout.canBeCompleted && <span>💡 Ukończ trening, aby zapisać swoje wyniki i metryki.</span>}
+            {workout.canBeRated && <span>💡 Oceń trening, aby pomóc AI w lepszym dostosowaniu przyszłych planów.</span>}
             {workout.canBeSkipped && !workout.canBeCompleted && (
               <span>💡 Pomiń trening, jeśli nie możesz go wykonać.</span>
             )}

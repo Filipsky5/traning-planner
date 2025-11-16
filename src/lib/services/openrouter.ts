@@ -557,7 +557,9 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
       }
 
       if (!step.distance_m || !step.duration_s) {
-        throw new Error(`Krok ${index} musi mieć zarówno distance_m jak i duration_s (otrzymano: distance_m=${step.distance_m}, duration_s=${step.duration_s})`);
+        throw new Error(
+          `Krok ${index} musi mieć zarówno distance_m jak i duration_s (otrzymano: distance_m=${step.distance_m}, duration_s=${step.duration_s})`
+        );
       }
 
       return {

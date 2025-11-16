@@ -37,27 +37,22 @@ import type { AiLogDto, AiLogIngestCommand } from "../../types";
  * });
  * ```
  */
-export async function ingestAiLog(
-  supabase: SupabaseClient<Database>,
-  command: AiLogIngestCommand
-): Promise<void> {
+export async function ingestAiLog(supabase: SupabaseClient<Database>, command: AiLogIngestCommand): Promise<void> {
   // Insert do tabeli ai_logs
   // Kolumny id i created_at są generowane automatycznie przez bazę danych
   // Pola opcjonalne konwertujemy na null (PostgreSQL wymaga null, nie undefined)
-  const { error } = await supabase
-    .from("ai_logs")
-    .insert({
-      event: command.event,
-      level: command.level,
-      model: command.model ?? null,
-      provider: command.provider ?? null,
-      latency_ms: command.latency_ms ?? null,
-      input_tokens: command.input_tokens ?? null,
-      output_tokens: command.output_tokens ?? null,
-      cost_usd: command.cost_usd ?? null,
-      payload: command.payload ?? null,
-      user_id: command.user_id ?? null,
-    });
+  const { error } = await supabase.from("ai_logs").insert({
+    event: command.event,
+    level: command.level,
+    model: command.model ?? null,
+    provider: command.provider ?? null,
+    latency_ms: command.latency_ms ?? null,
+    input_tokens: command.input_tokens ?? null,
+    output_tokens: command.output_tokens ?? null,
+    cost_usd: command.cost_usd ?? null,
+    payload: command.payload ?? null,
+    user_id: command.user_id ?? null,
+  });
 
   // Guard clause: obsługa błędu na początku (early return pattern)
   // UWAGA: NIE logujemy tego błędu do ai_logs (circular dependency!)
@@ -106,10 +101,7 @@ export async function listAiLogs(
   // .select("*", { count: "exact" }) - pobiera wszystkie kolumny + total count
   // .order("created_at", { ascending: false }) - sortowanie od najnowszych (DESC)
   // Sortowanie DESC jest optymalne dla indeksu idx_ai_logs_event_created
-  let query = supabase
-    .from("ai_logs")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false });
+  let query = supabase.from("ai_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
 
   // Aplikuj filtry (conditional query building)
   // Podobne do .where() w Firebase queries lub Swift Predicate

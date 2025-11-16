@@ -31,9 +31,7 @@ interface GoalFormProps {
  */
 export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFormProps) {
   // Stan formularza
-  const [goalChoice, setGoalChoice] = useState<"distance" | "health">(
-    initialGoal ? "distance" : "health"
-  );
+  const [goalChoice, setGoalChoice] = useState<"distance" | "health">(initialGoal ? "distance" : "health");
   const [targetDistanceKm, setTargetDistanceKm] = useState<string>(
     initialGoal ? (initialGoal.target_distance_m / 1000).toString() : ""
   );
@@ -166,9 +164,7 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
       <Card>
         <CardHeader>
           <CardTitle>Mój cel treningowy</CardTitle>
-          <CardDescription>
-            Zdefiniuj swój cel lub powiedz nam, że biegasz dla zdrowia
-          </CardDescription>
+          <CardDescription>Zdefiniuj swój cel lub powiedz nam, że biegasz dla zdrowia</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -221,9 +217,7 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
                     placeholder="np. 42.195"
                     className={errors.distance ? "border-red-500" : ""}
                   />
-                  {errors.distance && (
-                    <p className="text-sm text-red-600">{errors.distance}</p>
-                  )}
+                  {errors.distance && <p className="text-sm text-red-600">{errors.distance}</p>}
                 </div>
 
                 {/* Data */}
@@ -260,16 +254,12 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
                       />
                     </PopoverContent>
                   </Popover>
-                  {errors.date && (
-                    <p className="text-sm text-red-600">{errors.date}</p>
-                  )}
+                  {errors.date && <p className="text-sm text-red-600">{errors.date}</p>}
                 </div>
 
                 {/* Notatki */}
                 <div className="space-y-2">
-                  <Label htmlFor="notes">
-                    Notatki (opcjonalnie)
-                  </Label>
+                  <Label htmlFor="notes">Notatki (opcjonalnie)</Label>
                   <Textarea
                     id="notes"
                     value={notes}
@@ -285,9 +275,7 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
                   />
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>{notes.length}/500 znaków</span>
-                    {errors.notes && (
-                      <span className="text-red-600">{errors.notes}</span>
-                    )}
+                    {errors.notes && <span className="text-red-600">{errors.notes}</span>}
                   </div>
                 </div>
               </div>
@@ -331,18 +319,10 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={isSubmitting}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isSubmitting}>
               Anuluj
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isSubmitting}
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

@@ -1,18 +1,11 @@
-import { useState } from 'react';
-import { Button } from '../ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { DurationInput, type DurationState } from '../onboarding/DurationInput';
-import type { WorkoutCompleteCommand } from '../../types';
+import { useState } from "react";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { DurationInput, type DurationState } from "../onboarding/DurationInput";
+import type { WorkoutCompleteCommand } from "../../types";
 
 interface CompleteWorkoutDialogProps {
   open: boolean;
@@ -24,22 +17,18 @@ interface CompleteWorkoutDialogProps {
  * Dialog do wprowadzania metryk ukończonego treningu
  * Formularz z walidacją dla distance_m, duration_s, avg_hr_bpm, completed_at, rating
  */
-export function CompleteWorkoutDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-}: CompleteWorkoutDialogProps) {
+export function CompleteWorkoutDialog({ open, onOpenChange, onSubmit }: CompleteWorkoutDialogProps) {
   // Stan formularza
-  const [distanceKm, setDistanceKm] = useState('');
+  const [distanceKm, setDistanceKm] = useState("");
   const [duration, setDuration] = useState<DurationState>({
-    hours: '',
-    minutes: '',
-    seconds: '',
+    hours: "",
+    minutes: "",
+    seconds: "",
   });
-  const [avgHr, setAvgHr] = useState('');
-  const [completedDate, setCompletedDate] = useState('');
-  const [completedTime, setCompletedTime] = useState('');
-  const [rating, setRating] = useState<'too_easy' | 'just_right' | 'too_hard' | ''>('');
+  const [avgHr, setAvgHr] = useState("");
+  const [completedDate, setCompletedDate] = useState("");
+  const [completedTime, setCompletedTime] = useState("");
+  const [rating, setRating] = useState<"too_easy" | "just_right" | "too_hard" | "">("");
 
   // Stan walidacji
   const [errors, setErrors] = useState<{
@@ -60,7 +49,7 @@ export function CompleteWorkoutDialog({
     // Dystans: min 0.1 km (100m), max 100 km (100000m)
     const distance = parseFloat(distanceKm);
     if (isNaN(distance) || distance < 0.1 || distance > 100) {
-      newErrors.distance = 'Dystans musi być między 0.1 a 100 km';
+      newErrors.distance = "Dystans musi być między 0.1 a 100 km";
     }
 
     // Czas: min 5 min (300s), max 6h (21600s)
@@ -70,26 +59,26 @@ export function CompleteWorkoutDialog({
     const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
     if (totalSeconds < 300) {
-      newErrors.duration = 'Czas musi być dłuższy niż 5 minut';
+      newErrors.duration = "Czas musi być dłuższy niż 5 minut";
     } else if (totalSeconds > 21600) {
-      newErrors.duration = 'Czas nie może przekraczać 6 godzin';
+      newErrors.duration = "Czas nie może przekraczać 6 godzin";
     }
 
     // Tętno: 0-240 bpm
     const hr = parseInt(avgHr);
     if (isNaN(hr) || hr < 0 || hr > 240) {
-      newErrors.avgHr = 'Tętno musi być w zakresie 0-240 bpm';
+      newErrors.avgHr = "Tętno musi być w zakresie 0-240 bpm";
     }
 
     // Data i czas ukończenia
     if (!completedDate || !completedTime) {
-      newErrors.completedAt = 'Data i godzina ukończenia są wymagane';
+      newErrors.completedAt = "Data i godzina ukończenia są wymagane";
     } else {
       const completedAt = new Date(`${completedDate}T${completedTime}`);
       const now = new Date();
 
       if (completedAt > now) {
-        newErrors.completedAt = 'Data ukończenia nie może być w przyszłości';
+        newErrors.completedAt = "Data ukończenia nie może być w przyszłości";
       }
     }
 
@@ -130,18 +119,18 @@ export function CompleteWorkoutDialog({
       await onSubmit(data);
 
       // Reset formularza po sukcesie
-      setDistanceKm('');
-      setDuration({ hours: '', minutes: '', seconds: '' });
-      setAvgHr('');
-      setCompletedDate('');
-      setCompletedTime('');
-      setRating('');
+      setDistanceKm("");
+      setDuration({ hours: "", minutes: "", seconds: "" });
+      setAvgHr("");
+      setCompletedDate("");
+      setCompletedTime("");
+      setRating("");
       setErrors({});
 
       onOpenChange(false);
     } catch (error) {
       // Błąd będzie obsłużony przez parent component
-      console.error('Error in CompleteWorkoutDialog:', error);
+      console.error("Error in CompleteWorkoutDialog:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -153,12 +142,12 @@ export function CompleteWorkoutDialog({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen && !isSubmitting) {
       // Reset tylko przy zamykaniu (nie przy otwieraniu)
-      setDistanceKm('');
-      setDuration({ hours: '', minutes: '', seconds: '' });
-      setAvgHr('');
-      setCompletedDate('');
-      setCompletedTime('');
-      setRating('');
+      setDistanceKm("");
+      setDuration({ hours: "", minutes: "", seconds: "" });
+      setAvgHr("");
+      setCompletedDate("");
+      setCompletedTime("");
+      setRating("");
       setErrors({});
     }
     onOpenChange(newOpen);
@@ -167,7 +156,7 @@ export function CompleteWorkoutDialog({
   // Ustaw domyślną datę i czas na teraz (przy pierwszym otwarciu)
   if (open && !completedDate && !completedTime) {
     const now = new Date();
-    setCompletedDate(now.toISOString().split('T')[0]);
+    setCompletedDate(now.toISOString().split("T")[0]);
     setCompletedTime(now.toTimeString().slice(0, 5));
   }
 
@@ -176,9 +165,7 @@ export function CompleteWorkoutDialog({
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ukończ trening</DialogTitle>
-          <DialogDescription>
-            Wprowadź metryki swojego ukończonego treningu
-          </DialogDescription>
+          <DialogDescription>Wprowadź metryki swojego ukończonego treningu</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -199,11 +186,9 @@ export function CompleteWorkoutDialog({
                 }}
                 placeholder="np. 5.50"
                 disabled={isSubmitting}
-                className={errors.distance ? 'border-red-500' : ''}
+                className={errors.distance ? "border-red-500" : ""}
               />
-              {errors.distance && (
-                <p className="text-sm text-red-600">{errors.distance}</p>
-              )}
+              {errors.distance && <p className="text-sm text-red-600">{errors.distance}</p>}
             </div>
 
             {/* Czas trwania */}
@@ -219,9 +204,7 @@ export function CompleteWorkoutDialog({
                 }}
                 disabled={isSubmitting}
               />
-              {errors.duration && (
-                <p className="text-sm text-red-600">{errors.duration}</p>
-              )}
+              {errors.duration && <p className="text-sm text-red-600">{errors.duration}</p>}
             </div>
 
             {/* Średnie tętno */}
@@ -239,11 +222,9 @@ export function CompleteWorkoutDialog({
                 }}
                 placeholder="np. 145"
                 disabled={isSubmitting}
-                className={errors.avgHr ? 'border-red-500' : ''}
+                className={errors.avgHr ? "border-red-500" : ""}
               />
-              {errors.avgHr && (
-                <p className="text-sm text-red-600">{errors.avgHr}</p>
-              )}
+              {errors.avgHr && <p className="text-sm text-red-600">{errors.avgHr}</p>}
             </div>
 
             {/* Data ukończenia */}
@@ -259,9 +240,9 @@ export function CompleteWorkoutDialog({
                   setCompletedDate(e.target.value);
                   setErrors((prev) => ({ ...prev, completedAt: undefined }));
                 }}
-                max={new Date().toISOString().split('T')[0]}
+                max={new Date().toISOString().split("T")[0]}
                 disabled={isSubmitting}
-                className={errors.completedAt ? 'border-red-500' : ''}
+                className={errors.completedAt ? "border-red-500" : ""}
               />
             </div>
 
@@ -279,11 +260,9 @@ export function CompleteWorkoutDialog({
                   setErrors((prev) => ({ ...prev, completedAt: undefined }));
                 }}
                 disabled={isSubmitting}
-                className={errors.completedAt ? 'border-red-500' : ''}
+                className={errors.completedAt ? "border-red-500" : ""}
               />
-              {errors.completedAt && (
-                <p className="text-sm text-red-600">{errors.completedAt}</p>
-              )}
+              {errors.completedAt && <p className="text-sm text-red-600">{errors.completedAt}</p>}
             </div>
 
             {/* Ocena (opcjonalna) */}
@@ -313,16 +292,11 @@ export function CompleteWorkoutDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Anuluj
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Zapisywanie...' : 'Zapisz'}
+              {isSubmitting ? "Zapisywanie..." : "Zapisz"}
             </Button>
           </DialogFooter>
         </form>

@@ -54,8 +54,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Sprawdź czy to public path
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const isStaticAsset =
-    pathname.startsWith("/_") ||
-    /\.(js|css|png|jpg|jpeg|svg|ico|webp|woff|woff2|ttf|eot)$/.test(pathname);
+    pathname.startsWith("/_") || /\.(js|css|png|jpg|jpeg|svg|ico|webp|woff|woff2|ttf|eot)$/.test(pathname);
 
   // Skip middleware dla static assets
   if (isStaticAsset) {
@@ -95,10 +94,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   // 3. Onboarding check (tylko dla zalogowanych, nie dla /onboarding ani API)
-  const shouldSkipOnboardingCheck =
-    pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/api") ||
-    isStaticAsset;
+  const shouldSkipOnboardingCheck = pathname.startsWith("/onboarding") || pathname.startsWith("/api") || isStaticAsset;
 
   if (user && !shouldSkipOnboardingCheck) {
     // Sprawdź czy user ma >= 3 completed workouts

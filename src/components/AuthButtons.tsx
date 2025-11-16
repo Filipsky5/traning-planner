@@ -1,5 +1,5 @@
-import { LogIn, UserPlus } from 'lucide-react';
-import { Button } from './ui/button';
+import { LogIn, UserPlus } from "lucide-react";
+import { Button } from "./ui/button";
 
 /**
  * Przyciski autentykacji dla niezalogowanych użytkowników.

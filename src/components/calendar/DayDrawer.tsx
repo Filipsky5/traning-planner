@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDayWorkouts } from "../hooks/useDayWorkouts";
@@ -26,15 +20,9 @@ interface DayDrawerProps {
  * Pobiera dane z API za pomocą useDayWorkouts hook
  * Obsługuje akcje: Skip, Cancel
  */
-export function DayDrawer({
-  selectedDate,
-  trainingTypes,
-  onOpenChange,
-  onAddWorkout,
-}: DayDrawerProps) {
+export function DayDrawer({ selectedDate, trainingTypes, onOpenChange, onAddWorkout }: DayDrawerProps) {
   // Hook pobierający treningi dla wybranego dnia
-  const { workouts, isLoading, error, refetch, updateWorkoutStatus, removeWorkout } =
-    useDayWorkouts(selectedDate);
+  const { workouts, isLoading, error, refetch, updateWorkoutStatus, removeWorkout } = useDayWorkouts(selectedDate);
 
   // Stan dla ładowania akcji
   const [actionInProgress, setActionInProgress] = useState(false);
@@ -53,9 +41,7 @@ export function DayDrawer({
     : "";
 
   // Sprawdź czy wybrana data to dzisiaj
-  const isToday = selectedDate
-    ? selectedDate === new Date().toISOString().split("T")[0]
-    : false;
+  const isToday = selectedDate ? selectedDate === new Date().toISOString().split("T")[0] : false;
 
   // Handler zamknięcia drawera
   const handleClose = () => {

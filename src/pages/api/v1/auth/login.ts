@@ -26,10 +26,7 @@ import type { APIRoute } from "astro";
 import { ZodError } from "zod";
 import { createSupabaseServerInstance } from "../../../../db/supabase.client";
 import { loginSchema } from "../../../../lib/validation/auth";
-import {
-  handleSupabaseAuthError,
-  createAuthErrorResponse,
-} from "../../../../lib/errors/authErrors";
+import { handleSupabaseAuthError, createAuthErrorResponse } from "../../../../lib/errors/authErrors";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -73,19 +70,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     // Handle Zod validation errors
     if (error instanceof ZodError) {
-      return createAuthErrorResponse(
-        "validation_error",
-        error.errors[0].message,
-        422
-      );
+      return createAuthErrorResponse("validation_error", error.errors[0].message, 422);
     }
 
     // Handle unexpected errors
     console.error("[POST /api/v1/auth/login] Unexpected error:", error);
-    return createAuthErrorResponse(
-      "internal_error",
-      "Wystąpił nieoczekiwany błąd. Spróbuj ponownie",
-      500
-    );
+    return createAuthErrorResponse("internal_error", "Wystąpił nieoczekiwany błąd. Spróbuj ponownie", 500);
   }
 };

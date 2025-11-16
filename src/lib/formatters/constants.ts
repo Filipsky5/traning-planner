@@ -57,4 +57,3 @@ export const formatWorkoutDate = (dateString?: string | null): string => {
     day: "numeric",
   });
 };
-

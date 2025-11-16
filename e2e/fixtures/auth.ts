@@ -1,4 +1,4 @@
-import { test as base, Page } from '@playwright/test';
+import { test as base, Page } from "@playwright/test";
 
 /**
  * Authentication Fixture
@@ -12,9 +12,9 @@ import { test as base, Page } from '@playwright/test';
  * });
  */
 
-type AuthFixtures = {
+interface AuthFixtures {
   authenticatedPage: Page;
-};
+}
 
 export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page }, use) => {
@@ -36,11 +36,11 @@ export const test = base.extend<AuthFixtures>({
     //   data: { email: 'test@example.com', password: 'password123' }
     // });
 
-    await page.goto('/');
+    await page.goto("/");
 
     // Use the authenticated page
     await use(page);
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";

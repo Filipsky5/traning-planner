@@ -22,12 +22,7 @@ interface ConflictDialogProps {
  * Dialog wyświetlany gdy pozycja treningu jest już zajęta (konflikt 409)
  * Pozwala użytkownikowi wybrać nową pozycję i ponownie zaakceptować sugestię
  */
-export function ConflictDialog({
-  isOpen,
-  onOpenChange,
-  onConfirm,
-  isConfirming,
-}: ConflictDialogProps) {
+export function ConflictDialog({ isOpen, onOpenChange, onConfirm, isConfirming }: ConflictDialogProps) {
   const [selectedPosition, setSelectedPosition] = useState<number>(2);
 
   // Dostępne pozycje (1-5)
@@ -43,8 +38,7 @@ export function ConflictDialog({
         <DialogHeader>
           <DialogTitle>Konflikt pozycji</DialogTitle>
           <DialogDescription>
-            Na wybrany dzień istnieje już trening na pozycji 1. Wybierz inną
-            pozycję, aby dodać ten trening.
+            Na wybrany dzień istnieje już trening na pozycji 1. Wybierz inną pozycję, aby dodać ten trening.
           </DialogDescription>
         </DialogHeader>
 
@@ -52,8 +46,8 @@ export function ConflictDialog({
           {/* Informacja */}
           <div className="rounded-md bg-blue-50 p-3">
             <p className="text-sm text-blue-800">
-              <span className="font-medium">Pozycja</span> określa kolejność
-              treningu w ciągu dnia. Możesz mieć do 5 treningów dziennie.
+              <span className="font-medium">Pozycja</span> określa kolejność treningu w ciągu dnia. Możesz mieć do 5
+              treningów dziennie.
             </p>
           </div>
 
@@ -72,14 +66,9 @@ export function ConflictDialog({
                   className="flex items-center space-x-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50"
                 >
                   <RadioGroupItem value={String(position)} id={`position-${position}`} />
-                  <Label
-                    htmlFor={`position-${position}`}
-                    className="flex-1 cursor-pointer font-normal"
-                  >
+                  <Label htmlFor={`position-${position}`} className="flex-1 cursor-pointer font-normal">
                     <span className="font-medium">Pozycja {position}</span>
-                    {position === 1 && (
-                      <span className="ml-2 text-xs text-red-600">(zajęta)</span>
-                    )}
+                    {position === 1 && <span className="ml-2 text-xs text-red-600">(zajęta)</span>}
                   </Label>
                 </div>
               ))}

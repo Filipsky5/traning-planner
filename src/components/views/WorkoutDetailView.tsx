@@ -1,11 +1,11 @@
-import { useWorkoutDetail } from '../hooks/useWorkoutDetail';
-import { Skeleton } from '../ui/skeleton';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Toaster } from '../ui/sonner';
-import { WorkoutMetrics } from '../workout/WorkoutMetrics';
-import { WorkoutSteps } from '../workout/WorkoutSteps';
-import { WorkoutActions } from '../workout/WorkoutActions';
+import { useWorkoutDetail } from "../hooks/useWorkoutDetail";
+import { Skeleton } from "../ui/skeleton";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Toaster } from "../ui/sonner";
+import { WorkoutMetrics } from "../workout/WorkoutMetrics";
+import { WorkoutSteps } from "../workout/WorkoutSteps";
+import { WorkoutActions } from "../workout/WorkoutActions";
 
 interface WorkoutDetailViewProps {
   workoutId: string;
@@ -16,16 +16,8 @@ interface WorkoutDetailViewProps {
  * Zarządza stanem ładowania i błędów oraz renderuje komponenty podrzędne
  */
 export function WorkoutDetailView({ workoutId }: WorkoutDetailViewProps) {
-  const {
-    workout,
-    isLoading,
-    error,
-    completeWorkout,
-    rateWorkout,
-    skipWorkout,
-    cancelWorkout,
-    refetch,
-  } = useWorkoutDetail(workoutId);
+  const { workout, isLoading, error, completeWorkout, rateWorkout, skipWorkout, cancelWorkout, refetch } =
+    useWorkoutDetail(workoutId);
 
   // Stan ładowania
   if (isLoading) {
@@ -70,21 +62,13 @@ export function WorkoutDetailView({ workoutId }: WorkoutDetailViewProps) {
         <Card className="border-red-200">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold text-red-600">
-                Wystąpił błąd
-              </h2>
+              <h2 className="text-2xl font-bold text-red-600">Wystąpił błąd</h2>
               <p className="text-gray-600">{error.message}</p>
               <div className="flex gap-4 justify-center">
-                <Button
-                  onClick={refetch}
-                  variant="outline"
-                >
+                <Button onClick={refetch} variant="outline">
                   Spróbuj ponownie
                 </Button>
-                <Button
-                  onClick={() => window.history.back()}
-                  variant="ghost"
-                >
+                <Button onClick={() => window.history.back()} variant="ghost">
                   Powrót
                 </Button>
               </div>
@@ -103,9 +87,7 @@ export function WorkoutDetailView({ workoutId }: WorkoutDetailViewProps) {
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <h2 className="text-2xl font-bold">Nie znaleziono treningu</h2>
-              <Button onClick={() => window.history.back()}>
-                Powrót
-              </Button>
+              <Button onClick={() => window.history.back()}>Powrót</Button>
             </div>
           </CardContent>
         </Card>
@@ -122,10 +104,7 @@ export function WorkoutDetailView({ workoutId }: WorkoutDetailViewProps) {
           {/* Nagłówek */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold">Szczegóły treningu</h1>
-            <Button
-              variant="ghost"
-              onClick={() => window.history.back()}
-            >
+            <Button variant="ghost" onClick={() => window.history.back()}>
               ← Powrót
             </Button>
           </div>

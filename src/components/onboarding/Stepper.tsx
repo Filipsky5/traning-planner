@@ -28,8 +28,8 @@ export function Stepper({ currentStep, totalSteps }: StepperProps) {
                   isCompleted
                     ? "bg-green-500 text-white"
                     : isCurrent
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-300 text-gray-600"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-300 text-gray-600"
                 }
               `}
             >

@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page } from "@playwright/test";
 
 /**
  * Test Helper Functions
@@ -9,7 +9,7 @@ import { Page } from '@playwright/test';
  * Wait for network idle (no pending requests for 500ms)
  */
 export async function waitForNetworkIdle(page: Page, timeout = 5000) {
-  await page.waitForLoadState('networkidle', { timeout });
+  await page.waitForLoadState("networkidle", { timeout });
 }
 
 /**
@@ -33,31 +33,26 @@ export async function clickButton(page: Page, text: string) {
 export async function waitForToast(page: Page, message?: string) {
   const toast = message
     ? page.locator(`[data-sonner-toast]:has-text("${message}")`)
-    : page.locator('[data-sonner-toast]');
-  await toast.waitFor({ state: 'visible', timeout: 5000 });
+    : page.locator("[data-sonner-toast]");
+  await toast.waitFor({ state: "visible", timeout: 5000 });
 }
 
 /**
  * Take screenshot with timestamp
  */
 export async function takeTimestampedScreenshot(page: Page, name: string) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   await page.screenshot({ path: `test-results/${name}-${timestamp}.png`, fullPage: true });
 }
 
 /**
  * Mock API response
  */
-export async function mockApiResponse(
-  page: Page,
-  endpoint: string,
-  response: any,
-  status = 200
-) {
+export async function mockApiResponse(page: Page, endpoint: string, response: any, status = 200) {
   await page.route(endpoint, (route) => {
     route.fulfill({
       status,
-      contentType: 'application/json',
+      contentType: "application/json",
       body: JSON.stringify(response),
     });
   });
@@ -67,7 +62,7 @@ export async function mockApiResponse(
  * Format date to YYYY-MM-DD (for date inputs)
  */
 export function formatDateForInput(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 /**

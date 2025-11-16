@@ -1,32 +1,29 @@
-import { test as teardown, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
+import { test as teardown, expect } from "@playwright/test";
+import { LoginPage } from "../pages/LoginPage";
 
 /**
  * Teardown for onboarding tests
  * Cleans up all workouts created by the onboarding test user
  * Runs after all onboarding-flow tests complete
  */
-teardown('cleanup onboarding test user workouts', async ({ page }) => {
-  console.log('Starting teardown: cleaning up onboarding test user workouts...');
+teardown("cleanup onboarding test user workouts", async ({ page }) => {
+  console.log("Starting teardown: cleaning up onboarding test user workouts...");
 
   // Step 1: Login as test user
   const loginPage = new LoginPage(page);
   await loginPage.goto();
-  await loginPage.login(
-    process.env.E2E_USERNAME || 'test@example.com',
-    process.env.E2E_PASSWORD || 'password123'
-  );
+  await loginPage.login(process.env.E2E_USERNAME || "test@example.com", process.env.E2E_PASSWORD || "password123");
   await loginPage.waitForNavigation();
 
-  console.log('✓ Logged in as onboarding test user');
+  console.log("✓ Logged in as onboarding test user");
 
   // Step 2: Fetch all workouts for this user (use page.request to inherit cookies)
-  const workoutsResponse = await page.request.get('/api/v1/workouts', {
+  const workoutsResponse = await page.request.get("/api/v1/workouts", {
     failOnStatusCode: false,
   });
 
   if (workoutsResponse.status() === 401) {
-    console.warn('⚠ User not authenticated - skipping cleanup');
+    console.warn("⚠ User not authenticated - skipping cleanup");
     return;
   }
 
@@ -46,9 +43,9 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
       // Use page.evaluate to call DELETE from page context (same-origin)
       const result = await page.evaluate(async (workoutId) => {
         const response = await fetch(`/api/v1/workouts/${workoutId}`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
         return {
@@ -63,7 +60,7 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
         console.log(`  ✓ Deleted workout ${workout.id}`);
       } else {
         failedCount++;
-        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${result.status} - ${result.body || 'no body'}`);
+        console.warn(`  ✗ Failed to delete workout ${workout.id}: ${result.status} - ${result.body || "no body"}`);
       }
     } catch (error) {
       failedCount++;
@@ -76,6 +73,6 @@ teardown('cleanup onboarding test user workouts', async ({ page }) => {
   // Don't fail the teardown if some deletions failed
   // (tests already passed, cleanup is best-effort)
   if (deletedCount > 0) {
-    console.log('✓ Test user workouts cleaned up successfully');
+    console.log("✓ Test user workouts cleaned up successfully");
   }
 });

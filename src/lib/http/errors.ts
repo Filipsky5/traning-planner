@@ -40,4 +40,3 @@ export function createApiError(
 ): ApiError {
   return new ApiError(status, code, message, options);
 }
-

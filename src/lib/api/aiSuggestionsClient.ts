@@ -16,9 +16,7 @@ import type {
  * Generuje nową sugestię AI
  * POST /api/v1/ai/suggestions
  */
-export async function generateSuggestion(
-  command: AiSuggestionCreateCommand
-): Promise<AiSuggestionDto> {
+export async function generateSuggestion(command: AiSuggestionCreateCommand): Promise<AiSuggestionDto> {
   const response = await fetch("/api/v1/ai/suggestions", {
     method: "POST",
     headers: {

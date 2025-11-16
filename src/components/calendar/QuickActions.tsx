@@ -12,12 +12,7 @@ interface QuickActionsProps {
  * Przyciski szybkich akcji dla treningu
  * Renderowane tylko dla treningów ze statusem 'planned'
  */
-export function QuickActions({
-  workoutId,
-  status,
-  onSkip,
-  onCancel,
-}: QuickActionsProps) {
+export function QuickActions({ workoutId, status, onSkip, onCancel }: QuickActionsProps) {
   const [isSkipping, setIsSkipping] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 

@@ -44,8 +44,8 @@ function getWeekRange(date: Date): { start: string; end: string } {
  */
 function formatDate(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -53,7 +53,7 @@ function formatDate(date: Date): string {
  * Helper: parsuje datę z YYYY-MM-DD do Date
  */
 function parseDate(dateString: string): Date {
-  return new Date(dateString + 'T00:00:00');
+  return new Date(dateString + "T00:00:00");
 }
 
 /**
@@ -74,7 +74,7 @@ function isSameDay(date1: Date, date2: Date): boolean {
  */
 function generateCalendarDays(
   range: { start: string; end: string },
-  viewMode: 'month' | 'week',
+  viewMode: "month" | "week",
   calendarData: CalendarDto | null,
   trainingTypes: TrainingTypeDto[]
 ): DayCellViewModel[] {
@@ -86,7 +86,7 @@ function generateCalendarDays(
   const end = parseDate(range.end);
 
   // Dla widoku miesiąca: dodaj dni z poprzedniego miesiąca aby zacząć od poniedziałku
-  if (viewMode === 'month') {
+  if (viewMode === "month") {
     const firstDayOfWeek = start.getDay();
     const daysToAdd = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // poniedziałek = 0
 
@@ -105,7 +105,7 @@ function generateCalendarDays(
   }
 
   // Dla widoku miesiąca: dodaj dni z następnego miesiąca aby wypełnić ostatni tydzień
-  if (viewMode === 'month') {
+  if (viewMode === "month") {
     const lastDayOfWeek = end.getDay();
     const daysToAdd = lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek;
 
@@ -133,22 +133,23 @@ function createDayCell(
   const isToday = isSameDay(date, today);
 
   // Znajdź dane dnia w calendarData
-  const dayData = calendarData?.days.find(d => d.date === dateString);
+  const dayData = calendarData?.days.find((d) => d.date === dateString);
 
   // Mapuj workouts na WorkoutViewModel
-  const workouts: WorkoutViewModel[] = dayData?.workouts.map(workout => {
-    const trainingType = trainingTypes.find(t => t.code === workout.training_type_code);
-    return {
-      ...workout,
-      trainingType: trainingType || {
-        code: workout.training_type_code,
-        name: workout.training_type_code,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      },
-      color: getColorForTrainingType(workout.training_type_code),
-    };
-  }) || [];
+  const workouts: WorkoutViewModel[] =
+    dayData?.workouts.map((workout) => {
+      const trainingType = trainingTypes.find((t) => t.code === workout.training_type_code);
+      return {
+        ...workout,
+        trainingType: trainingType || {
+          code: workout.training_type_code,
+          name: workout.training_type_code,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        },
+        color: getColorForTrainingType(workout.training_type_code),
+      };
+    }) || [];
 
   return {
     date,
@@ -165,13 +166,13 @@ function createDayCell(
  */
 function getColorForTrainingType(code: string): string {
   const colorMap: Record<string, string> = {
-    'easy_run': 'bg-blue-500',
-    'tempo_run': 'bg-orange-500',
-    'interval': 'bg-red-500',
-    'long_run': 'bg-purple-500',
-    'recovery': 'bg-green-500',
+    easy_run: "bg-blue-500",
+    tempo_run: "bg-orange-500",
+    interval: "bg-red-500",
+    long_run: "bg-purple-500",
+    recovery: "bg-green-500",
   };
-  return colorMap[code] || 'bg-gray-500';
+  return colorMap[code] || "bg-gray-500";
 }
 
 /**
@@ -179,7 +180,7 @@ function getColorForTrainingType(code: string): string {
  */
 export function useCalendar(initialDate: Date = new Date()) {
   const [viewDate, setViewDate] = useState<Date>(initialDate);
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+  const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [calendarData, setCalendarData] = useState<CalendarDto | null>(null);
@@ -193,9 +194,7 @@ export function useCalendar(initialDate: Date = new Date()) {
 
   // Oblicz zakres dat na podstawie viewDate i viewMode
   const range = useMemo(() => {
-    return viewMode === 'month'
-      ? getMonthRange(viewDate)
-      : getWeekRange(viewDate);
+    return viewMode === "month" ? getMonthRange(viewDate) : getWeekRange(viewDate);
   }, [viewDate, viewMode]);
 
   // Generuj listę dni kalendarza
@@ -207,14 +206,14 @@ export function useCalendar(initialDate: Date = new Date()) {
   useEffect(() => {
     async function fetchTrainingTypes() {
       try {
-        const response = await fetch('/api/v1/training-types');
+        const response = await fetch("/api/v1/training-types");
         if (!response.ok) {
           throw new Error(`Failed to fetch training types: ${response.status}`);
         }
         const data: ApiListResponse<TrainingTypeDto> = await response.json();
         setTrainingTypes(data.data);
       } catch (err) {
-        console.error('Error fetching training types:', err);
+        console.error("Error fetching training types:", err);
         setError(err as Error);
       }
     }
@@ -239,7 +238,7 @@ export function useCalendar(initialDate: Date = new Date()) {
         const data: ApiResponse<CalendarDto> = await response.json();
         setCalendarData(data.data);
       } catch (err) {
-        console.error('Error fetching calendar:', err);
+        console.error("Error fetching calendar:", err);
         setError(err as Error);
       } finally {
         setIsLoading(false);
@@ -253,19 +252,22 @@ export function useCalendar(initialDate: Date = new Date()) {
   }, [range, trainingTypes]);
 
   // Funkcje publiczne
-  const setPeriod = useCallback((direction: 'prev' | 'next') => {
-    setViewDate(current => {
-      const newDate = new Date(current);
-      if (viewMode === 'month') {
-        newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-      } else {
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-      }
-      return newDate;
-    });
-  }, [viewMode]);
+  const setPeriod = useCallback(
+    (direction: "prev" | "next") => {
+      setViewDate((current) => {
+        const newDate = new Date(current);
+        if (viewMode === "month") {
+          newDate.setMonth(newDate.getMonth() + (direction === "next" ? 1 : -1));
+        } else {
+          newDate.setDate(newDate.getDate() + (direction === "next" ? 7 : -7));
+        }
+        return newDate;
+      });
+    },
+    [viewMode]
+  );
 
-  const changeViewMode = useCallback((mode: 'month' | 'week') => {
+  const changeViewMode = useCallback((mode: "month" | "week") => {
     setViewMode(mode);
   }, []);
 
@@ -295,7 +297,7 @@ export function useCalendar(initialDate: Date = new Date()) {
 
   const refetch = useCallback(() => {
     // Wymusi ponowne pobranie danych przez zmianę zakresu (hack)
-    setViewDate(current => new Date(current));
+    setViewDate((current) => new Date(current));
   }, []);
 
   return {

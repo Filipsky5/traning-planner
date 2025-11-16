@@ -67,9 +67,7 @@ export async function logAiInteraction(command: AiLogIngestCommand): Promise<voi
 
     // Fire-and-forget: nie blokuj głównego flow jeśli logging failed
     if (!response.ok) {
-      console.error(
-        `[aiLogsClient] Failed to log AI interaction: ${response.status} ${response.statusText}`
-      );
+      console.error(`[aiLogsClient] Failed to log AI interaction: ${response.status} ${response.statusText}`);
     }
   } catch (error) {
     // Fire-and-forget: nie rzucaj błędu jeśli logging failed
@@ -147,11 +145,7 @@ export async function logAiSuccess(
  * }
  * ```
  */
-export async function logAiError(
-  event: string,
-  error: unknown,
-  payload?: Record<string, unknown>
-): Promise<void> {
+export async function logAiError(event: string, error: unknown, payload?: Record<string, unknown>): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : String(error);
   const errorName = error instanceof Error ? error.name : "UnknownError";
 

@@ -3,9 +3,9 @@
  * Runs before each test file to configure global test environment
  */
 
-import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 
 // Cleanup after each test (unmount React components)
 afterEach(() => {
@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 // Mock window.matchMedia (required for many UI components)
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
@@ -42,4 +42,4 @@ global.IntersectionObserver = class IntersectionObserver {
 global.fetch = vi.fn();
 
 // Set timezone to UTC for consistent date testing
-process.env.TZ = 'UTC';
+process.env.TZ = "UTC";

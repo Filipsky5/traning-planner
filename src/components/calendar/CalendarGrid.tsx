@@ -27,57 +27,60 @@ export function CalendarGrid({
   onWorkoutClick,
 }: CalendarGridProps) {
   // Nazwy dni tygodnia
-  const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'];
+  const weekDays = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nie"];
   const gridRef = useRef<HTMLDivElement>(null);
 
   /**
    * Obsługuje nawigację klawiaturą po siatce kalendarza
    */
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLElement;
-    if (!target || !target.hasAttribute('data-day-index')) return;
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement;
+      if (!target || !target.hasAttribute("data-day-index")) return;
 
-    const currentIndex = parseInt(target.getAttribute('data-day-index') || '0', 10);
-    let newIndex = currentIndex;
+      const currentIndex = parseInt(target.getAttribute("data-day-index") || "0", 10);
+      let newIndex = currentIndex;
 
-    switch (event.key) {
-      case 'ArrowLeft':
-        newIndex = Math.max(0, currentIndex - 1);
-        event.preventDefault();
-        break;
-      case 'ArrowRight':
-        newIndex = Math.min(days.length - 1, currentIndex + 1);
-        event.preventDefault();
-        break;
-      case 'ArrowUp':
-        newIndex = Math.max(0, currentIndex - 7);
-        event.preventDefault();
-        break;
-      case 'ArrowDown':
-        newIndex = Math.min(days.length - 1, currentIndex + 7);
-        event.preventDefault();
-        break;
-      case 'Enter':
-      case ' ':
-        // Otwórz DayDrawer dla wybranego dnia
-        if (days[currentIndex]) {
-          onOpenDay(days[currentIndex]);
+      switch (event.key) {
+        case "ArrowLeft":
+          newIndex = Math.max(0, currentIndex - 1);
           event.preventDefault();
-        }
-        break;
-      default:
-        return;
-    }
-
-    // Przenieś focus na nową komórkę
-    if (newIndex !== currentIndex && gridRef.current) {
-      const cells = gridRef.current.querySelectorAll('[data-day-index]');
-      const newCell = cells[newIndex] as HTMLElement;
-      if (newCell) {
-        newCell.focus();
+          break;
+        case "ArrowRight":
+          newIndex = Math.min(days.length - 1, currentIndex + 1);
+          event.preventDefault();
+          break;
+        case "ArrowUp":
+          newIndex = Math.max(0, currentIndex - 7);
+          event.preventDefault();
+          break;
+        case "ArrowDown":
+          newIndex = Math.min(days.length - 1, currentIndex + 7);
+          event.preventDefault();
+          break;
+        case "Enter":
+        case " ":
+          // Otwórz DayDrawer dla wybranego dnia
+          if (days[currentIndex]) {
+            onOpenDay(days[currentIndex]);
+            event.preventDefault();
+          }
+          break;
+        default:
+          return;
       }
-    }
-  }, [days, onOpenDay]);
+
+      // Przenieś focus na nową komórkę
+      if (newIndex !== currentIndex && gridRef.current) {
+        const cells = gridRef.current.querySelectorAll("[data-day-index]");
+        const newCell = cells[newIndex] as HTMLElement;
+        if (newCell) {
+          newCell.focus();
+        }
+      }
+    },
+    [days, onOpenDay]
+  );
 
   if (isLoading) {
     return (
@@ -85,10 +88,7 @@ export function CalendarGrid({
         {/* Nagłówki dni tygodnia */}
         <div className="grid grid-cols-7 gap-px bg-gray-200 border-b">
           {weekDays.map((day) => (
-            <div
-              key={day}
-              className="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700"
-            >
+            <div key={day} className="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">
               {day}
             </div>
           ))}
@@ -112,10 +112,7 @@ export function CalendarGrid({
       {/* Nagłówki dni tygodnia */}
       <div className="grid grid-cols-7 gap-px bg-gray-200 border-b">
         {weekDays.map((day) => (
-          <div
-            key={day}
-            className="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700"
-          >
+          <div key={day} className="bg-gray-50 p-2 text-center text-sm font-semibold text-gray-700">
             {day}
           </div>
         ))}

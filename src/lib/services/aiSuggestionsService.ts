@@ -69,10 +69,7 @@ export async function listSuggestions(
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  let query = supabase
-    .from("ai_suggestions")
-    .select(SUGGESTION_SELECT, { count: "exact" })
-    .eq("user_id", userId);
+  let query = supabase.from("ai_suggestions").select(SUGGESTION_SELECT, { count: "exact" }).eq("user_id", userId);
 
   if (filters.status) {
     query = query.eq("status", filters.status);
@@ -455,7 +452,7 @@ function aggregateSteps(steps: WorkoutStepDto[]): { distance: number; duration: 
 }
 
 function mergeContexts(
-  ...contexts: Array<Record<string, unknown> | null | undefined>
+  ...contexts: (Record<string, unknown> | null | undefined)[]
 ): Record<string, unknown> | undefined {
   const merged: Record<string, unknown> = {};
   let hasValue = false;
@@ -475,11 +472,7 @@ function mergeContexts(
 }
 
 async function assertTrainingTypeExists(supabase: SupabaseClient, code: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("training_types")
-    .select("code")
-    .eq("code", code)
-    .maybeSingle();
+  const { data, error } = await supabase.from("training_types").select("code").eq("code", code).maybeSingle();
 
   if (error) {
     throw createApiError(500, "internal_error", "Failed to verify training type", { cause: error });
@@ -522,11 +515,7 @@ async function assertDailyLimitNotExceeded(
   }
 }
 
-export async function fetchSuggestionRow(
-  supabase: SupabaseClient,
-  userId: string,
-  id: string
-): Promise<SuggestionRow> {
+export async function fetchSuggestionRow(supabase: SupabaseClient, userId: string, id: string): Promise<SuggestionRow> {
   const { data, error } = await supabase
     .from("ai_suggestions")
     .select(SUGGESTION_SELECT)
@@ -708,4 +697,3 @@ function buildSuggestionMeta(params: {
     ...(context ? { context } : {}),
   };
 }
-

@@ -33,19 +33,19 @@ export async function GET(context: APIContext) {
     // 1. Auth check - guard clause
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Extract id from URL params
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 3. Get workout (ownership verification inside service)
@@ -57,23 +57,23 @@ export async function GET(context: APIContext) {
     // 5. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Guard: workout nie istnieje lub nie należy do użytkownika
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Błędy serwerowe
     console.error("GET /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -93,19 +93,19 @@ export async function PATCH(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Extract id from URL params
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 3. Parse and validate body (strict mode - blokuje immutable fields)
@@ -121,7 +121,7 @@ export async function PATCH(context: APIContext) {
     // 6. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Obsługa błędów walidacji Zod (w tym immutable fields)
@@ -134,8 +134,8 @@ export async function PATCH(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid workout data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -143,18 +143,18 @@ export async function PATCH(context: APIContext) {
 
     // Guard: workout nie istnieje lub nie należy do użytkownika
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Błędy serwerowe
     console.error("PATCH /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -172,19 +172,19 @@ export async function DELETE(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Extract id from URL params
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 3. Delete workout (ownership verification inside service)
@@ -195,10 +195,10 @@ export async function DELETE(context: APIContext) {
   } catch (err: any) {
     // Guard: workout nie istnieje lub nie należy do użytkownika
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Guard: FK constraint violation (workout created from accepted AI suggestion)
@@ -208,8 +208,8 @@ export async function DELETE(context: APIContext) {
         JSON.stringify({
           error: {
             code: "fk_constraint_violation",
-            message: "Cannot delete workout created from accepted AI suggestion. Revert acceptance first."
-          }
+            message: "Cannot delete workout created from accepted AI suggestion. Revert acceptance first.",
+          },
         }),
         { status: 409, headers: { "content-type": "application/json" } }
       );
@@ -217,9 +217,9 @@ export async function DELETE(context: APIContext) {
 
     // Błędy serwerowe
     console.error("DELETE /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

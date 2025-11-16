@@ -9,11 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RateWorkoutDialog } from "../workout/RateWorkoutDialog";
 import { useWorkoutDetail } from "../hooks/useWorkoutDetail";
-import type {
-  TrainingTypeDto,
-  WorkoutCompleteCommand,
-  WorkoutDetailDto,
-} from "../../types";
+import type { TrainingTypeDto, WorkoutCompleteCommand, WorkoutDetailDto } from "../../types";
 import {
   formatDistance,
   formatDuration,
@@ -67,40 +63,40 @@ export function WorkoutDetailDrawer({
           {formattedDate && <SheetDescription className="capitalize">{formattedDate}</SheetDescription>}
         </SheetHeader>
 
-          <div className="mt-6 space-y-6 px-4">
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
-              </div>
-            )}
+        <div className="mt-6 space-y-6 px-4">
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+            </div>
+          )}
 
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-800">{error.message}</p>
-                <Button onClick={refetch} variant="outline" size="sm" className="mt-2">
-                  Spróbuj ponownie
-                </Button>
-              </div>
-            )}
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <p className="text-sm text-red-800">{error.message}</p>
+              <Button onClick={refetch} variant="outline" size="sm" className="mt-2">
+                Spróbuj ponownie
+              </Button>
+            </div>
+          )}
 
-            {detail && !isLoading && !error && (
-              <div className="space-y-6">
-                <WorkoutSummary
-                  workout={detail}
-                  trainingTypeName={trainingTypeName}
-                  status={status ?? workoutStatusConfig.planned}
-                />
+          {detail && !isLoading && !error && (
+            <div className="space-y-6">
+              <WorkoutSummary
+                workout={detail}
+                trainingTypeName={trainingTypeName}
+                status={status ?? workoutStatusConfig.planned}
+              />
 
-                <WorkoutSteps steps={detail.steps} />
+              <WorkoutSteps steps={detail.steps} />
 
-                {detail.status === "planned" && (
-                  <CompletionForm workout={detail} onSubmit={completeWorkout} onCompleted={handleCompleted} />
-                )}
-              </div>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+              {detail.status === "planned" && (
+                <CompletionForm workout={detail} onSubmit={completeWorkout} onCompleted={handleCompleted} />
+              )}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -110,11 +106,7 @@ interface WorkoutSummaryProps {
   status: WorkoutStatusDisplay;
 }
 
-const WorkoutSummary = memo(function WorkoutSummary({
-  workout,
-  trainingTypeName,
-  status,
-}: WorkoutSummaryProps) {
+const WorkoutSummary = memo(function WorkoutSummary({ workout, trainingTypeName, status }: WorkoutSummaryProps) {
   const isCompleted = workout.status === "completed";
 
   return (
@@ -186,9 +178,7 @@ const WorkoutSummary = memo(function WorkoutSummary({
           {workout.completed_at && (
             <div className="text-sm">
               <span className="text-gray-500">Ukończono:</span>
-              <span className="ml-2 font-medium">
-                {new Date(workout.completed_at).toLocaleString("pl-PL")}
-              </span>
+              <span className="ml-2 font-medium">{new Date(workout.completed_at).toLocaleString("pl-PL")}</span>
             </div>
           )}
         </div>
@@ -212,9 +202,7 @@ const WorkoutSteps = memo(function WorkoutSteps({ steps }: WorkoutStepsProps) {
       <div className="space-y-2">
         {steps.map((step, index) => (
           <div key={index} className="rounded-md border bg-gray-50 p-3 text-sm">
-            <div className="font-medium text-gray-900">
-              {workoutStepPartLabels[step.part] || step.part}
-            </div>
+            <div className="font-medium text-gray-900">{workoutStepPartLabels[step.part] || step.part}</div>
             <div className="mt-1 space-y-1 text-gray-600">
               {step.distance_m && <div>Dystans: {formatDistance(step.distance_m)}</div>}
               {step.duration_s && <div>Czas: {formatDuration(step.duration_s)}</div>}
@@ -318,13 +306,11 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
       reset(getCompletionDefaults(workout));
       onCompleted?.();
     } catch (err) {
-      setServerError(
-        err instanceof Error ? err.message : "Nie udało się oznaczyć treningu jako ukończonego."
-      );
+      setServerError(err instanceof Error ? err.message : "Nie udało się oznaczyć treningu jako ukończonego.");
     }
   };
 
-  const handleRatingSubmit = async ({ rating }: { rating: 'too_easy' | 'just_right' | 'too_hard' }) => {
+  const handleRatingSubmit = async ({ rating }: { rating: "too_easy" | "just_right" | "too_hard" }) => {
     setValue("rating", rating);
   };
 
@@ -375,13 +361,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
 
         <div className="space-y-2">
           <Label htmlFor="hr">Średnie tętno (bpm)</Label>
-          <Input
-            id="hr"
-            type="number"
-            placeholder="np. 145"
-            disabled={isSubmitting}
-            {...register("avg_hr_bpm")}
-          />
+          <Input id="hr" type="number" placeholder="np. 145" disabled={isSubmitting} {...register("avg_hr_bpm")} />
           {errors.avg_hr_bpm && <p className="text-sm text-destructive">{errors.avg_hr_bpm.message}</p>}
         </div>
 

@@ -28,19 +28,19 @@ export async function POST(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Extract id from URL params
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 3. Parse and validate body
@@ -56,7 +56,7 @@ export async function POST(context: APIContext) {
     // 6. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Obsługa błędów walidacji Zod
@@ -69,8 +69,8 @@ export async function POST(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid completion data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -78,10 +78,10 @@ export async function POST(context: APIContext) {
 
     // Guard: workout nie istnieje lub nie należy do użytkownika
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Guard: workout już ukończony (invalid state transition)
@@ -90,8 +90,8 @@ export async function POST(context: APIContext) {
         JSON.stringify({
           error: {
             code: "invalid_status_transition",
-            message: "Workout is already completed"
-          }
+            message: "Workout is already completed",
+          },
         }),
         { status: 409, headers: { "content-type": "application/json" } }
       );
@@ -99,9 +99,9 @@ export async function POST(context: APIContext) {
 
     // Błędy serwerowe
     console.error("POST /api/v1/workouts/[id]/complete failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

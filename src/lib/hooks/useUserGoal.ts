@@ -71,9 +71,7 @@ export function useUserGoal() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error?.message || `Failed to save goal: ${response.status}`
-        );
+        throw new Error(errorData.error?.message || `Failed to save goal: ${response.status}`);
       }
 
       const result: ApiResponse<UserGoalDto> = await response.json();
@@ -104,9 +102,7 @@ export function useUserGoal() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error?.message || `Failed to delete goal: ${response.status}`
-        );
+        throw new Error(errorData.error?.message || `Failed to delete goal: ${response.status}`);
       }
 
       // 204 No Content - cel został usunięty

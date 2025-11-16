@@ -1,16 +1,9 @@
-import { useState, useCallback, useId } from 'react';
-import { Lock, Loader2, CheckCircle2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import { useState, useCallback, useId } from "react";
+import { Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 interface ResetPasswordFormProps {
   token: string;
@@ -24,8 +17,8 @@ interface ResetPasswordFormProps {
  * TODO: Po implementacji backendu, podłączyć do POST /api/v1/auth/reset-password
  */
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -37,19 +30,19 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   // Walidacja nowego hasła
   const validatePassword = useCallback((value: string): string | null => {
     if (!value) {
-      return 'Hasło jest wymagane';
+      return "Hasło jest wymagane";
     }
 
     if (value.length < 8) {
-      return 'Hasło musi mieć minimum 8 znaków';
+      return "Hasło musi mieć minimum 8 znaków";
     }
 
     if (!/[A-Za-z]/.test(value)) {
-      return 'Hasło musi zawierać litery';
+      return "Hasło musi zawierać litery";
     }
 
     if (!/[0-9]/.test(value)) {
-      return 'Hasło musi zawierać cyfry';
+      return "Hasło musi zawierać cyfry";
     }
 
     return null;
@@ -59,11 +52,11 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const validateConfirmPassword = useCallback(
     (value: string): string | null => {
       if (!value) {
-        return 'Potwierdzenie hasła jest wymagane';
+        return "Potwierdzenie hasła jest wymagane";
       }
 
       if (value !== newPassword) {
-        return 'Hasła nie są identyczne';
+        return "Hasła nie są identyczne";
       }
 
       return null;
@@ -76,7 +69,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setNewPassword(e.target.value);
       if (fieldErrors.newPassword) {
-        setFieldErrors((prev) => ({ ...prev, newPassword: '' }));
+        setFieldErrors((prev) => ({ ...prev, newPassword: "" }));
       }
     },
     [fieldErrors.newPassword]
@@ -86,7 +79,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setConfirmPassword(e.target.value);
       if (fieldErrors.confirmPassword) {
-        setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
+        setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
       }
     },
     [fieldErrors.confirmPassword]
@@ -118,10 +111,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       try {
         // Wywołaj POST /api/v1/auth/reset-password
         // UWAGA: Token nie jest przekazywany w body - pochodzi z cookies (ustawiony przez Supabase)
-        const response = await fetch('/api/v1/auth/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // WAŻNE: Wyślij cookies z tokenem
+        const response = await fetch("/api/v1/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // WAŻNE: Wyślij cookies z tokenem
           body: JSON.stringify({ newPassword }),
         });
 
@@ -130,17 +123,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
         if (!response.ok) {
           // Server zwrócił error
-          throw new Error(data.error?.message || 'Błąd resetowania hasła');
+          throw new Error(data.error?.message || "Błąd resetowania hasła");
         }
 
         // Success - user jest teraz zalogowany
         setSuccess(true);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.'
-        );
+        setError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
       } finally {
         setLoading(false);
       }
@@ -157,14 +146,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             <CheckCircle2 className="h-6 w-6 text-green-600" />
           </div>
           <CardTitle>Hasło zostało zmienione</CardTitle>
-          <CardDescription>
-            Twoje hasło zostało pomyślnie zaktualizowane
-          </CardDescription>
+          <CardDescription>Twoje hasło zostało pomyślnie zaktualizowane</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Możesz teraz zalogować się używając nowego hasła.
-          </p>
+          <p className="text-sm text-muted-foreground">Możesz teraz zalogować się używając nowego hasła.</p>
         </CardContent>
         <CardFooter>
           <Button asChild className="w-full">
@@ -180,9 +165,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Ustaw nowe hasło</CardTitle>
-        <CardDescription>
-          Wprowadź nowe hasło dla swojego konta
-        </CardDescription>
+        <CardDescription>Wprowadź nowe hasło dla swojego konta</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
@@ -210,12 +193,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               autoComplete="new-password"
               autoFocus
             />
-            <p className="text-xs text-muted-foreground">
-              Minimum 8 znaków, litery i cyfry
-            </p>
-            {fieldErrors.newPassword && (
-              <p className="text-sm text-destructive">{fieldErrors.newPassword}</p>
-            )}
+            <p className="text-xs text-muted-foreground">Minimum 8 znaków, litery i cyfry</p>
+            {fieldErrors.newPassword && <p className="text-sm text-destructive">{fieldErrors.newPassword}</p>}
           </div>
 
           {/* Pole Potwierdzenie hasła */}
@@ -233,11 +212,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               disabled={loading}
               autoComplete="new-password"
             />
-            {fieldErrors.confirmPassword && (
-              <p className="text-sm text-destructive">
-                {fieldErrors.confirmPassword}
-              </p>
-            )}
+            {fieldErrors.confirmPassword && <p className="text-sm text-destructive">{fieldErrors.confirmPassword}</p>}
           </div>
         </CardContent>
 

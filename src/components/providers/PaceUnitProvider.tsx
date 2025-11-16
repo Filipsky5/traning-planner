@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { PaceUnit, PaceUnitContextType } from '../../lib/types/ui';
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import type { PaceUnit, PaceUnitContextType } from "../../lib/types/ui";
 
 // Klucz localStorage dla jednostki tempa
-const PACE_UNIT_STORAGE_KEY = 'paceUnit';
+const PACE_UNIT_STORAGE_KEY = "paceUnit";
 
 // Domyślna jednostka tempa
-const DEFAULT_PACE_UNIT: PaceUnit = 'min/km';
+const DEFAULT_PACE_UNIT: PaceUnit = "min/km";
 
 // Tworzenie kontekstu
 const PaceUnitContext = createContext<PaceUnitContextType | undefined>(undefined);
@@ -28,7 +28,7 @@ export function PaceUnitProvider({ children }: PaceUnitProviderProps) {
       const stored = localStorage.getItem(PACE_UNIT_STORAGE_KEY);
 
       // Walidacja: sprawdź czy wartość jest poprawna
-      if (stored === 'min/km' || stored === 'km/h') {
+      if (stored === "min/km" || stored === "km/h") {
         setPaceUnitState(stored);
       } else if (stored) {
         // Niepoprawna wartość - ustaw domyślną i nadpisz w localStorage
@@ -37,7 +37,7 @@ export function PaceUnitProvider({ children }: PaceUnitProviderProps) {
       }
     } catch (error) {
       // localStorage niedostępny (np. tryb prywatny)
-      console.warn('localStorage not available, pace unit will not be persisted:', error);
+      console.warn("localStorage not available, pace unit will not be persisted:", error);
     } finally {
       setIsInitialized(true);
     }
@@ -50,7 +50,7 @@ export function PaceUnitProvider({ children }: PaceUnitProviderProps) {
     try {
       localStorage.setItem(PACE_UNIT_STORAGE_KEY, unit);
     } catch (error) {
-      console.warn('Failed to save pace unit to localStorage:', error);
+      console.warn("Failed to save pace unit to localStorage:", error);
     }
   };
 
@@ -60,11 +60,7 @@ export function PaceUnitProvider({ children }: PaceUnitProviderProps) {
     return null;
   }
 
-  return (
-    <PaceUnitContext.Provider value={{ paceUnit, setPaceUnit }}>
-      {children}
-    </PaceUnitContext.Provider>
-  );
+  return <PaceUnitContext.Provider value={{ paceUnit, setPaceUnit }}>{children}</PaceUnitContext.Provider>;
 }
 
 /**
@@ -75,7 +71,7 @@ export function usePaceUnit(): PaceUnitContextType {
   const context = useContext(PaceUnitContext);
 
   if (context === undefined) {
-    throw new Error('usePaceUnit must be used within PaceUnitProvider');
+    throw new Error("usePaceUnit must be used within PaceUnitProvider");
   }
 
   return context;

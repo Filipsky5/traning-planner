@@ -29,4 +29,3 @@ export function errorResponse(error: ApiError, headers?: HeadersInit) {
 
   return jsonResponse(error.status, body, headers);
 }
-

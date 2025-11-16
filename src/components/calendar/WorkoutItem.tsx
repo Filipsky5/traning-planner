@@ -2,11 +2,7 @@ import type { WorkoutSummaryDto } from "../../types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { QuickActions } from "./QuickActions";
-import {
-  getColorForTrainingType,
-  formatDistance,
-  formatDuration,
-} from "../../lib/utils/workout";
+import { getColorForTrainingType, formatDistance, formatDuration } from "../../lib/utils/workout";
 
 interface WorkoutItemProps {
   workout: WorkoutSummaryDto;
@@ -28,9 +24,7 @@ export function WorkoutItem({ workout, trainingTypeName, onSkip, onCancel }: Wor
     canceled: { label: "Anulowany", variant: "destructive" as const },
   };
 
-  const status =
-    statusConfig[workout.status as keyof typeof statusConfig] ||
-    statusConfig.planned;
+  const status = statusConfig[workout.status as keyof typeof statusConfig] || statusConfig.planned;
 
   // Kolor dla typu treningu
   const color = getColorForTrainingType(workout.training_type_code);
@@ -59,16 +53,12 @@ export function WorkoutItem({ workout, trainingTypeName, onSkip, onCancel }: Wor
             <div className="flex items-start justify-between gap-2">
               <div className="font-medium text-sm text-gray-900">
                 {trainingTypeName || workout.training_type_code}
-                <span className="ml-2 text-xs text-gray-500">
-                  #{workout.position}
-                </span>
+                <span className="ml-2 text-xs text-gray-500">#{workout.position}</span>
               </div>
             </div>
 
             {/* Planowane parametry */}
-            {details && (
-              <p className="text-xs text-gray-600 mt-1">{details}</p>
-            )}
+            {details && <p className="text-xs text-gray-600 mt-1">{details}</p>}
 
             {/* Odznaki (Status, AI, Rating) */}
             <div className="flex gap-1 flex-wrap mt-2">
@@ -79,10 +69,7 @@ export function WorkoutItem({ workout, trainingTypeName, onSkip, onCancel }: Wor
 
               {/* Odznaka AI */}
               {isAiGenerated && (
-                <Badge
-                  variant="outline"
-                  className="text-xs py-0 h-5 border-purple-300 text-purple-700"
-                >
+                <Badge variant="outline" className="text-xs py-0 h-5 border-purple-300 text-purple-700">
                   AI
                 </Badge>
               )}
@@ -102,12 +89,7 @@ export function WorkoutItem({ workout, trainingTypeName, onSkip, onCancel }: Wor
         </div>
 
         {/* Quick Actions */}
-        <QuickActions
-          workoutId={workout.id}
-          status={workout.status}
-          onSkip={onSkip}
-          onCancel={onCancel}
-        />
+        <QuickActions workoutId={workout.id} status={workout.status} onSkip={onSkip} onCancel={onCancel} />
       </div>
     </Card>
   );

@@ -16,11 +16,7 @@ interface WorkoutOnboardingFormProps {
  * Form for entering a single workout's data during onboarding
  * Includes fields for distance, duration, heart rate, and date
  */
-export function WorkoutOnboardingForm({
-  onSubmit,
-  isLoading,
-  stepNumber,
-}: WorkoutOnboardingFormProps) {
+export function WorkoutOnboardingForm({ onSubmit, isLoading, stepNumber }: WorkoutOnboardingFormProps) {
   // Form state
   const [distanceKm, setDistanceKm] = useState("");
   const [duration, setDuration] = useState({
@@ -109,11 +105,7 @@ export function WorkoutOnboardingForm({
         <CardTitle>Dane treningu #{stepNumber}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6"
-          data-testid="workout-onboarding-form"
-        >
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="workout-onboarding-form">
           {/* Distance */}
           <div className="space-y-2">
             <Label htmlFor="distance">
@@ -211,12 +203,7 @@ export function WorkoutOnboardingForm({
           </div>
 
           {/* Submit button */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full"
-            data-testid="workout-submit-button"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full" data-testid="workout-submit-button">
             {isLoading ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

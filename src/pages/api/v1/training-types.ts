@@ -62,10 +62,7 @@ export async function GET(context: APIContext) {
 
     // 3. Pobranie danych z Supabase przez service layer
     // context.locals.supabase jest dostępny dzięki middleware Astro
-    const items: TrainingTypeDto[] = await listTrainingTypes(
-      context.locals.supabase,
-      include_inactive
-    );
+    const items: TrainingTypeDto[] = await listTrainingTypes(context.locals.supabase, include_inactive);
 
     // 4. Przygotowanie odpowiedzi z paginacją (MVP: stała, bo słownik mały)
     const page = 1;

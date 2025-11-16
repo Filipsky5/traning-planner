@@ -3,13 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ManualWorkoutFormValues, ManualWorkoutStepForm } from "../../types/workoutForms";
 import type { StepPart } from "../../types";
 
@@ -102,9 +96,7 @@ export function StepsEditor() {
                   ))}
                 </SelectContent>
               </Select>
-              {stepErrors?.part && (
-                <p className="text-sm text-red-600">{stepErrors.part.message}</p>
-              )}
+              {stepErrors?.part && <p className="text-sm text-red-600">{stepErrors.part.message}</p>}
             </div>
 
             {/* Dystans */}
@@ -121,9 +113,7 @@ export function StepsEditor() {
                   valueAsNumber: true,
                 })}
               />
-              {stepErrors?.distanceKm && (
-                <p className="text-sm text-red-600">{stepErrors.distanceKm.message}</p>
-              )}
+              {stepErrors?.distanceKm && <p className="text-sm text-red-600">{stepErrors.distanceKm.message}</p>}
             </div>
 
             {/* Czas (minuty i sekundy) */}
@@ -164,9 +154,7 @@ export function StepsEditor() {
 
             {/* Planowane tętno (opcjonalne) */}
             <div className="space-y-1">
-              <Label htmlFor={`steps.${index}.targetHrBpm`}>
-                Planowane tętno (bpm) - opcjonalne
-              </Label>
+              <Label htmlFor={`steps.${index}.targetHrBpm`}>Planowane tętno (bpm) - opcjonalne</Label>
               <Input
                 id={`steps.${index}.targetHrBpm`}
                 type="number"
@@ -177,9 +165,7 @@ export function StepsEditor() {
                   valueAsNumber: true,
                 })}
               />
-              {stepErrors?.targetHrBpm && (
-                <p className="text-sm text-red-600">{stepErrors.targetHrBpm.message}</p>
-              )}
+              {stepErrors?.targetHrBpm && <p className="text-sm text-red-600">{stepErrors.targetHrBpm.message}</p>}
             </div>
 
             {/* Notatki (opcjonalne) */}
@@ -192,9 +178,7 @@ export function StepsEditor() {
                 placeholder="Dodatkowe informacje..."
                 {...register(`steps.${index}.notes`)}
               />
-              {stepErrors?.notes && (
-                <p className="text-sm text-red-600">{stepErrors.notes.message}</p>
-              )}
+              {stepErrors?.notes && <p className="text-sm text-red-600">{stepErrors.notes.message}</p>}
             </div>
           </Card>
         );

@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { AISuggestionViewModel } from "../../types/suggestions";
 import { transformAISuggestion } from "../../types/suggestions";
 import type { TrainingTypeDto } from "../../types";
@@ -201,9 +195,7 @@ export function AISuggestionDrawer({
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Sugestia treningu AI</SheetTitle>
-            <SheetDescription className="capitalize">
-              {formattedDate}
-            </SheetDescription>
+            <SheetDescription className="capitalize">{formattedDate}</SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 space-y-6 px-4">
@@ -234,10 +226,7 @@ export function AISuggestionDrawer({
             {/* Podgląd sugestii - pokazuj gdy mamy sugestię */}
             {suggestion && !isLoading && (
               <div className="space-y-4">
-                <SuggestionPreview
-                  suggestion={suggestion}
-                  trainingTypeName={trainingTypeName}
-                />
+                <SuggestionPreview suggestion={suggestion} trainingTypeName={trainingTypeName} />
 
                 {/* Kontrolki lub expired state */}
                 {suggestion.isExpired ? (

@@ -26,7 +26,6 @@ export function CalendarView() {
     closeDayDrawer,
     openAiDrawer,
     closeAiDrawer,
-    isDayDrawerOpen,
     isAiDrawerOpen,
     selectedDayDate,
     selectedDate,

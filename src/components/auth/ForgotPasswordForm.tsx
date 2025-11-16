@@ -76,7 +76,7 @@ export function ForgotPasswordForm() {
 
         // Success - zawsze pokazuj komunikat sukcesu (security best practice)
         setSuccess(true);
-      } catch (err) {
+      } catch {
         setError("Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
       } finally {
         setLoading(false);
@@ -151,7 +151,6 @@ export function ForgotPasswordForm() {
               aria-invalid={!!error}
               disabled={loading}
               autoComplete="email"
-              autoFocus
             />
           </div>
         </CardContent>

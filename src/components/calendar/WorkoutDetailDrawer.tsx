@@ -254,7 +254,7 @@ const completionSchema = z.object({
 
 type CompletionFormValues = z.infer<typeof completionSchema>;
 
-const getCompletionDefaults = (workout: WorkoutDetailDto): CompletionFormValues => ({
+const getCompletionDefaults = (workout: WorkoutDetailDto): Partial<CompletionFormValues> => ({
   distance_m: workout.planned_distance_m ?? undefined,
   duration_s: workout.planned_duration_s ?? undefined,
   avg_hr_bpm: undefined,
@@ -294,6 +294,8 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
     setServerError(null);
 
     try {
+      // Zod schema validates that distance_m and duration_s are required numbers
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       await onSubmit({
         distance_m: values.distance_m!,
         duration_s: values.duration_s!,

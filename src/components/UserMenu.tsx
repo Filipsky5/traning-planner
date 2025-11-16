@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, LogOut, Target } from "lucide-react";
+import { LogOut, Target } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

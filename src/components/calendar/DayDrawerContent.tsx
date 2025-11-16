@@ -18,7 +18,7 @@ interface DayDrawerContentProps {
  * Wyświetla odpowiedni komunikat w zależności od stanu
  */
 export function DayDrawerContent({
-  date,
+  date: _date,
   workouts,
   trainingTypes,
   isLoading,

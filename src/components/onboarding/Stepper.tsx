@@ -13,7 +13,6 @@ export function Stepper({ currentStep, totalSteps }: StepperProps) {
         const stepNumber = index + 1;
         const isCompleted = stepNumber < currentStep;
         const isCurrent = stepNumber === currentStep;
-        const isPending = stepNumber > currentStep;
 
         return (
           <div key={stepNumber} className="flex items-center">

@@ -189,12 +189,12 @@ export function RegisterForm({ redirectTo = "/onboarding" }: RegisterFormProps) 
         setLoading(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       email,
       password,
       confirmPassword,
       acceptTerms,
-      redirectTo,
       validateEmail,
       validatePassword,
       validateConfirmPassword,
@@ -267,7 +267,6 @@ export function RegisterForm({ redirectTo = "/onboarding" }: RegisterFormProps) 
               aria-invalid={!!fieldErrors.email}
               disabled={loading}
               autoComplete="email"
-              autoFocus
             />
             {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}
           </div>

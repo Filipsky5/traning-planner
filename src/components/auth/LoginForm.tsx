@@ -165,7 +165,6 @@ export function LoginForm({ redirectTo = "/" }: LoginFormProps) {
               aria-invalid={!!fieldErrors.email}
               disabled={loading}
               autoComplete="email"
-              autoFocus
               data-testid="login-email-input"
             />
             {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}

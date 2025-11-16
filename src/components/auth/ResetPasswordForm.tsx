@@ -134,7 +134,8 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         setLoading(false);
       }
     },
-    [token, newPassword, confirmPassword, validatePassword, validateConfirmPassword]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [newPassword, confirmPassword, validatePassword, validateConfirmPassword]
   );
 
   // Ekran sukcesu
@@ -191,7 +192,6 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               aria-invalid={!!fieldErrors.newPassword}
               disabled={loading}
               autoComplete="new-password"
-              autoFocus
             />
             <p className="text-xs text-muted-foreground">Minimum 8 znaków, litery i cyfry</p>
             {fieldErrors.newPassword && <p className="text-sm text-destructive">{fieldErrors.newPassword}</p>}

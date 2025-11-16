@@ -1,7 +1,7 @@
 import { useWorkoutDetail } from "../hooks/useWorkoutDetail";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, CardHeader } from "../ui/card";
 import { Toaster } from "../ui/sonner";
 import { WorkoutMetrics } from "../workout/WorkoutMetrics";
 import { WorkoutSteps } from "../workout/WorkoutSteps";

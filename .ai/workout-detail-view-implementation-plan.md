@@ -215,3 +215,4 @@ Integracja będzie realizowana przez `fetch` API wewnątrz hooka `useWorkoutDeta
 9. **Integracja API w hooku**: Zaimplementowanie logiki wywołań API dla akcji `complete`, `rate`, `skip`, `cancel`. Po każdej udanej operacji, wywołanie `refetch`.
 10. **Obsługa błędów i toastów**: Dodanie obsługi błędów API i wyświetlanie toastów informujących o sukcesie lub porażce akcji.
 11. **Finalne stylowanie i testy**: Dopracowanie wyglądu za pomocą Tailwind CSS i manualne przetestowanie wszystkich ścieżek użytkownika.
+

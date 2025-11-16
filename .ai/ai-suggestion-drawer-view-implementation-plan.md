@@ -197,3 +197,4 @@ Integracja z API będzie realizowana przez dedykowane funkcje-serwisy w `src/lib
 8. **Połączenie logiki**: Zintegruj wywołania API w `AISuggestionDrawer` w odpowiedzi na zdarzenia z komponentów-dzieci. Zaimplementuj pełną obsługę stanów `loading` i `error`.
 9. **Obsługa błędów**: Zaimplementuj logikę obsługi poszczególnych kodów błędów API (409, 410, 429). Stwórz komponent `ConflictDialog`.
 10. **Finalne testy i stylowanie**: Przetestuj cały przepływ manualnie, dostosuj style i upewnij się, że komponenty są w pełni responsywne.
+

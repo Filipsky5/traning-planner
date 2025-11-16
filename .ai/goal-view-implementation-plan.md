@@ -195,3 +195,4 @@ Walidacja po stronie klienta będzie realizowana w komponencie `GoalForm`, najpr
 7.  **Implementacja logiki interakcji**: Dodać obsługę przełączania `RadioGroup`, logikę `onSubmit` transformującą dane z ViewModel na DTO, oraz obsługę modala potwierdzającego usunięcie.
 8.  **Styling i UX**: Dopracować style za pomocą Tailwind CSS. Dodać toasty (np. używając `sonner` z Shadcn) dla potwierdzenia operacji (zapis, usunięcie) i dla błędów. Upewnić się, że stany ładowania na przyciskach są poprawnie zaimplementowane.
 9.  **Testowanie manualne**: Przetestować wszystkie scenariusze: ładowanie strony, brak celu, istnienie celu, tworzenie, aktualizacja, usuwanie, walidacja pól i obsługa błędów API.
+

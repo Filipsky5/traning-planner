@@ -159,3 +159,4 @@ Do zarządzania logiką wieloetapowego formularza zostanie stworzony niestandard
     - Poprawne działanie przycisku "Dalej" i "Zakończ".
     - Obsługę błędów API.
     - Poprawne przekierowanie po pomyślnym zakończeniu onboardingu.
+

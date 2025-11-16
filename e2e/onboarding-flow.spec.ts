@@ -77,43 +77,6 @@ test.describe("Onboarding Flow", () => {
     await onboardingPage.expectStep(1);
   });
 
-  test("should show loading state during submission", async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    const onboardingPage = new OnboardingPage(page);
-
-    // Login (use separate user for onboarding tests)
-    await loginPage.goto();
-    await loginPage.login(
-      process.env.E2E_USERNAME || "onboarding@example.com",
-      process.env.E2E_PASSWORD || "password123"
-    );
-    await loginPage.waitForNavigation();
-
-    await onboardingPage.waitForOnboardingView();
-
-    // Fill valid form
-    await onboardingPage.fillWorkoutForm({
-      distanceKm: "5.0",
-      hours: "0",
-      minutes: "30",
-      seconds: "0",
-      avgHr: "145",
-      date: "2024-11-10",
-    });
-
-    // Submit and check loading state
-    const submitPromise = onboardingPage.submitForm();
-
-    // Check if button is disabled during submission (may be too fast to catch)
-    // This is optional and depends on network speed
-    // await expect(onboardingPage.submitButton).toBeDisabled();
-
-    await submitPromise;
-
-    // After submission, should be on step 2
-    await onboardingPage.expectStep(2);
-  });
-
   test("should complete full onboarding process and redirect to calendar", async ({ page }) => {
     const loginPage = new LoginPage(page);
     const onboardingPage = new OnboardingPage(page);

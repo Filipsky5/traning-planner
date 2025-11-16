@@ -144,7 +144,7 @@ export class OnboardingPage {
 
     if (toastCount > 0) {
       // Wait for all visible toasts to disappear (max 10s)
-      await visibleToasts.first().waitFor({ state: 'hidden', timeout: 10000 });
+      await visibleToasts.first().waitFor({ state: "hidden", timeout: 10000 });
     }
 
     await this.submitButton.click();

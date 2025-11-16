@@ -70,10 +70,11 @@
   - docker-compose dla lokalnego developmentu (opcjonalnie)
 
 ### Hosting
-- **DigitalOcean**
-  - Droplet z Docker Marketplace image (zalecane)
-  - LUB DigitalOcean App Platform (prostsze, $5/miesiąc)
-  - Container Registry dla Docker images
+- **Cloudflare Pages**
+  - Natywne wsparcie dla Astro SSR przez Cloudflare Workers
+  - Globalna sieć CDN i wdrożenia na skraju sieci (Edge)
+  - Darmowy plan z hojnymi limitami i wsparciem dla projektów komercyjnych
+  - Automatyczne wdrożenia z Git
 
 ### CI/CD
 - **GitHub Actions**
@@ -163,20 +164,18 @@ src/
 ## Koszty Miesięczne (Szacowane)
 
 - **Supabase**: $0 (Free tier - 500MB DB, 2GB transfer)
-- **DigitalOcean Droplet**: $12-24/miesiąc (Basic/Regular)
-- **DigitalOcean App Platform** (alternatywa): $5/miesiąc
+- **Cloudflare Pages**: $0 (Free tier z hojnymi limitami)
 - **OpenRouter AI**: $5-20/miesiąc (zależnie od użycia)
 - **GitHub Actions**: $0 (darmowe dla public repos, 2000 min/miesiąc dla private)
 
-**RAZEM: $17-44/miesiąc** (lub $10-25/miesiąc z App Platform)
+**RAZEM: $5-20/miesiąc**
 
 ## Alternatywy i Plan B
 
-### Jeśli zabraknie czasu na Docker + DO:
-1. Deploy na **Vercel** (darmowy, 5 minut setup)
-2. Vercel automatycznie obsługuje Astro SSR
-3. GitHub Actions deploy do Vercel
-4. W dokumentacji: "Deployment available on multiple platforms"
+### Jeśli Cloudflare Pages sprawia problemy:
+1. Deploy na **Vercel** lub **Netlify** (darmowy, 5 minut setup)
+2. Obie platformy automatycznie obsługują Astro SSR
+3. W dokumentacji: "Deployment available on multiple platforms"
 
 ### Jeśli Tailwind 4 sprawia problemy:
 - Downgrade do **Tailwind 3.4** (stabilny)
@@ -196,7 +195,7 @@ src/
 
 ## Timeline (5 tygodni, 8h/tydzień)
 
-**Tydzień 1**: Setup (Supabase, DO, Docker, GitHub Actions)
+**Tydzień 1**: Setup (Supabase, Cloudflare Pages, GitHub Actions)
 **Tydzień 2**: CRUD + UI (Kalendarz, formularze)
 **Tydzień 3**: AI Generator + logika biznesowa
 **Tydzień 4**: Testy + debugging + dokumentacja

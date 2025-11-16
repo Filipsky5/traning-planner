@@ -1,0 +1,20 @@
+# Wrangler configuration for Cloudflare Pages
+# This file is used for local development with `npm run preview:cloudflare`
+# For production deployment, configuration is managed via GitHub Actions
+
+name = "training-planner"
+compatibility_date = "2025-11-16"
+
+# Pages configuration
+pages_build_output_dir = "./dist"
+
+# For local development
+[env.development]
+compatibility_date = "2025-11-16"
+
+# Environment variables for local development should be set in .dev.vars file
+# Example .dev.vars:
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_KEY=your-anon-key
+# OPENROUTER_API_KEY=your-openrouter-key
+# etc.

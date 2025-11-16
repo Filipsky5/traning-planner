@@ -43,25 +43,24 @@ export default defineConfig({
 
   // Projects configuration - Chromium only per guidelines
   projects: [
+    // Onboarding flow tests - test fresh user (no auth state)
+    {
+      name: "onboarding-flow",
+      testMatch: /.*onboarding-flow\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        // NO storageState - tests fresh user experience
+      },
+    },
     // Setup project - prepares authenticated user with completed onboarding
     {
       name: "setup",
+      dependencies: ["onboarding-flow"],
       testMatch: /.*auth\.setup\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-      },
-    },
-    // Desktop tests - use authenticated state
-    {
-      name: "chromium-desktop",
-      dependencies: ["setup"],
-      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 1440, height: 900 },
-        // Use saved auth state for calendar and other authenticated tests
-        storageState: "playwright/.auth/user.json",
       },
     },
     // Mobile tests - use authenticated state (Chromium with mobile viewport)
@@ -78,21 +77,23 @@ export default defineConfig({
         storageState: "playwright/.auth/user.json",
       },
     },
-    // Onboarding flow tests - test fresh user (no auth state)
+    // Desktop tests - use authenticated state
     {
-      name: "onboarding-flow",
-      testMatch: /.*onboarding-flow\.spec\.ts/,
+      name: "chromium-desktop",
+      dependencies: ["setup"],
+      testIgnore: [/.*auth\.setup\.ts/, /.*onboarding-flow\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-        // NO storageState - tests fresh user experience
+        // Use saved auth state for calendar and other authenticated tests
+        storageState: "playwright/.auth/user.json",
       },
     },
     // Teardown project - cleans up test user workouts after ALL tests
     {
       name: "teardown",
       testMatch: /.*onboarding\.teardown\.ts/,
-      dependencies: ["chromium-desktop", "chromium-mobile", "onboarding-flow"],
+      dependencies: ["chromium-mobile", "chromium-desktop"],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },

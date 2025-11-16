@@ -18,9 +18,7 @@ export const loginSchema = z.object({
     .email("Nieprawidłowy format adresu email")
     .toLowerCase()
     .trim(),
-  password: z
-    .string({ required_error: "Hasło jest wymagane" })
-    .min(8, "Hasło musi mieć minimum 8 znaków"),
+  password: z.string({ required_error: "Hasło jest wymagane" }).min(8, "Hasło musi mieć minimum 8 znaków"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

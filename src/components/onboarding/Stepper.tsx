@@ -13,7 +13,6 @@ export function Stepper({ currentStep, totalSteps }: StepperProps) {
         const stepNumber = index + 1;
         const isCompleted = stepNumber < currentStep;
         const isCurrent = stepNumber === currentStep;
-        const isPending = stepNumber > currentStep;
 
         return (
           <div key={stepNumber} className="flex items-center">
@@ -28,8 +27,8 @@ export function Stepper({ currentStep, totalSteps }: StepperProps) {
                   isCompleted
                     ? "bg-green-500 text-white"
                     : isCurrent
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-300 text-gray-600"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-300 text-gray-600"
                 }
               `}
             >

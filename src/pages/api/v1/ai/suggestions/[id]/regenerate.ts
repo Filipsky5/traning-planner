@@ -43,4 +43,3 @@ function handleError(error: unknown): Response {
   console.error("AI suggestion regenerate endpoint failed", error);
   return errorResponse(createApiError(500, "internal_error", "Unexpected server error", { cause: error }));
 }
-

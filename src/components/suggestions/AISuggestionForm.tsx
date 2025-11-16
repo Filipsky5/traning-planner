@@ -1,18 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { TrainingTypeDto } from "../../types";
 
@@ -30,15 +20,8 @@ interface AISuggestionFormProps {
  * Formularz do generowania sugestii AI
  * Pozwala wybrać typ treningu i datę planowaną
  */
-export function AISuggestionForm({
-  trainingTypes,
-  onSubmit,
-  isSubmitting,
-  initialData,
-}: AISuggestionFormProps) {
-  const [trainingTypeCode, setTrainingTypeCode] = useState<string>(
-    initialData.trainingTypeCode || ""
-  );
+export function AISuggestionForm({ trainingTypes, onSubmit, isSubmitting, initialData }: AISuggestionFormProps) {
+  const [trainingTypeCode, setTrainingTypeCode] = useState<string>(initialData.trainingTypeCode || "");
   const [plannedDate, setPlannedDate] = useState<Date>(initialData.plannedDate);
   const [errors, setErrors] = useState<{
     trainingTypeCode?: string;
@@ -82,10 +65,7 @@ export function AISuggestionForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Wybór typu treningu */}
       <div className="space-y-2">
-        <label
-          htmlFor="training-type"
-          className="text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="training-type" className="text-sm font-medium text-gray-700">
           Typ treningu
         </label>
         <Select
@@ -98,9 +78,7 @@ export function AISuggestionForm({
         >
           <SelectTrigger
             id="training-type"
-            className={cn(
-              errors.trainingTypeCode && "border-red-500 focus:ring-red-500"
-            )}
+            className={cn(errors.trainingTypeCode && "border-red-500 focus:ring-red-500")}
           >
             <SelectValue placeholder="Wybierz typ treningu" />
           </SelectTrigger>
@@ -112,9 +90,7 @@ export function AISuggestionForm({
             ))}
           </SelectContent>
         </Select>
-        {errors.trainingTypeCode && (
-          <p className="text-sm text-red-600">{errors.trainingTypeCode}</p>
-        )}
+        {errors.trainingTypeCode && <p className="text-sm text-red-600">{errors.trainingTypeCode}</p>}
       </div>
 
       {/* Wybór daty */}
@@ -178,17 +154,11 @@ export function AISuggestionForm({
             />
           </PopoverContent>
         </Popover>
-        {errors.plannedDate && (
-          <p className="text-sm text-red-600">{errors.plannedDate}</p>
-        )}
+        {errors.plannedDate && <p className="text-sm text-red-600">{errors.plannedDate}</p>}
       </div>
 
       {/* Przycisk submita */}
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={isSubmitting}
-      >
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <>
             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

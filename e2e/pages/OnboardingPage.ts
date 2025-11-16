@@ -136,6 +136,17 @@ export class OnboardingPage {
   async submitForm() {
     // Small delay to let React validation settle before submit
     await this.page.waitForTimeout(300);
+
+    // Wait for any visible toast notifications to disappear before clicking
+    // Sonner toasts auto-hide after ~3-5 seconds and can block the submit button
+    const visibleToasts = this.page.locator('[data-sonner-toast][data-visible="true"]');
+    const toastCount = await visibleToasts.count();
+
+    if (toastCount > 0) {
+      // Wait for all visible toasts to disappear (max 10s)
+      await visibleToasts.first().waitFor({ state: "hidden", timeout: 10000 });
+    }
+
     await this.submitButton.click();
   }
 

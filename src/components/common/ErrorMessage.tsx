@@ -13,12 +13,7 @@ export function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
       <div className="text-center space-y-4 max-w-md px-4">
         {/* Ikona błędu */}
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-          <svg
-            className="h-6 w-6 text-red-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

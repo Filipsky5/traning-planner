@@ -28,8 +28,7 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   // Password reset errors
   "Password reset link expired": "Link do resetowania hasła wygasł. Zażądaj nowego linku",
   "Invalid or expired token": "Link resetujący wygasł lub jest nieprawidłowy",
-  "New password should be different from the old password":
-    "Nowe hasło musi być inne niż poprzednie",
+  "New password should be different from the old password": "Nowe hasło musi być inne niż poprzednie",
 
   // Rate limiting
   "Email rate limit exceeded": "Zbyt wiele prób. Spróbuj ponownie za chwilę",
@@ -37,7 +36,7 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
     "Ze względów bezpieczeństwa możesz wysłać żądanie raz na 60 sekund",
 
   // Session errors
-  "refresh_token_not_found": "Sesja wygasła. Zaloguj się ponownie",
+  refresh_token_not_found: "Sesja wygasła. Zaloguj się ponownie",
   "Session expired": "Sesja wygasła. Zaloguj się ponownie",
   "Invalid Refresh Token": "Sesja wygasła. Zaloguj się ponownie",
 
@@ -96,11 +95,7 @@ export function mapAuthError(error: SupabaseAuthError | Error): string {
  *   return createAuthErrorResponse("invalid_credentials", "Nieprawidłowy email lub hasło", 401);
  * }
  */
-export function createAuthErrorResponse(
-  code: string,
-  message: string,
-  status: number = 400
-): Response {
+export function createAuthErrorResponse(code: string, message: string, status = 400): Response {
   const body: AuthErrorResponse = {
     error: {
       code,
@@ -134,8 +129,8 @@ export function createAuthErrorResponse(
  */
 export function handleSupabaseAuthError(
   error: SupabaseAuthError | Error,
-  defaultCode: string = "auth_error",
-  defaultStatus: number = 400
+  defaultCode = "auth_error",
+  defaultStatus = 400
 ): Response {
   const message = mapAuthError(error);
 

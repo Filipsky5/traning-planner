@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { WorkoutDetailDto, WorkoutCompleteCommand, WorkoutRateCommand, ApiResponse } from '../../types';
-import { formatDistance, formatDuration, formatPace } from '@/lib/formatters/constants';
+import { useState, useEffect, useCallback } from "react";
+import type { WorkoutDetailDto, WorkoutCompleteCommand, WorkoutRateCommand, ApiResponse } from "../../types";
+import { formatDistance, formatDuration, formatPace } from "@/lib/formatters/constants";
 
 /**
  * ViewModel treningu z polami sformatowanymi do wyświetlania
  */
 export interface WorkoutViewModel {
   id: string;
-  status: 'planned' | 'completed' | 'skipped' | 'canceled';
-  origin: 'manual' | 'ai' | 'import';
-  rating: 'too_easy' | 'just_right' | 'too_hard' | null;
+  status: "planned" | "completed" | "skipped" | "canceled";
+  origin: "manual" | "ai" | "import";
+  rating: "too_easy" | "just_right" | "too_hard" | null;
   trainingTypeCode: string;
   detail: WorkoutDetailDto;
 
@@ -24,12 +24,12 @@ export interface WorkoutViewModel {
   avgHr: number | null;
 
   // Kroki treningu
-  steps: Array<{
-    part: 'warmup' | 'main' | 'cooldown' | 'segment';
+  steps: {
+    part: "warmup" | "main" | "cooldown" | "segment";
     distance_m?: number;
     duration_s?: number;
     notes?: string;
-  }>;
+  }[];
 
   // Flagi do logiki warunkowej
   canBeCompleted: boolean;
@@ -62,8 +62,8 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
    */
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}.${month}.${year}`;
   };
@@ -75,11 +75,11 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
     if (!dateString) return null;
 
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
 
     return `${day}.${month}.${year} ${hours}:${minutes}`;
   };
@@ -88,8 +88,8 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
    * Transformuje DTO z API na ViewModel
    */
   const transformToViewModel = useCallback((dto: WorkoutDetailDto): WorkoutViewModel => {
-    const isPlanned = dto.status === 'planned';
-    const isCompleted = dto.status === 'completed';
+    const isPlanned = dto.status === "planned";
+    const isCompleted = dto.status === "completed";
 
     return {
       id: dto.id,
@@ -134,13 +134,13 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}`, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Nie znaleziono treningu');
+          throw new Error("Nie znaleziono treningu");
         }
         throw new Error(`Błąd pobierania danych: ${response.status}`);
       }
@@ -149,7 +149,7 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
       const viewModel = transformToViewModel(result.data);
       setWorkout(viewModel);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Nieznany błąd'));
+      setError(err instanceof Error ? err : new Error("Nieznany błąd"));
     } finally {
       setIsLoading(false);
     }
@@ -165,72 +165,78 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
   /**
    * Ukończ trening
    */
-  const completeWorkout = useCallback(async (data: WorkoutCompleteCommand) => {
-    if (!workoutId) {
-      throw new Error('Brak identyfikatora treningu');
-    }
-
-    try {
-      const response = await fetch(`/api/v1/workouts/${workoutId}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error?.message || `Błąd: ${response.status}`);
+  const completeWorkout = useCallback(
+    async (data: WorkoutCompleteCommand) => {
+      if (!workoutId) {
+        throw new Error("Brak identyfikatora treningu");
       }
 
-      await refetch();
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Nie udało się ukończyć treningu');
-    }
-  }, [workoutId, refetch]);
+      try {
+        const response = await fetch(`/api/v1/workouts/${workoutId}/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error?.message || `Błąd: ${response.status}`);
+        }
+
+        await refetch();
+      } catch (err) {
+        throw err instanceof Error ? err : new Error("Nie udało się ukończyć treningu");
+      }
+    },
+    [workoutId, refetch]
+  );
 
   /**
    * Oceń trening
    */
-  const rateWorkout = useCallback(async (data: WorkoutRateCommand) => {
-    if (!workoutId) {
-      throw new Error('Brak identyfikatora treningu');
-    }
-
-    try {
-      const response = await fetch(`/api/v1/workouts/${workoutId}/rate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error?.message || `Błąd: ${response.status}`);
+  const rateWorkout = useCallback(
+    async (data: WorkoutRateCommand) => {
+      if (!workoutId) {
+        throw new Error("Brak identyfikatora treningu");
       }
 
-      await refetch();
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Nie udało się ocenić treningu');
-    }
-  }, [workoutId, refetch]);
+      try {
+        const response = await fetch(`/api/v1/workouts/${workoutId}/rate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error?.message || `Błąd: ${response.status}`);
+        }
+
+        await refetch();
+      } catch (err) {
+        throw err instanceof Error ? err : new Error("Nie udało się ocenić treningu");
+      }
+    },
+    [workoutId, refetch]
+  );
 
   /**
    * Pomiń trening
    */
   const skipWorkout = useCallback(async () => {
     if (!workoutId) {
-      throw new Error('Brak identyfikatora treningu');
+      throw new Error("Brak identyfikatora treningu");
     }
 
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/skip`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({}),
       });
@@ -242,7 +248,7 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
 
       await refetch();
     } catch (err) {
-      throw err instanceof Error ? err : new Error('Nie udało się pominąć treningu');
+      throw err instanceof Error ? err : new Error("Nie udało się pominąć treningu");
     }
   }, [workoutId, refetch]);
 
@@ -251,14 +257,14 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
    */
   const cancelWorkout = useCallback(async () => {
     if (!workoutId) {
-      throw new Error('Brak identyfikatora treningu');
+      throw new Error("Brak identyfikatora treningu");
     }
 
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/cancel`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({}),
       });
@@ -270,7 +276,7 @@ export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailRetu
 
       await refetch();
     } catch (err) {
-      throw err instanceof Error ? err : new Error('Nie udało się anulować treningu');
+      throw err instanceof Error ? err : new Error("Nie udało się anulować treningu");
     }
   }, [workoutId, refetch]);
 

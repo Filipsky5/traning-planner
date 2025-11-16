@@ -96,4 +96,3 @@ export function requireServiceRole(context: APIContext): void {
 
   // Auth poprawny - funkcja zwraca void (brak throw = success)
 }
-

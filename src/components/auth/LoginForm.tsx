@@ -1,16 +1,9 @@
-import { useState, useCallback, useId } from 'react';
-import { LogIn, Loader2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import { useState, useCallback, useId } from "react";
+import { LogIn, Loader2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -22,9 +15,9 @@ interface LoginFormProps {
  *
  * TODO: Po implementacji backendu, podłączyć do POST /api/v1/auth/login
  */
-export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export function LoginForm({ redirectTo = "/" }: LoginFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -35,12 +28,12 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
   // Walidacja pola email
   const validateEmail = useCallback((value: string): string | null => {
     if (!value.trim()) {
-      return 'Adres email jest wymagany';
+      return "Adres email jest wymagany";
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) {
-      return 'Nieprawidłowy format adresu email';
+      return "Nieprawidłowy format adresu email";
     }
 
     return null;
@@ -49,11 +42,11 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
   // Walidacja pola hasło
   const validatePassword = useCallback((value: string): string | null => {
     if (!value) {
-      return 'Hasło jest wymagane';
+      return "Hasło jest wymagane";
     }
 
     if (value.length < 8) {
-      return 'Hasło musi mieć minimum 8 znaków';
+      return "Hasło musi mieć minimum 8 znaków";
     }
 
     return null;
@@ -67,7 +60,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
 
       // Wyczyść błąd pola podczas wpisywania
       if (fieldErrors.email) {
-        setFieldErrors((prev) => ({ ...prev, email: '' }));
+        setFieldErrors((prev) => ({ ...prev, email: "" }));
       }
     },
     [fieldErrors.email]
@@ -81,7 +74,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
 
       // Wyczyść błąd pola podczas wpisywania
       if (fieldErrors.password) {
-        setFieldErrors((prev) => ({ ...prev, password: '' }));
+        setFieldErrors((prev) => ({ ...prev, password: "" }));
       }
     },
     [fieldErrors.password]
@@ -112,10 +105,10 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
 
       try {
         // Wywołaj POST /api/v1/auth/login
-        const response = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // WAŻNE: Wyślij cookies
+        const response = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // WAŻNE: Wyślij cookies
           body: JSON.stringify({ email, password }),
         });
 
@@ -124,18 +117,14 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
 
         if (!response.ok) {
           // Server zwrócił error
-          throw new Error(data.error?.message || 'Błąd logowania');
+          throw new Error(data.error?.message || "Błąd logowania");
         }
 
         // Success - session zapisany w cookies przez server
         // Przekieruj na odpowiednią stronę
         window.location.href = redirectTo;
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.'
-        );
+        setError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
       } finally {
         setLoading(false);
       }
@@ -147,9 +136,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Zaloguj się</CardTitle>
-        <CardDescription>
-          Wprowadź swoje dane aby uzyskać dostęp do aplikacji
-        </CardDescription>
+        <CardDescription>Wprowadź swoje dane aby uzyskać dostęp do aplikacji</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
@@ -178,12 +165,9 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
               aria-invalid={!!fieldErrors.email}
               disabled={loading}
               autoComplete="email"
-              autoFocus
               data-testid="login-email-input"
             />
-            {fieldErrors.email && (
-              <p className="text-sm text-destructive">{fieldErrors.email}</p>
-            )}
+            {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}
           </div>
 
           {/* Pole Hasło */}
@@ -202,29 +186,19 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
               autoComplete="current-password"
               data-testid="login-password-input"
             />
-            {fieldErrors.password && (
-              <p className="text-sm text-destructive">{fieldErrors.password}</p>
-            )}
+            {fieldErrors.password && <p className="text-sm text-destructive">{fieldErrors.password}</p>}
           </div>
 
           {/* Link do odzyskiwania hasła */}
           <div className="text-right">
-            <a
-              href="/forgot-password"
-              className="text-sm text-primary hover:underline"
-            >
+            <a href="/forgot-password" className="text-sm text-primary hover:underline">
               Zapomniałeś hasła?
             </a>
           </div>
         </CardContent>
 
         <CardFooter className="flex-col gap-4">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loading}
-            data-testid="login-submit-button"
-          >
+          <Button type="submit" className="w-full" disabled={loading} data-testid="login-submit-button">
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -239,7 +213,7 @@ export function LoginForm({ redirectTo = '/' }: LoginFormProps) {
           </Button>
 
           <p className="text-sm text-muted-foreground text-center">
-            Nie masz konta?{' '}
+            Nie masz konta?{" "}
             <a href="/register" className="text-primary hover:underline">
               Zarejestruj się
             </a>

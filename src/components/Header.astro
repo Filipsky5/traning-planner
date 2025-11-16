@@ -27,30 +27,26 @@ const userEmail = user?.email ?? null;
     <div class="flex justify-between items-center h-16">
       {/* Logo / nazwa aplikacji */}
       <div class="flex items-center">
-        <a href="/" class="text-xl font-bold text-primary">
-          Training Planner
-        </a>
+        <a href="/" class="text-xl font-bold text-primary"> Training Planner </a>
       </div>
 
       {/* Nawigacja - tylko dla zalogowanych */}
-      {isAuthenticated && (
-        <nav class="hidden md:flex items-center gap-6">
-          <a href="/" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-            Kalendarz
-          </a>
-          <a href="/goal" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-            Cel
-          </a>
-        </nav>
-      )}
+      {
+        isAuthenticated && (
+          <nav class="hidden md:flex items-center gap-6">
+            <a href="/" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              Kalendarz
+            </a>
+            <a href="/goal" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              Cel
+            </a>
+          </nav>
+        )
+      }
 
       {/* Warunkowe renderowanie: UserMenu (zalogowani) vs AuthButtons (niezalogowani) */}
       <div class="flex items-center">
-        {isAuthenticated ? (
-          <UserMenu client:load userEmail={userEmail} />
-        ) : (
-          <AuthButtons client:load />
-        )}
+        {isAuthenticated ? <UserMenu client:load userEmail={userEmail} /> : <AuthButtons client:load />}
       </div>
     </div>
   </div>

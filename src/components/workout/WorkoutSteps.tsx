@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 interface WorkoutStep {
-  part: 'warmup' | 'main' | 'cooldown' | 'segment';
+  part: "warmup" | "main" | "cooldown" | "segment";
   distance_m?: number;
   duration_s?: number;
   notes?: string;
@@ -18,26 +18,26 @@ interface WorkoutStepsProps {
 export function WorkoutSteps({ steps }: WorkoutStepsProps) {
   // Mapowanie nazw części na polskie etykiety
   const partLabels: Record<string, string> = {
-    warmup: 'Rozgrzewka',
-    main: 'Część główna',
-    cooldown: 'Schłodzenie',
-    segment: 'Segment',
+    warmup: "Rozgrzewka",
+    main: "Część główna",
+    cooldown: "Schłodzenie",
+    segment: "Segment",
   };
 
   // Kolory dla różnych części treningu
   const partColors: Record<string, string> = {
-    warmup: 'bg-yellow-50 border-yellow-200',
-    main: 'bg-blue-50 border-blue-200',
-    cooldown: 'bg-green-50 border-green-200',
-    segment: 'bg-gray-50 border-gray-200',
+    warmup: "bg-yellow-50 border-yellow-200",
+    main: "bg-blue-50 border-blue-200",
+    cooldown: "bg-green-50 border-green-200",
+    segment: "bg-gray-50 border-gray-200",
   };
 
   // Ikony dla różnych części (emoji jako placeholder)
   const partIcons: Record<string, string> = {
-    warmup: '🔥',
-    main: '💪',
-    cooldown: '❄️',
-    segment: '📍',
+    warmup: "🔥",
+    main: "💪",
+    cooldown: "❄️",
+    segment: "📍",
   };
 
   /**
@@ -83,9 +83,7 @@ export function WorkoutSteps({ steps }: WorkoutStepsProps) {
           <CardTitle>Kroki treningu</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-500 text-center py-4">
-            Brak zdefiniowanych kroków treningu
-          </p>
+          <p className="text-gray-500 text-center py-4">Brak zdefiniowanych kroków treningu</p>
         </CardContent>
       </Card>
     );
@@ -99,10 +97,7 @@ export function WorkoutSteps({ steps }: WorkoutStepsProps) {
       <CardContent>
         <div className="space-y-3">
           {steps.map((step, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-lg border-2 ${partColors[step.part] || partColors.segment}`}
-            >
+            <div key={index} className={`p-4 rounded-lg border-2 ${partColors[step.part] || partColors.segment}`}>
               <div className="flex items-start gap-3">
                 {/* Ikona i numer */}
                 <div className="flex-shrink-0">
@@ -124,18 +119,14 @@ export function WorkoutSteps({ steps }: WorkoutStepsProps) {
                     {step.distance_m !== undefined && (
                       <div className="flex items-center gap-1">
                         <span className="text-gray-500">Dystans:</span>
-                        <span className="font-medium text-gray-900">
-                          {formatDistance(step.distance_m)}
-                        </span>
+                        <span className="font-medium text-gray-900">{formatDistance(step.distance_m)}</span>
                       </div>
                     )}
 
                     {step.duration_s !== undefined && (
                       <div className="flex items-center gap-1">
                         <span className="text-gray-500">Czas:</span>
-                        <span className="font-medium text-gray-900">
-                          {formatDuration(step.duration_s)}
-                        </span>
+                        <span className="font-medium text-gray-900">{formatDuration(step.duration_s)}</span>
                       </div>
                     )}
                   </div>

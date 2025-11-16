@@ -52,17 +52,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // 4. WAŻNE: Ignoruj error i zawsze zwróć success
     // (Security best practice - nie ujawniaj czy email istnieje)
     if (error) {
-      console.warn(
-        "[POST /api/v1/auth/forgot-password] Supabase error (ignored):",
-        error.message
-      );
+      console.warn("[POST /api/v1/auth/forgot-password] Supabase error (ignored):", error.message);
     }
 
     // 5. Success response (zawsze)
     return new Response(
       JSON.stringify({
-        message:
-          "Jeśli konto z tym adresem email istnieje, wysłaliśmy link do resetowania hasła",
+        message: "Jeśli konto z tym adresem email istnieje, wysłaliśmy link do resetowania hasła",
       }),
       {
         status: 200,
@@ -74,19 +70,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     // Handle Zod validation errors
     if (error instanceof ZodError) {
-      return createAuthErrorResponse(
-        "validation_error",
-        error.errors[0].message,
-        422
-      );
+      return createAuthErrorResponse("validation_error", error.errors[0].message, 422);
     }
 
     // Handle unexpected errors
     console.error("[POST /api/v1/auth/forgot-password] Unexpected error:", error);
-    return createAuthErrorResponse(
-      "internal_error",
-      "Wystąpił nieoczekiwany błąd. Spróbuj ponownie",
-      500
-    );
+    return createAuthErrorResponse("internal_error", "Wystąpił nieoczekiwany błąd. Spróbuj ponownie", 500);
   }
 };

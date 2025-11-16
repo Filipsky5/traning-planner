@@ -9,10 +9,7 @@ interface ExpiredSuggestionStateProps {
  * Stan wyświetlany gdy sugestia wygasła
  * Informuje użytkownika o wygaśnięciu i pozwala wygenerować nową sugestię
  */
-export function ExpiredSuggestionState({
-  onGenerateNew,
-  isGenerating,
-}: ExpiredSuggestionStateProps) {
+export function ExpiredSuggestionState({ onGenerateNew, isGenerating }: ExpiredSuggestionStateProps) {
   return (
     <div className="space-y-4">
       {/* Informacja o wygaśnięciu */}
@@ -35,12 +32,9 @@ export function ExpiredSuggestionState({
             <line x1="12" x2="12.01" y1="16" y2="16" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-yellow-900">
-          Sugestia wygasła
-        </p>
+        <p className="text-base font-semibold text-yellow-900">Sugestia wygasła</p>
         <p className="mt-2 text-sm text-yellow-800">
-          Ta sugestia jest już nieaktualna. Sugestie AI są ważne przez 24 godziny
-          od wygenerowania.
+          Ta sugestia jest już nieaktualna. Sugestie AI są ważne przez 24 godziny od wygenerowania.
         </p>
       </div>
 
@@ -62,11 +56,7 @@ export function ExpiredSuggestionState({
       </div>
 
       {/* Przycisk generowania nowej */}
-      <Button
-        onClick={onGenerateNew}
-        disabled={isGenerating}
-        className="w-full"
-      >
+      <Button onClick={onGenerateNew} disabled={isGenerating} className="w-full">
         {isGenerating ? (
           <>
             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

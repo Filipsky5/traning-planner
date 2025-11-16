@@ -49,7 +49,7 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
   - AI integration via OpenRouter.ai (model-agnostic)
 - DevOps & Deployment
   - Docker (single-stage, `node:22-alpine`)
-  - DigitalOcean (Droplet or App Platform)
+  - Cloudflare Pages
   - GitHub Actions for CI/CD
 - Testing & DX
   - **E2E Tests**: Playwright (Chromium, WebKit, desktop + mobile viewports)

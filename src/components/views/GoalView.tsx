@@ -18,12 +18,7 @@ export function GoalView() {
 
   // Stan błędu - wyświetl komunikat z możliwością ponowienia
   if (error) {
-    return (
-      <ErrorMessage
-        message="Nie udało się wczytać celu. Spróbuj odświeżyć stronę."
-        onRetry={refetch}
-      />
-    );
+    return <ErrorMessage message="Nie udało się wczytać celu. Spróbuj odświeżyć stronę." onRetry={refetch} />;
   }
 
   // Stan sukcesu - wyświetl formularz
@@ -32,12 +27,7 @@ export function GoalView() {
       <Toaster />
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="max-w-2xl mx-auto">
-          <GoalForm
-            initialGoal={goal}
-            isSubmitting={isSubmitting}
-            onSave={saveGoal}
-            onDelete={deleteGoal}
-          />
+          <GoalForm initialGoal={goal} isSubmitting={isSubmitting} onSave={saveGoal} onDelete={deleteGoal} />
         </div>
       </div>
     </>

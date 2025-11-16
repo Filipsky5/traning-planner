@@ -14,10 +14,10 @@ interface WorkoutCardProps {
 export function WorkoutCard({ workout, onWorkoutClick }: WorkoutCardProps) {
   // Mapowanie statusu na czytelną nazwę i styl
   const statusConfig = {
-    planned: { label: '', variant: 'outline' as const },
-    completed: { label: 'Ukończony', variant: 'default' as const },
-    skipped: { label: 'Pominięty', variant: 'secondary' as const },
-    cancelled: { label: 'Anulowany', variant: 'destructive' as const },
+    planned: { label: "", variant: "outline" as const },
+    completed: { label: "Ukończony", variant: "default" as const },
+    skipped: { label: "Pominięty", variant: "secondary" as const },
+    cancelled: { label: "Anulowany", variant: "destructive" as const },
   };
 
   const status = statusConfig[workout.status as keyof typeof statusConfig] || statusConfig.planned;
@@ -40,9 +40,7 @@ export function WorkoutCard({ workout, onWorkoutClick }: WorkoutCardProps) {
 
         {/* Treść */}
         <div className="flex-1 min-w-0 space-y-1">
-          <div className="font-medium truncate text-sm">
-            {workout.trainingType.name}
-          </div>
+          <div className="font-medium truncate text-sm">{workout.trainingType.name}</div>
 
           {/* Odznaki */}
           <div className="flex gap-1 flex-wrap">

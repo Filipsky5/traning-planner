@@ -3,7 +3,7 @@
  * 'min/km' - minuty na kilometr
  * 'km/h' - kilometry na godzinę
  */
-export type PaceUnit = 'min/km' | 'km/h';
+export type PaceUnit = "min/km" | "km/h";
 
 /**
  * Struktura kontekstu React dla jednostki tempa.

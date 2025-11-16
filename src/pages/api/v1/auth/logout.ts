@@ -19,10 +19,7 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../../db/supabase.client";
-import {
-  handleSupabaseAuthError,
-  createAuthErrorResponse,
-} from "../../../../lib/errors/authErrors";
+import { handleSupabaseAuthError, createAuthErrorResponse } from "../../../../lib/errors/authErrors";
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
@@ -55,10 +52,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     // Handle unexpected errors
     console.error("[POST /api/v1/auth/logout] Unexpected error:", error);
-    return createAuthErrorResponse(
-      "internal_error",
-      "Wystąpił nieoczekiwany błąd. Spróbuj ponownie",
-      500
-    );
+    return createAuthErrorResponse("internal_error", "Wystąpił nieoczekiwany błąd. Spróbuj ponownie", 500);
   }
 };

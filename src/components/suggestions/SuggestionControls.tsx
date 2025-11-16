@@ -27,11 +27,7 @@ export function SuggestionControls({
   return (
     <div className="space-y-4">
       {/* Przycisk akceptacji */}
-      <Button
-        onClick={onAccept}
-        disabled={isAccepting || isRegenerating}
-        className="w-full"
-      >
+      <Button onClick={onAccept} disabled={isAccepting || isRegenerating} className="w-full">
         {isAccepting ? (
           <>
             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>

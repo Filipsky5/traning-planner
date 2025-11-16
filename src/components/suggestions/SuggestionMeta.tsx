@@ -19,9 +19,7 @@ export function SuggestionMeta({ suggestion, trainingTypeName }: SuggestionMetaP
         {/* Typ treningu */}
         <div>
           <p className="text-xs text-gray-500 uppercase tracking-wide">Typ treningu</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {trainingTypeName || suggestion.trainingTypeCode}
-          </p>
+          <p className="text-lg font-semibold text-gray-900">{trainingTypeName || suggestion.trainingTypeCode}</p>
         </div>
 
         {/* Łączny czas i dystans */}

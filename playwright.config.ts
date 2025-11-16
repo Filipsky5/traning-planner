@@ -18,10 +18,10 @@ export default defineConfig({
   timeout: 30 * 1000,
 
   // Test execution settings
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 0,
+  workers: 1,
 
   // Reporter configuration
   reporter: process.env.CI ? [["html"], ["list"], ["github"]] : [["html"], ["list"]],

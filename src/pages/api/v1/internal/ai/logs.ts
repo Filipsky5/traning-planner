@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * POST /api/v1/internal/ai/logs - Ingest AI log
  * GET /api/v1/internal/ai/logs - List AI logs

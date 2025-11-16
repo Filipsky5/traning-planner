@@ -61,8 +61,17 @@ jobs:
       - name: Build Cloudflare bundle
         run: npm run build:cloudflare
         env:
-          # Public environment variables (safe to expose)
+          # All environment variables required by astro:env schema
+          # (validateSecrets: true requires them at build time)
           PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_DEFAULT_MODEL: ${{ secrets.OPENROUTER_DEFAULT_MODEL }}
+          OPENROUTER_TIMEOUT_MS: ${{ secrets.OPENROUTER_TIMEOUT_MS }}
+          OPENROUTER_MAX_RETRIES: ${{ secrets.OPENROUTER_MAX_RETRIES }}
+          INTERNAL_ADMIN_TOKEN: ${{ secrets.INTERNAL_ADMIN_TOKEN }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v5

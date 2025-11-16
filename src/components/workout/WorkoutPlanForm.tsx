@@ -3,19 +3,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { StepsEditor } from "./StepsEditor";
 import { OptionalRealizationSection } from "./OptionalRealizationSection";
@@ -41,12 +31,7 @@ interface WorkoutPlanFormProps {
  * Główny formularz do ręcznego dodawania treningu
  * Obsługuje zarówno planowane jak i ukończone treningi
  */
-export function WorkoutPlanForm({
-  trainingTypes,
-  initialDate,
-  onCancel,
-  onSubmitSuccess,
-}: WorkoutPlanFormProps) {
+export function WorkoutPlanForm({ trainingTypes, initialDate, onCancel, onSubmitSuccess }: WorkoutPlanFormProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -135,12 +120,7 @@ export function WorkoutPlanForm({
 
     // Jeśli trening ukończony, sprawdź pola realizacji
     if (values.isCompleted) {
-      if (
-        !values.realizedDistanceKm ||
-        !values.realizedDurationSec ||
-        !values.avgHrBpm ||
-        !values.completedAt
-      ) {
+      if (!values.realizedDistanceKm || !values.realizedDurationSec || !values.avgHrBpm || !values.completedAt) {
         return "Wszystkie pola realizacji są wymagane dla ukończonego treningu";
       }
     }
@@ -174,9 +154,7 @@ export function WorkoutPlanForm({
       if (err instanceof ApiError) {
         // Obsługa specyficznych błędów API
         if (err.status === 409) {
-          setApiError(
-            "Istnieje już trening z taką pozycją dla danej daty. Zmień pozycję lub usuń istniejący trening."
-          );
+          setApiError("Istnieje już trening z taką pozycją dla danej daty. Zmień pozycję lub usuń istniejący trening.");
         } else if (err.status === 422) {
           setApiError("Nieprawidłowe dane treningu. Sprawdź wszystkie pola.");
         } else if (err.status === 404) {
@@ -245,9 +223,7 @@ export function WorkoutPlanForm({
                 ))}
               </SelectContent>
             </Select>
-            {errors.trainingTypeCode && (
-              <p className="text-sm text-red-600">{errors.trainingTypeCode.message}</p>
-            )}
+            {errors.trainingTypeCode && <p className="text-sm text-red-600">{errors.trainingTypeCode.message}</p>}
           </div>
 
           {/* Data planowana */}
@@ -259,10 +235,7 @@ export function WorkoutPlanForm({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !plannedDate && "text-muted-foreground"
-                  )}
+                  className={cn("w-full justify-start text-left font-normal", !plannedDate && "text-muted-foreground")}
                   type="button"
                   disabled={isSubmitting}
                 >
@@ -296,9 +269,7 @@ export function WorkoutPlanForm({
               })}
               disabled={isSubmitting}
             />
-            {errors.position && (
-              <p className="text-sm text-red-600">{errors.position.message}</p>
-            )}
+            {errors.position && <p className="text-sm text-red-600">{errors.position.message}</p>}
           </div>
 
           {/* Podgląd sum */}
@@ -322,13 +293,7 @@ export function WorkoutPlanForm({
 
         {/* Przyciski akcji */}
         <div className="flex gap-3 pt-4 pb-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="flex-1"
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="flex-1">
             Anuluj
           </Button>
           <Button type="submit" disabled={isSubmitting} className="flex-1">

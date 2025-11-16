@@ -12,10 +12,7 @@ interface SuggestionPreviewProps {
  * Podgląd wygenerowanej sugestii AI
  * Wyświetla metadane, kroki i status sugestii
  */
-export function SuggestionPreview({
-  suggestion,
-  trainingTypeName,
-}: SuggestionPreviewProps) {
+export function SuggestionPreview({ suggestion, trainingTypeName }: SuggestionPreviewProps) {
   // Mapowanie statusu na badge
   const getStatusBadge = () => {
     const statusConfig = {
@@ -33,9 +30,7 @@ export function SuggestionPreview({
     <div className="space-y-4">
       {/* Status sugestii */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-900">
-          Sugestia od AI
-        </h3>
+        <h3 className="text-base font-semibold text-gray-900">Sugestia od AI</h3>
         {getStatusBadge()}
       </div>
 
@@ -50,8 +45,7 @@ export function SuggestionPreview({
         <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
           <p className="font-medium">Uwaga: Ta sugestia wygasła</p>
           <p className="mt-1 text-xs">
-            Sugestie są ważne przez 24 godziny od wygenerowania. Możesz
-            wygenerować nową sugestię poniżej.
+            Sugestie są ważne przez 24 godziny od wygenerowania. Możesz wygenerować nową sugestię poniżej.
           </p>
         </div>
       )}

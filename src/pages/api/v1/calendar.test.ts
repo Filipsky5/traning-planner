@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit tests for GET /api/v1/calendar handler
  *
@@ -17,11 +18,7 @@ import type { CalendarDto } from "../../../types";
 /**
  * Helper to create mock APIContext
  */
-function createMockContext(
-  queryParams: Record<string, string>,
-  user?: { id: string },
-  supabase?: any
-): APIContext {
+function createMockContext(queryParams: Record<string, string>, user?: { id: string }, supabase?: any): APIContext {
   const url = new URL("http://localhost/api/v1/calendar");
   Object.entries(queryParams).forEach(([key, value]) => {
     url.searchParams.set(key, value);
@@ -90,10 +87,7 @@ describe("GET /api/v1/calendar", () => {
 
   describe("422 - validation error", () => {
     it("should return 422 when end < start", async () => {
-      const context = createMockContext(
-        { start: "2025-02-10", end: "2025-02-01" },
-        { id: "user-123" }
-      );
+      const context = createMockContext({ start: "2025-02-10", end: "2025-02-01" }, { id: "user-123" });
 
       const response = await GET(context);
 
@@ -150,10 +144,7 @@ describe("GET /api/v1/calendar", () => {
     });
 
     it("should return 422 when date format is invalid (slash separator)", async () => {
-      const context = createMockContext(
-        { start: "2025/01/01", end: "2025/01/31" },
-        { id: "user-123" }
-      );
+      const context = createMockContext({ start: "2025/01/01", end: "2025/01/31" }, { id: "user-123" });
 
       const response = await GET(context);
 
@@ -211,11 +202,7 @@ describe("GET /api/v1/calendar", () => {
       getCalendarSpy.mockResolvedValue(mockCalendarDto);
 
       const mockSupabase = {};
-      const context = createMockContext(
-        { start: "2025-01-01", end: "2025-01-31" },
-        { id: "user-123" },
-        mockSupabase
-      );
+      const context = createMockContext({ start: "2025-01-01", end: "2025-01-31" }, { id: "user-123" }, mockSupabase);
 
       const response = await GET(context);
 
@@ -277,13 +264,7 @@ describe("GET /api/v1/calendar", () => {
 
       // Sprawdź, że getCalendar zostało wywołane ze statusem
       expect(getCalendarSpy).toHaveBeenCalledTimes(1);
-      expect(getCalendarSpy).toHaveBeenCalledWith(
-        mockSupabase,
-        "user-123",
-        "2025-01-01",
-        "2025-01-31",
-        "planned"
-      );
+      expect(getCalendarSpy).toHaveBeenCalledWith(mockSupabase, "user-123", "2025-01-01", "2025-01-31", "planned");
     });
 
     it("should return 200 with empty days when no workouts exist", async () => {
@@ -298,11 +279,7 @@ describe("GET /api/v1/calendar", () => {
       getCalendarSpy.mockResolvedValue(mockCalendarDto);
 
       const mockSupabase = {};
-      const context = createMockContext(
-        { start: "2025-01-01", end: "2025-01-31" },
-        { id: "user-123" },
-        mockSupabase
-      );
+      const context = createMockContext({ start: "2025-01-01", end: "2025-01-31" }, { id: "user-123" }, mockSupabase);
 
       const response = await GET(context);
 
@@ -322,10 +299,7 @@ describe("GET /api/v1/calendar", () => {
       const dbError = new Error("Database connection failed");
       getCalendarSpy.mockRejectedValue(dbError);
 
-      const context = createMockContext(
-        { start: "2025-01-01", end: "2025-01-31" },
-        { id: "user-123" }
-      );
+      const context = createMockContext({ start: "2025-01-01", end: "2025-01-31" }, { id: "user-123" });
 
       const response = await GET(context);
 

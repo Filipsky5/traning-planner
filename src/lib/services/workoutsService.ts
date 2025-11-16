@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Workouts Service Layer
  *
@@ -20,14 +21,14 @@ import type {
   WorkoutDetailDto,
   WorkoutLast3ItemDto,
   CalendarDto,
-  WorkoutStepDto
+  WorkoutStepDto,
 } from "../../types";
 import type {
   ListQuery,
   CreateWorkoutInput,
   UpdateWorkoutInput,
   CompleteWorkoutInput,
-  RateWorkoutInput
+  RateWorkoutInput,
 } from "../validation/workouts";
 
 // Helper: Transform steps_jsonb (JSONB in DB) to WorkoutStepDto[] (typed array)
@@ -59,10 +60,7 @@ export async function listWorkouts(
   // Rozwiązanie: osobny query dla count, osobny dla data
 
   // 1. COUNT QUERY (bez range, bez multi-column sort - tylko filtry)
-  let countQuery = supabase
-    .from("workouts")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+  let countQuery = supabase.from("workouts").select("id", { count: "exact", head: true }).eq("user_id", userId);
 
   // Apply filters to count query
   if (filters.status) {
@@ -138,10 +136,7 @@ export async function listWorkouts(
   dataQuery = dataQuery.range(from, to);
 
   // 3. Execute both queries in parallel
-  const [countResult, dataResult] = await Promise.all([
-    countQuery,
-    dataQuery
-  ]);
+  const [countResult, dataResult] = await Promise.all([countQuery, dataQuery]);
 
   if (countResult.error) {
     console.error("listWorkouts - Count query error:", countResult.error);
@@ -155,7 +150,7 @@ export async function listWorkouts(
 
   return {
     data: (dataResult.data ?? []) as WorkoutSummaryDto[],
-    total: countResult.count ?? 0
+    total: countResult.count ?? 0,
   };
 }
 
@@ -188,7 +183,7 @@ export async function getWorkoutById(
   // Transform steps_jsonb → steps (typed array)
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -231,14 +226,10 @@ export async function createWorkout(
     duration_s: input.duration_s ?? null,
     avg_hr_bpm: input.avg_hr_bpm ?? null,
     completed_at: input.completed_at ?? null,
-    rating: input.rating ?? null
+    rating: input.rating ?? null,
   };
 
-  const { data, error } = await supabase
-    .from("workouts")
-    .insert(insertData)
-    .select("*")
-    .single();
+  const { data, error } = await supabase.from("workouts").insert(insertData).select("*").single();
 
   // Guard: duplicate position error
   if (error) {
@@ -248,7 +239,7 @@ export async function createWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -267,6 +258,7 @@ export async function updateWorkout(
   input: UpdateWorkoutInput
 ): Promise<WorkoutDetailDto> {
   // Get current workout (ownership check + ensure exists)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const current = await getWorkoutById(supabase, userId, workoutId);
 
   // Build update object (only changed fields)
@@ -296,7 +288,7 @@ export async function updateWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -306,19 +298,11 @@ export async function updateWorkout(
  * FK constraint: Cannot delete workout if it's referenced by accepted AI suggestion
  * Error: FK_CONSTRAINT → 409 Conflict with remediation hint
  */
-export async function deleteWorkout(
-  supabase: SupabaseClient,
-  userId: string,
-  workoutId: string
-): Promise<void> {
+export async function deleteWorkout(supabase: SupabaseClient, userId: string, workoutId: string): Promise<void> {
   // Check ownership first (throw NOT_FOUND if not exists or not owner)
   await getWorkoutById(supabase, userId, workoutId);
 
-  const { error } = await supabase
-    .from("workouts")
-    .delete()
-    .eq("id", workoutId)
-    .eq("user_id", userId);
+  const { error } = await supabase.from("workouts").delete().eq("id", workoutId).eq("user_id", userId);
 
   // Guard: FK constraint violation (workout created from accepted AI suggestion)
   if (error) {
@@ -358,7 +342,7 @@ export async function completeWorkout(
       duration_s: input.duration_s,
       avg_hr_bpm: input.avg_hr_bpm,
       completed_at: input.completed_at,
-      rating: input.rating ?? null
+      rating: input.rating ?? null,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -369,7 +353,7 @@ export async function completeWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -400,7 +384,7 @@ export async function skipWorkout(
       duration_s: null,
       avg_hr_bpm: null,
       completed_at: null,
-      rating: null
+      rating: null,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -411,7 +395,7 @@ export async function skipWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -442,7 +426,7 @@ export async function cancelWorkout(
       duration_s: null,
       avg_hr_bpm: null,
       completed_at: null,
-      rating: null
+      rating: null,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -453,7 +437,7 @@ export async function cancelWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -488,7 +472,7 @@ export async function rateWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -565,22 +549,23 @@ export async function getCalendar(
     if (!grouped.has(date)) {
       grouped.set(date, []);
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     grouped.get(date)!.push({
       id: workout.id,
       training_type_code: workout.training_type_code,
       status: workout.status,
-      position: workout.position
+      position: workout.position,
     });
   });
 
   // Convert Map to array of CalendarDayDto
   const days = Array.from(grouped.entries()).map(([date, workouts]) => ({
     date,
-    workouts
+    workouts,
   }));
 
   return {
     range: { start, end },
-    days
+    days,
   };
 }

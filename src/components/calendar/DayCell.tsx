@@ -22,14 +22,7 @@ interface DayCellProps {
  * Wyświetla karty treningów lub przycisk + do dodawania nowego treningu
  * Obsługuje nawigację klawiaturą przez atrybuty data-day-index i tabIndex
  */
-export function DayCell({
-  day,
-  index,
-  onAddWorkout,
-  onAddWorkoutManual,
-  onOpenDay,
-  onWorkoutClick,
-}: DayCellProps) {
+export function DayCell({ day, index, onAddWorkout, onAddWorkoutManual, onOpenDay, onWorkoutClick }: DayCellProps) {
   const MAX_VISIBLE_WORKOUTS = 2;
   const hasMoreWorkouts = day.workouts.length > MAX_VISIBLE_WORKOUTS;
   const visibleWorkouts = day.workouts.slice(0, MAX_VISIBLE_WORKOUTS);
@@ -37,20 +30,23 @@ export function DayCell({
 
   // Style dla komórki
   const cellClasses = [
-    'bg-white p-2 min-h-[100px] cursor-pointer transition-all duration-200',
-    'hover:bg-gray-50 hover:shadow-sm',
-    day.isToday && 'ring-2 ring-blue-500 ring-inset bg-blue-50/30',
-    !day.isCurrentMonth && 'bg-gray-50 text-gray-400 opacity-60',
-  ].filter(Boolean).join(' ');
+    "bg-white p-2 min-h-[100px] cursor-pointer transition-all duration-200",
+    "hover:bg-gray-50 hover:shadow-sm",
+    day.isToday && "ring-2 ring-blue-500 ring-inset bg-blue-50/30",
+    !day.isCurrentMonth && "bg-gray-50 text-gray-400 opacity-60",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   // ARIA label dla accessibility
-  const ariaLabel = `${day.date.toLocaleDateString('pl-PL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  })}${day.workouts.length > 0 ? `, ${day.workouts.length} ${day.workouts.length === 1 ? 'trening' : 'treningi'}` : ''}`;
+  const ariaLabel = `${day.date.toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })}${day.workouts.length > 0 ? `, ${day.workouts.length} ${day.workouts.length === 1 ? "trening" : "treningi"}` : ""}`;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
       className={cellClasses}
       role="gridcell"
@@ -63,9 +59,7 @@ export function DayCell({
       <div className="flex items-center justify-between mb-1">
         <span
           className={`text-sm font-medium ${
-            day.isToday
-              ? 'bg-blue-500 text-white rounded-full w-7 h-7 flex items-center justify-center'
-              : ''
+            day.isToday ? "bg-blue-500 text-white rounded-full w-7 h-7 flex items-center justify-center" : ""
           }`}
         >
           {day.date.getDate()}
@@ -108,11 +102,7 @@ export function DayCell({
       {/* Lista treningów */}
       <div className="space-y-1">
         {visibleWorkouts.map((workout) => (
-          <WorkoutCard
-            key={workout.id}
-            workout={workout}
-            onWorkoutClick={onWorkoutClick}
-          />
+          <WorkoutCard key={workout.id} workout={workout} onWorkoutClick={onWorkoutClick} />
         ))}
 
         {/* Wskaźnik "+N więcej" */}

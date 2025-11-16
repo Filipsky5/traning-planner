@@ -26,7 +26,6 @@ export function CalendarView() {
     closeDayDrawer,
     openAiDrawer,
     closeAiDrawer,
-    isDayDrawerOpen,
     isAiDrawerOpen,
     selectedDayDate,
     selectedDate,
@@ -63,9 +62,7 @@ export function CalendarView() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">
-            Wystąpił błąd
-          </h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Wystąpił błąd</h2>
           <p className="text-gray-600">{error.message}</p>
           <button
             onClick={() => window.location.reload()}

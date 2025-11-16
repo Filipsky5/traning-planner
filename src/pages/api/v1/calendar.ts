@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/v1/calendar
  *
@@ -33,10 +34,10 @@ export async function GET(context: APIContext) {
     // 1. Auth check - guard clause
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Validate query params przez Zod
@@ -45,13 +46,7 @@ export async function GET(context: APIContext) {
     const { start, end, status } = calendarQuerySchema.parse(params);
 
     // 3. Fetch calendar data (workouts grouped by date)
-    const calendar = await getCalendar(
-      context.locals.supabase,
-      user.id,
-      start,
-      end,
-      status
-    );
+    const calendar = await getCalendar(context.locals.supabase, user.id, start, end, status);
 
     // 4. Build response envelope
     const response: ApiResponse<CalendarDto> = { data: calendar };
@@ -59,7 +54,7 @@ export async function GET(context: APIContext) {
     // 5. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Obsługa błędów walidacji Zod (w tym invalid date range)
@@ -72,8 +67,8 @@ export async function GET(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid query parameters",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -81,9 +76,9 @@ export async function GET(context: APIContext) {
 
     // Błędy serwerowe/DB
     console.error("GET /api/v1/calendar failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

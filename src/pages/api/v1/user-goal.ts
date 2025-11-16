@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GET /api/v1/user-goal - Get current user goal or null
  * PUT /api/v1/user-goal - Create or replace user goal
@@ -31,10 +32,10 @@ export async function GET(context: APIContext) {
     // 1. Auth check - guard clause pattern
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Fetch goal z service layer
@@ -46,7 +47,7 @@ export async function GET(context: APIContext) {
     // 4. Happy path - zwróć 200 OK
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Błędy serwerowe/DB - loguj szczegóły (bez danych osobowych)
@@ -55,12 +56,12 @@ export async function GET(context: APIContext) {
       message: err.message,
       stack: err.stack,
       name: err.name,
-      stringified: JSON.stringify(err)
+      stringified: JSON.stringify(err),
     });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -84,10 +85,10 @@ export async function PUT(context: APIContext) {
     // 1. Auth check - guard clause
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Parse and validate request body
@@ -103,7 +104,7 @@ export async function PUT(context: APIContext) {
     // 5. Happy path - zwróć 200 OK (nie 201, bo może być update)
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Obsługa błędów walidacji Zod
@@ -116,8 +117,8 @@ export async function PUT(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid goal data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -129,12 +130,12 @@ export async function PUT(context: APIContext) {
       message: err.message,
       stack: err.stack,
       name: err.name,
-      stringified: JSON.stringify(err)
+      stringified: JSON.stringify(err),
     });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -151,10 +152,10 @@ export async function DELETE(context: APIContext) {
     // 1. Auth check - guard clause
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Delete goal przez service layer
@@ -165,10 +166,10 @@ export async function DELETE(context: APIContext) {
   } catch (err: any) {
     // Guard: goal nie istnieje
     if (err.message === "GOAL_NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Błędy serwerowe
@@ -177,11 +178,11 @@ export async function DELETE(context: APIContext) {
       message: err.message,
       stack: err.stack,
       name: err.name,
-      stringified: JSON.stringify(err)
+      stringified: JSON.stringify(err),
     });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }

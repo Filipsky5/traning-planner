@@ -1,9 +1,5 @@
 import { useState, useCallback } from "react";
-import type {
-  WorkoutOnboardingFormViewModel,
-  CreateCompletedWorkoutDto,
-} from "../../types/onboarding";
-import type { ApiResponse } from "../../types";
+import type { WorkoutOnboardingFormViewModel, CreateCompletedWorkoutDto } from "../../types/onboarding";
 
 interface UseOnboardingReturn {
   currentStep: number;
@@ -23,43 +19,40 @@ export function useOnboarding(nextUrl: string): UseOnboardingReturn {
   /**
    * Transform form ViewModel to API DTO
    */
-  const transformToDto = useCallback(
-    (data: WorkoutOnboardingFormViewModel): CreateCompletedWorkoutDto => {
-      // Convert km to meters
-      const distanceM = parseFloat(data.distanceKm) * 1000;
+  const transformToDto = useCallback((data: WorkoutOnboardingFormViewModel): CreateCompletedWorkoutDto => {
+    // Convert km to meters
+    const distanceM = parseFloat(data.distanceKm) * 1000;
 
-      // Convert HH:MM:SS to seconds
-      const hours = parseInt(data.duration.hours) || 0;
-      const minutes = parseInt(data.duration.minutes) || 0;
-      const seconds = parseInt(data.duration.seconds) || 0;
-      const durationS = hours * 3600 + minutes * 60 + seconds;
+    // Convert HH:MM:SS to seconds
+    const hours = parseInt(data.duration.hours) || 0;
+    const minutes = parseInt(data.duration.minutes) || 0;
+    const seconds = parseInt(data.duration.seconds) || 0;
+    const durationS = hours * 3600 + minutes * 60 + seconds;
 
-      // Convert date to YYYY-MM-DD string
-      const completedAtDate = data.completedAt.toISOString().split("T")[0];
+    // Convert date to YYYY-MM-DD string
+    const completedAtDate = data.completedAt.toISOString().split("T")[0];
 
-      return {
-        training_type_code: "easy", // Default for onboarding
-        planned_date: completedAtDate, // Same as completed_at
-        position: 1, // Default position
-        planned_distance_m: distanceM, // Same as actual distance
-        planned_duration_s: durationS, // Same as actual duration
-        steps: [
-          {
-            part: "main",
-            distance_m: distanceM,
-            duration_s: durationS,
-          },
-        ],
-        status: "completed",
-        distance_m: distanceM,
-        duration_s: durationS,
-        avg_hr_bpm: parseInt(data.avgHr),
-        completed_at: data.completedAt.toISOString(),
-        rating: "just_right", // Default rating for onboarding
-      };
-    },
-    []
-  );
+    return {
+      training_type_code: "easy", // Default for onboarding
+      planned_date: completedAtDate, // Same as completed_at
+      position: 1, // Default position
+      planned_distance_m: distanceM, // Same as actual distance
+      planned_duration_s: durationS, // Same as actual duration
+      steps: [
+        {
+          part: "main",
+          distance_m: distanceM,
+          duration_s: durationS,
+        },
+      ],
+      status: "completed",
+      distance_m: distanceM,
+      duration_s: durationS,
+      avg_hr_bpm: parseInt(data.avgHr),
+      completed_at: data.completedAt.toISOString(),
+      rating: "just_right", // Default rating for onboarding
+    };
+  }, []);
 
   /**
    * Handle form submission for each step
@@ -99,15 +92,11 @@ export function useOnboarding(nextUrl: string): UseOnboardingReturn {
         // Check if all requests succeeded
         const failedResponse = responses.find((res) => !res.ok);
         if (failedResponse) {
-          throw new Error(
-            `Failed to save workout: ${failedResponse.status} ${failedResponse.statusText}`
-          );
+          throw new Error(`Failed to save workout: ${failedResponse.status} ${failedResponse.statusText}`);
         }
 
         // Parse all responses
-        const results = await Promise.all(
-          responses.map((res) => res.json())
-        );
+        const results = await Promise.all(responses.map((res) => res.json()));
 
         // Verify all responses are valid
         const failedResult = results.find((result) => !result.data);

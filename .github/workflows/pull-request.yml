@@ -1,0 +1,133 @@
+name: Pull Request Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Project setup
+        uses: ./.github/actions/setup-project
+
+      - name: Run lint
+        run: npm run lint
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Project setup
+        uses: ./.github/actions/setup-project
+
+      - name: Run unit tests with coverage
+        run: npm run test:unit:coverage
+
+      - name: Upload unit coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: unit-coverage
+          path: coverage
+          if-no-files-found: ignore
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    environment: integration
+    needs: lint
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+      INTERNAL_ADMIN_TOKEN: ${{ secrets.INTERNAL_ADMIN_TOKEN }}
+      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Project setup
+        uses: ./.github/actions/setup-project
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build test bundle
+        run: npm run build:test
+
+      - name: Run E2E tests with coverage
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report
+        run: npx nyc --reporter=lcov --reporter=text-summary --report-dir=coverage-e2e npm run test:e2e -- --reporter=html,line
+
+      - name: Upload E2E coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-coverage
+          path: coverage-e2e
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+  status-comment:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - unit-tests
+      - e2e-tests
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Publish status comment
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commentBody = [
+              "## ✅ Wynik Pull Request CI",
+              "",
+              `- Lint: **${{ needs.lint.result }}**`,
+              `- Testy jednostkowe: **${{ needs['unit-tests'].result }}**`,
+              `- Testy e2e: **${{ needs['e2e-tests'].result }}**`
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+

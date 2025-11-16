@@ -82,14 +82,9 @@ export function useDayWorkouts(date: string | null) {
   }, []);
 
   // Optymistyczna aktualizacja UI - zaktualizuj status treningu
-  const updateWorkoutStatus = useCallback(
-    (workoutId: string, status: WorkoutSummaryDto["status"]) => {
-      setWorkouts((prev) =>
-        prev.map((w) => (w.id === workoutId ? { ...w, status } : w))
-      );
-    },
-    []
-  );
+  const updateWorkoutStatus = useCallback((workoutId: string, status: WorkoutSummaryDto["status"]) => {
+    setWorkouts((prev) => prev.map((w) => (w.id === workoutId ? { ...w, status } : w)));
+  }, []);
 
   return {
     workouts,

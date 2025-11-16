@@ -26,7 +26,7 @@ export async function GET(context: APIContext) {
 
     const result = await listSuggestions(context.locals.supabase, userId, filters);
 
-    const payload: ApiListResponse<typeof result.data[number]> = {
+    const payload: ApiListResponse<(typeof result.data)[number]> = {
       data: result.data,
       page: result.page,
       per_page: result.perPage,
@@ -86,4 +86,3 @@ function handleError(error: unknown): Response {
   console.error("AI suggestions index endpoint failed", error);
   return errorResponse(createApiError(500, "internal_error", "Unexpected server error", { cause: error }));
 }
-

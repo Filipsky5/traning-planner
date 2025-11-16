@@ -69,9 +69,7 @@ export function mapStepFormToDto(step: ManualWorkoutStepForm): WorkoutStepDto {
  * - Obsługuje zarówno planned jak i completed workouts
  * - Waliduje wymagane pola w zależności od isCompleted
  */
-export function mapFormValuesToCreateWorkoutInput(
-  values: ManualWorkoutFormValues
-): CreateWorkoutInput {
+export function mapFormValuesToCreateWorkoutInput(values: ManualWorkoutFormValues): CreateWorkoutInput {
   // Podstawowe pola (zawsze wymagane)
   const input: CreateWorkoutInput = {
     training_type_code: values.trainingTypeCode,
@@ -85,9 +83,7 @@ export function mapFormValuesToCreateWorkoutInput(
   // Jeśli trening jest już ukończony, dodaj pola realizacji
   if (values.isCompleted) {
     input.status = "completed";
-    input.distance_m = values.realizedDistanceKm
-      ? Math.round(values.realizedDistanceKm * 1000)
-      : undefined;
+    input.distance_m = values.realizedDistanceKm ? Math.round(values.realizedDistanceKm * 1000) : undefined;
     input.duration_s = values.realizedDurationSec;
     input.avg_hr_bpm = values.avgHrBpm;
     input.completed_at = values.completedAt?.toISOString();

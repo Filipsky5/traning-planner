@@ -1,11 +1,5 @@
 import { useEffect } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { WorkoutPlanForm } from "../workout/WorkoutPlanForm";
 import type { TrainingTypeDto, WorkoutDetailDto } from "../../types";
 
@@ -63,9 +57,7 @@ export function ManualWorkoutDrawer({
       <SheetContent className="overflow-y-auto sm:max-w-[600px]">
         <SheetHeader>
           <SheetTitle>Dodaj trening ręcznie</SheetTitle>
-          <SheetDescription className="capitalize">
-            {formattedDate}
-          </SheetDescription>
+          <SheetDescription className="capitalize">{formattedDate}</SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 px-4">

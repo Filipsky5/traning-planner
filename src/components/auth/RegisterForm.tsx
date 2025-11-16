@@ -1,22 +1,15 @@
-import { useState, useCallback, useId } from 'react';
-import { UserPlus, Loader2, Mail } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import { useState, useCallback, useId } from "react";
+import { UserPlus, Loader2, Mail } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 
 interface RegisterFormProps {
   redirectTo?: string;
 }
 
-type Step = 'form' | 'verification';
+type Step = "form" | "verification";
 
 /**
  * Formularz rejestracji nowego użytkownika.
@@ -25,15 +18,16 @@ type Step = 'form' | 'verification';
  *
  * TODO: Po implementacji backendu, podłączyć do POST /api/v1/auth/register
  */
-export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function RegisterForm({ redirectTo = "/onboarding" }: RegisterFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [step, setStep] = useState<Step>('form');
+  const [step, setStep] = useState<Step>("form");
 
   const emailId = useId();
   const passwordId = useId();
@@ -43,12 +37,12 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
   // Walidacja email
   const validateEmail = useCallback((value: string): string | null => {
     if (!value.trim()) {
-      return 'Adres email jest wymagany';
+      return "Adres email jest wymagany";
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) {
-      return 'Nieprawidłowy format adresu email';
+      return "Nieprawidłowy format adresu email";
     }
 
     return null;
@@ -57,19 +51,19 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
   // Walidacja hasła
   const validatePassword = useCallback((value: string): string | null => {
     if (!value) {
-      return 'Hasło jest wymagane';
+      return "Hasło jest wymagane";
     }
 
     if (value.length < 8) {
-      return 'Hasło musi mieć minimum 8 znaków';
+      return "Hasło musi mieć minimum 8 znaków";
     }
 
     if (!/[A-Za-z]/.test(value)) {
-      return 'Hasło musi zawierać litery';
+      return "Hasło musi zawierać litery";
     }
 
     if (!/[0-9]/.test(value)) {
-      return 'Hasło musi zawierać cyfry';
+      return "Hasło musi zawierać cyfry";
     }
 
     return null;
@@ -79,11 +73,11 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
   const validateConfirmPassword = useCallback(
     (value: string): string | null => {
       if (!value) {
-        return 'Potwierdzenie hasła jest wymagane';
+        return "Potwierdzenie hasła jest wymagane";
       }
 
       if (value !== password) {
-        return 'Hasła nie są identyczne';
+        return "Hasła nie są identyczne";
       }
 
       return null;
@@ -94,7 +88,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
   // Walidacja akceptacji regulaminu
   const validateTerms = useCallback((value: boolean): string | null => {
     if (!value) {
-      return 'Musisz zaakceptować regulamin';
+      return "Musisz zaakceptować regulamin";
     }
     return null;
   }, []);
@@ -104,7 +98,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setEmail(e.target.value);
       if (fieldErrors.email) {
-        setFieldErrors((prev) => ({ ...prev, email: '' }));
+        setFieldErrors((prev) => ({ ...prev, email: "" }));
       }
     },
     [fieldErrors.email]
@@ -114,7 +108,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setPassword(e.target.value);
       if (fieldErrors.password) {
-        setFieldErrors((prev) => ({ ...prev, password: '' }));
+        setFieldErrors((prev) => ({ ...prev, password: "" }));
       }
     },
     [fieldErrors.password]
@@ -124,7 +118,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setConfirmPassword(e.target.value);
       if (fieldErrors.confirmPassword) {
-        setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
+        setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
       }
     },
     [fieldErrors.confirmPassword]
@@ -134,7 +128,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setAcceptTerms(e.target.checked);
       if (fieldErrors.terms) {
-        setFieldErrors((prev) => ({ ...prev, terms: '' }));
+        setFieldErrors((prev) => ({ ...prev, terms: "" }));
       }
     },
     [fieldErrors.terms]
@@ -169,10 +163,10 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
 
       try {
         // Wywołaj POST /api/v1/auth/register
-        const response = await fetch('/api/v1/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // WAŻNE: Wyślij cookies
+        const response = await fetch("/api/v1/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // WAŻNE: Wyślij cookies
           body: JSON.stringify({
             email,
             password,
@@ -185,27 +179,23 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
 
         if (!response.ok) {
           // Server zwrócił error
-          throw new Error(data.error?.message || 'Błąd rejestracji');
+          throw new Error(data.error?.message || "Błąd rejestracji");
         }
 
         // Success - przejście do ekranu weryfikacji email
-        setStep('verification');
+        setStep("verification");
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.'
-        );
+        setError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
       } finally {
         setLoading(false);
       }
     },
+
     [
       email,
       password,
       confirmPassword,
       acceptTerms,
-      redirectTo,
       validateEmail,
       validatePassword,
       validateConfirmPassword,
@@ -214,7 +204,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
   );
 
   // Ekran weryfikacji emaila
-  if (step === 'verification') {
+  if (step === "verification") {
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
@@ -228,16 +218,11 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Kliknij link w wiadomości email aby zweryfikować swoje konto i dokończyć
-            proces rejestracji.
+            Kliknij link w wiadomości email aby zweryfikować swoje konto i dokończyć proces rejestracji.
           </p>
           <p className="text-sm text-muted-foreground">
-            Nie otrzymałeś wiadomości? Sprawdź folder spam lub{' '}
-            <button
-              type="button"
-              onClick={() => setStep('form')}
-              className="text-primary hover:underline"
-            >
+            Nie otrzymałeś wiadomości? Sprawdź folder spam lub{" "}
+            <button type="button" onClick={() => setStep("form")} className="text-primary hover:underline">
               wróć do formularza
             </button>
             .
@@ -257,9 +242,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Utwórz konto</CardTitle>
-        <CardDescription>
-          Wprowadź swoje dane aby założyć nowe konto
-        </CardDescription>
+        <CardDescription>Wprowadź swoje dane aby założyć nowe konto</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
@@ -285,11 +268,8 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
               aria-invalid={!!fieldErrors.email}
               disabled={loading}
               autoComplete="email"
-              autoFocus
             />
-            {fieldErrors.email && (
-              <p className="text-sm text-destructive">{fieldErrors.email}</p>
-            )}
+            {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}
           </div>
 
           {/* Pole Hasło */}
@@ -307,12 +287,8 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
               disabled={loading}
               autoComplete="new-password"
             />
-            <p className="text-xs text-muted-foreground">
-              Minimum 8 znaków, litery i cyfry
-            </p>
-            {fieldErrors.password && (
-              <p className="text-sm text-destructive">{fieldErrors.password}</p>
-            )}
+            <p className="text-xs text-muted-foreground">Minimum 8 znaków, litery i cyfry</p>
+            {fieldErrors.password && <p className="text-sm text-destructive">{fieldErrors.password}</p>}
           </div>
 
           {/* Pole Potwierdzenie hasła */}
@@ -330,11 +306,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
               disabled={loading}
               autoComplete="new-password"
             />
-            {fieldErrors.confirmPassword && (
-              <p className="text-sm text-destructive">
-                {fieldErrors.confirmPassword}
-              </p>
-            )}
+            {fieldErrors.confirmPassword && <p className="text-sm text-destructive">{fieldErrors.confirmPassword}</p>}
           </div>
 
           {/* Checkbox akceptacji regulaminu */}
@@ -349,34 +321,22 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
                 className="mt-1 h-4 w-4 rounded border-input accent-primary"
               />
               <Label htmlFor={termsId} className="text-sm font-normal cursor-pointer">
-                Akceptuję{' '}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
+                Akceptuję{" "}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   regulamin
-                </a>{' '}
-                i{' '}
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
+                </a>{" "}
+                i{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   politykę prywatności
-                </a>{' '}
+                </a>{" "}
                 <span className="text-destructive">*</span>
               </Label>
             </div>
-            {fieldErrors.terms && (
-              <p className="text-sm text-destructive">{fieldErrors.terms}</p>
-            )}
+            {fieldErrors.terms && <p className="text-sm text-destructive">{fieldErrors.terms}</p>}
           </div>
         </CardContent>
 
-        <CardFooter className="flex-col gap-4" style={{ marginTop: '5px' }}>
+        <CardFooter className="flex-col gap-4" style={{ marginTop: "5px" }}>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <>
@@ -392,7 +352,7 @@ export function RegisterForm({ redirectTo = '/onboarding' }: RegisterFormProps) 
           </Button>
 
           <p className="text-sm text-muted-foreground text-center">
-            Masz już konto?{' '}
+            Masz już konto?{" "}
             <a href="/login" className="text-primary hover:underline">
               Zaloguj się
             </a>

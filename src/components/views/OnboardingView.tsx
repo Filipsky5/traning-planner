@@ -27,9 +27,7 @@ export function OnboardingView({ nextUrl }: OnboardingViewProps) {
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Nie udało się zapisać treningów. Spróbuj ponownie.";
+        error instanceof Error ? error.message : "Nie udało się zapisać treningów. Spróbuj ponownie.";
       toast.error(errorMessage);
       console.error("Error submitting workout:", error);
     }
@@ -41,9 +39,7 @@ export function OnboardingView({ nextUrl }: OnboardingViewProps) {
       <div className="min-h-screen bg-gray-50 py-8 px-4" data-testid="onboarding-view">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-center mb-2">
-              Witamy w Training Planner!
-            </h1>
+            <h1 className="text-3xl font-bold text-center mb-2">Witamy w Training Planner!</h1>
             <p className="text-center text-gray-600">
               Aby lepiej dostosować plan treningowy, powiedz nam o swoich ostatnich 3 treningach
             </p>
@@ -51,10 +47,7 @@ export function OnboardingView({ nextUrl }: OnboardingViewProps) {
 
           <Stepper currentStep={currentStep} totalSteps={totalSteps} />
 
-          <h2
-            className="text-2xl font-semibold mb-6 text-center"
-            data-testid="onboarding-step-title"
-          >
+          <h2 className="text-2xl font-semibold mb-6 text-center" data-testid="onboarding-step-title">
             Trening {currentStep} z {totalSteps}
           </h2>
 

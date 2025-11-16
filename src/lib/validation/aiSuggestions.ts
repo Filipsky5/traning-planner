@@ -6,14 +6,8 @@ const SORTABLE_FIELDS = ["created_at", "planned_date", "status"] as const;
 export const listQuerySchema = z
   .object({
     status: z.enum(["shown", "accepted", "rejected", "expired"]).optional(),
-    created_after: z
-      .string()
-      .regex(ISO_DATE_REGEX, "created_after must be in YYYY-MM-DD format")
-      .optional(),
-    created_before: z
-      .string()
-      .regex(ISO_DATE_REGEX, "created_before must be in YYYY-MM-DD format")
-      .optional(),
+    created_after: z.string().regex(ISO_DATE_REGEX, "created_after must be in YYYY-MM-DD format").optional(),
+    created_before: z.string().regex(ISO_DATE_REGEX, "created_before must be in YYYY-MM-DD format").optional(),
     page: z
       .union([z.string(), z.number()])
       .optional()
@@ -111,12 +105,7 @@ export const acceptBodySchema = z.object({
       invalid_type_error: "position must be a number",
     })
     .transform((value) => Number(value))
-    .pipe(
-      z
-        .number()
-        .int("position must be an integer")
-        .min(1, "position must be >= 1")
-    ),
+    .pipe(z.number().int("position must be an integer").min(1, "position must be >= 1")),
 });
 
 export type AcceptBody = z.infer<typeof acceptBodySchema>;
@@ -174,4 +163,3 @@ export const eventsQuerySchema = z.object({
 });
 
 export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
-

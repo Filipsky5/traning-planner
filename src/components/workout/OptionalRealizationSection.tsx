@@ -51,15 +51,9 @@ export function OptionalRealizationSection() {
           <Label htmlFor="isCompleted" className="text-base font-semibold">
             Trening już wykonany
           </Label>
-          <p className="text-sm text-gray-500">
-            Zaznacz jeśli chcesz od razu wprowadzić dane z wykonania
-          </p>
+          <p className="text-sm text-gray-500">Zaznacz jeśli chcesz od razu wprowadzić dane z wykonania</p>
         </div>
-        <Switch
-          id="isCompleted"
-          checked={isCompleted}
-          onCheckedChange={handleCompletedToggle}
-        />
+        <Switch id="isCompleted" checked={isCompleted} onCheckedChange={handleCompletedToggle} />
       </div>
 
       {isCompleted && (
@@ -83,9 +77,7 @@ export function OptionalRealizationSection() {
                 max: { value: 100, message: "Dystans musi być <= 100 km" },
               })}
             />
-            {errors.realizedDistanceKm && (
-              <p className="text-sm text-red-600">{errors.realizedDistanceKm.message}</p>
-            )}
+            {errors.realizedDistanceKm && <p className="text-sm text-red-600">{errors.realizedDistanceKm.message}</p>}
           </div>
 
           {/* Zrealizowany czas */}
@@ -136,9 +128,7 @@ export function OptionalRealizationSection() {
                 max: { value: 21600, message: "Czas musi być <= 6 godzin (21600s)" },
               })}
             />
-            {errors.realizedDurationSec && (
-              <p className="text-sm text-red-600">{errors.realizedDurationSec.message}</p>
-            )}
+            {errors.realizedDurationSec && <p className="text-sm text-red-600">{errors.realizedDurationSec.message}</p>}
           </div>
 
           {/* Średnie tętno */}
@@ -159,9 +149,7 @@ export function OptionalRealizationSection() {
                 max: { value: 240, message: "Tętno musi być <= 240 bpm" },
               })}
             />
-            {errors.avgHrBpm && (
-              <p className="text-sm text-red-600">{errors.avgHrBpm.message}</p>
-            )}
+            {errors.avgHrBpm && <p className="text-sm text-red-600">{errors.avgHrBpm.message}</p>}
           </div>
 
           {/* Data i czas ukończenia */}
@@ -178,9 +166,7 @@ export function OptionalRealizationSection() {
               })}
               defaultValue={new Date().toISOString().slice(0, 16)}
             />
-            {errors.completedAt && (
-              <p className="text-sm text-red-600">{errors.completedAt.message}</p>
-            )}
+            {errors.completedAt && <p className="text-sm text-red-600">{errors.completedAt.message}</p>}
           </div>
 
           {/* Ocena treningu */}
@@ -188,9 +174,7 @@ export function OptionalRealizationSection() {
             <Label>Ocena treningu (opcjonalna)</Label>
             <RadioGroup
               value={watch("rating") || ""}
-              onValueChange={(value) =>
-                setValue("rating", value as "too_easy" | "just_right" | "too_hard")
-              }
+              onValueChange={(value) => setValue("rating", value as "too_easy" | "just_right" | "too_hard")}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="too_easy" id="rating-easy" />

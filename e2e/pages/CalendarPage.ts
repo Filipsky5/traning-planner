@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 /**
  * Page Object Model for Calendar Page
@@ -17,23 +17,23 @@ export class CalendarPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.calendarView = page.getByTestId('calendar-view');
+    this.calendarView = page.getByTestId("calendar-view");
     this.calendarGrid = page.locator('[role="grid"]');
     this.dayCells = page.locator('[role="gridcell"]');
     this.addWorkoutButtons = page.locator('button:has-text("+")');
-    this.monthHeader = page.locator('h2');
+    this.monthHeader = page.locator("h2");
     this.nextMonthButton = page.locator('button[aria-label*="Następny"]');
     this.prevMonthButton = page.locator('button[aria-label*="Poprzedni"]');
     this.todayButton = page.locator('button:has-text("Dzisiaj")');
   }
 
   async goto() {
-    await this.page.goto('/');
+    await this.page.goto("/");
   }
 
   async waitForCalendarLoad() {
-    await this.calendarView.waitFor({ state: 'visible' });
-    await this.calendarGrid.waitFor({ state: 'visible' });
+    await this.calendarView.waitFor({ state: "visible" });
+    await this.calendarGrid.waitFor({ state: "visible" });
   }
 
   async clickAddWorkout(dayIndex: number) {

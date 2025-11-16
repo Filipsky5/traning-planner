@@ -28,4 +28,3 @@ export async function parseOptionalJsonBody(request: Request): Promise<unknown |
     throw createApiError(400, "validation_error", "Invalid JSON payload", { cause: error });
   }
 }
-

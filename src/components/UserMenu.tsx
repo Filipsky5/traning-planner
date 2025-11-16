@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { User, LogOut, Target } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { LogOut, Target } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,16 +7,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { PaceUnitToggle } from './PaceUnitToggle';
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { PaceUnitToggle } from "./PaceUnitToggle";
 
 interface UserMenuProps {
   userEmail: string | null;
 }
 
-type PaceUnit = 'min/km' | 'km/h';
+type PaceUnit = "min/km" | "km/h";
 
 /**
  * Menu użytkownika wyświetlane w nagłówku aplikacji.
@@ -26,17 +26,17 @@ type PaceUnit = 'min/km' | 'km/h';
  * Stan jednostki tempa (paceUnit) jest zarządzany lokalnie z synchronizacją do localStorage.
  */
 export function UserMenu({ userEmail }: UserMenuProps) {
-  const [paceUnit, setPaceUnitState] = useState<PaceUnit>('min/km');
+  const [paceUnit, setPaceUnitState] = useState<PaceUnit>("min/km");
 
   // Odczytaj jednostkę tempa z localStorage przy montowaniu komponentu
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('paceUnit');
-      if (stored === 'min/km' || stored === 'km/h') {
+      const stored = localStorage.getItem("paceUnit");
+      if (stored === "min/km" || stored === "km/h") {
         setPaceUnitState(stored);
       }
     } catch (error) {
-      console.error('Failed to read paceUnit from localStorage:', error);
+      console.error("Failed to read paceUnit from localStorage:", error);
     }
   }, []);
 
@@ -44,43 +44,43 @@ export function UserMenu({ userEmail }: UserMenuProps) {
   const setPaceUnit = (unit: PaceUnit) => {
     setPaceUnitState(unit);
     try {
-      localStorage.setItem('paceUnit', unit);
+      localStorage.setItem("paceUnit", unit);
     } catch (error) {
-      console.error('Failed to save paceUnit to localStorage:', error);
+      console.error("Failed to save paceUnit to localStorage:", error);
     }
   };
 
   const handleLogout = async () => {
     try {
       // Wywołaj POST /api/v1/auth/logout
-      const response = await fetch('/api/v1/auth/logout', {
-        method: 'POST',
-        credentials: 'include', // WAŻNE: Wyślij cookies
+      const response = await fetch("/api/v1/auth/logout", {
+        method: "POST",
+        credentials: "include", // WAŻNE: Wyślij cookies
       });
 
       if (!response.ok) {
-        console.error('Error signing out:', await response.text());
+        console.error("Error signing out:", await response.text());
         // Przekieruj mimo błędu (sesja może być już nieważna)
       }
 
       // Redirect to login page after logout
-      window.location.href = '/login';
+      window.location.href = "/login";
     } catch (error) {
-      console.error('Unexpected error during logout:', error);
+      console.error("Unexpected error during logout:", error);
       // Przekieruj mimo błędu
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
   };
 
   const handleGoToGoal = () => {
-    window.location.href = '/goal';
+    window.location.href = "/goal";
   };
 
   // Pierwsze litery email jako inicjały (np. "john.doe@example.com" -> "JD")
   const getInitials = (email: string | null): string => {
-    if (!email) return 'U';
+    if (!email) return "U";
 
-    const parts = email.split('@')[0].split('.');
+    const parts = email.split("@")[0].split(".");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
@@ -92,9 +92,7 @@ export function UserMenu({ userEmail }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {getInitials(userEmail)}
-            </AvatarFallback>
+            <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userEmail)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -102,11 +100,7 @@ export function UserMenu({ userEmail }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Twoje konto</p>
-            {userEmail && (
-              <p className="text-xs leading-none text-muted-foreground">
-                {userEmail}
-              </p>
-            )}
+            {userEmail && <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -17,8 +17,8 @@ interface DayDrawerContentProps {
  * Zawartość drawera - renderuje stan ładowania, błędu lub listę treningów
  * Wyświetla odpowiedni komunikat w zależności od stanu
  */
+
 export function DayDrawerContent({
-  date,
   workouts,
   trainingTypes,
   isLoading,
@@ -46,12 +46,7 @@ export function DayDrawerContent({
         <div className="text-center space-y-3">
           {/* Ikona błędu */}
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-            <svg
-              className="h-6 w-6 text-red-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -63,12 +58,8 @@ export function DayDrawerContent({
 
           {/* Komunikat błędu */}
           <div>
-            <p className="text-sm font-medium text-red-800">
-              Nie udało się wczytać treningów
-            </p>
-            <p className="mt-1 text-xs text-red-700">
-              {error.message || "Spróbuj ponownie później."}
-            </p>
+            <p className="text-sm font-medium text-red-800">Nie udało się wczytać treningów</p>
+            <p className="mt-1 text-xs text-red-700">{error.message || "Spróbuj ponownie później."}</p>
           </div>
 
           {/* Przycisk ponowienia */}
@@ -93,12 +84,7 @@ export function DayDrawerContent({
       </div>
 
       {/* Lista treningów */}
-      <WorkoutList
-        workouts={workouts}
-        trainingTypes={trainingTypes}
-        onSkip={onSkip}
-        onCancel={onCancel}
-      />
+      <WorkoutList workouts={workouts} trainingTypes={trainingTypes} onSkip={onSkip} onCancel={onCancel} />
     </div>
   );
 }

@@ -27,7 +27,8 @@ interface Props {
 const { title = "Training Planner" } = Astro.props;
 
 // Pobierz user z context.locals (do potencjalnego użycia w przyszłości)
-const user = Astro.locals.user;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _user = Astro.locals.user;
 ---
 
 <!doctype html>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /**
  * Unit tests for getCalendar service function
  *
@@ -255,9 +257,7 @@ describe("getCalendar", () => {
       const dbError = { message: "Database connection failed", code: "CONN_ERROR" };
       const supabase = createMockSupabase(null, dbError);
 
-      await expect(
-        getCalendar(supabase, "user-123", "2025-01-01", "2025-01-31")
-      ).rejects.toEqual(dbError);
+      await expect(getCalendar(supabase, "user-123", "2025-01-01", "2025-01-31")).rejects.toEqual(dbError);
     });
 
     it("should handle null data gracefully when error is null", async () => {

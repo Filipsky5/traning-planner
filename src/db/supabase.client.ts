@@ -78,37 +78,28 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
  *   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
  * }
  */
-export const createSupabaseServerInstance = (context: {
-  headers: Headers;
-  cookies: AstroCookies;
-}) => {
-  const supabase = createServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookieOptions,
-      cookies: {
-        /**
-         * getAll() - Pobiera wszystkie cookies z request headers.
-         * Wywoływane przez Supabase SDK aby odczytać session tokens.
-         */
-        getAll() {
-          return parseCookieHeader(context.headers.get("Cookie") ?? "");
-        },
-        /**
-         * setAll() - Zapisuje cookies w response.
-         * Wywoływane przez Supabase SDK aby zapisać/zaktualizować session tokens.
-         *
-         * @param cookiesToSet - Array of cookies do ustawienia
-         */
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            context.cookies.set(name, value, options)
-          );
-        },
+export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookieOptions,
+    cookies: {
+      /**
+       * getAll() - Pobiera wszystkie cookies z request headers.
+       * Wywoływane przez Supabase SDK aby odczytać session tokens.
+       */
+      getAll() {
+        return parseCookieHeader(context.headers.get("Cookie") ?? "");
       },
-    }
-  );
+      /**
+       * setAll() - Zapisuje cookies w response.
+       * Wywoływane przez Supabase SDK aby zapisać/zaktualizować session tokens.
+       *
+       * @param cookiesToSet - Array of cookies do ustawienia
+       */
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => context.cookies.set(name, value, options));
+      },
+    },
+  });
 
   return supabase;
 };

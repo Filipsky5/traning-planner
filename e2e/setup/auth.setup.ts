@@ -1,4 +1,5 @@
-import { test as setup, expect, type Page } from "@playwright/test";
+/* eslint-disable no-console */
+import { test as setup, expect } from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
 import { OnboardingPage } from "../pages/OnboardingPage";
 import { CalendarPage } from "../pages/CalendarPage";
@@ -6,56 +7,9 @@ import { CalendarPage } from "../pages/CalendarPage";
 const authFile = "playwright/.auth/user.json";
 
 /**
- * Helper function to cleanup all workouts for test user
- * Used before setup to ensure clean slate (idempotent tests)
- */
-async function cleanupTestUserWorkouts(page: Page) {
-  try {
-    console.log("Cleaning up existing test user workouts...");
-
-    const workoutsResponse = await page.request.get("/api/v1/workouts", {
-      failOnStatusCode: false,
-    });
-
-    if (!workoutsResponse.ok()) {
-      console.log("  No workouts to cleanup or user not authenticated");
-      return 0;
-    }
-
-    const workoutsData = await workoutsResponse.json();
-    const workouts = workoutsData.data || [];
-
-    console.log(`  Found ${workouts.length} workout(s) to delete`);
-
-    for (const workout of workouts) {
-      try {
-        const result = await page.evaluate(async (workoutId: string) => {
-          const response = await fetch(`/api/v1/workouts/${workoutId}`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-          });
-          return { ok: response.ok, status: response.status };
-        }, workout.id);
-
-        if (result.ok) {
-          console.log(`  ✓ Deleted workout ${workout.id}`);
-        }
-      } catch (error) {
-        console.warn(`  ✗ Failed to delete workout ${workout.id}:`, error);
-      }
-    }
-
-    console.log(`✓ Cleanup complete: deleted ${workouts.length} workout(s)`);
-    return workouts.length;
-  } catch (error) {
-    console.warn("Cleanup failed (non-critical):", error);
-    return 0;
-  }
-}
-
-/**
  * Global Setup: Prepare authenticated user with completed onboarding
- * This runs once before all tests to ensure calendar tests have a valid user
+ * This runs AFTER onboarding-flow tests, which create 3 workouts
+ * Setup uses those workouts for calendar tests (does NOT delete them)
  */
 setup("authenticate and complete onboarding", async ({ page }) => {
   const loginPage = new LoginPage(page);
@@ -67,10 +21,8 @@ setup("authenticate and complete onboarding", async ({ page }) => {
   await loginPage.login(process.env.E2E_USERNAME || "test@example.com", process.env.E2E_PASSWORD || "password123");
   await loginPage.waitForNavigation();
 
-  // Step 2: Cleanup existing workouts (ensures idempotent tests)
-  await cleanupTestUserWorkouts(page);
-
-  // Step 3: Check if we're redirected to onboarding (user has <3 workouts)
+  // Step 2: Check if we're redirected to onboarding (user has <3 workouts)
+  // If onboarding-flow tests ran successfully, user should have 3 workouts
   const currentUrl = page.url();
 
   if (currentUrl.includes("/onboarding")) {

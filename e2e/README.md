@@ -14,28 +14,34 @@ E2E_PASSWORD=TestPassword123!
 
 ## How Tests Work
 
-### 1. Setup Phase (runs first)
-- **File**: `e2e/setup/auth.setup.ts`
-- **Project**: `setup`
-- **User**: `E2E_USERNAME`
-- **Purpose**:
-  - Logs in as test user
-  - Completes onboarding if needed (creates 3 workouts)
-  - Saves authenticated state to `playwright/.auth/user.json`
-
-### 2. Calendar Tests
-- **File**: `e2e/calendar.spec.ts`
-- **Projects**: `chromium-desktop`, `chromium-mobile`
-- **User**: Uses saved auth state from setup (E2E_USERNAME)
-- **Dependencies**: Requires setup to run first
-- **Assumption**: User has completed onboarding (≥3 workouts)
-
-### 3. Onboarding Flow Tests
+### 1. Onboarding Flow Tests (runs first)
 - **File**: `e2e/onboarding-flow.spec.ts`
 - **Project**: `onboarding-flow`
 - **User**: `E2E_USERNAME` (fresh login each test)
-- **Dependencies**: None (runs independently)
-- **Assumption**: User has <3 workouts (ensured by teardown)
+- **Purpose**:
+  - Tests onboarding flow (3 steps)
+  - Creates 3 workouts in the process
+  - These workouts are reused by calendar tests
+
+### 2. Setup Phase (runs after onboarding-flow)
+- **File**: `e2e/setup/auth.setup.ts`
+- **Project**: `setup`
+- **User**: `E2E_USERNAME`
+- **Dependencies**: Requires `onboarding-flow` to complete first
+- **Purpose**:
+  - Logs in as test user (who now has 3 workouts from onboarding-flow)
+  - Verifies user has completed onboarding (≥3 workouts)
+  - Saves authenticated state to `playwright/.auth/user.json`
+  - **Does NOT delete workouts** - reuses them for calendar tests
+
+### 3. Calendar Tests
+- **File**: `e2e/calendar.spec.ts`
+- **Projects**: `chromium-desktop`, `chromium-mobile`
+- **User**: Uses saved auth state from setup (E2E_USERNAME)
+- **Dependencies**: Requires `setup` to run first
+- **Purpose**:
+  - Tests calendar view functionality
+  - Uses the 3 workouts created by onboarding-flow
 
 ### 4. Global Teardown
 - **File**: `e2e/teardown/onboarding.teardown.ts`
@@ -52,15 +58,24 @@ E2E_PASSWORD=TestPassword123!
 ## Test Execution Order
 
 ```
-1. setup (auth.setup.ts)
+1. onboarding-flow (onboarding-flow.spec.ts)
+   └─ Creates 3 workouts for E2E_USERNAME
    ↓
-2. chromium-desktop (calendar.spec.ts) + chromium-mobile (calendar.spec.ts)
-   + onboarding-flow (onboarding-flow.spec.ts) - runs in parallel
+2. setup (auth.setup.ts)
+   └─ Verifies user has 3 workouts, saves auth state
    ↓
-3. teardown (onboarding.teardown.ts) - runs AFTER ALL tests complete
+3. chromium-desktop (calendar.spec.ts) + chromium-mobile (calendar.spec.ts)
+   └─ Use the 3 workouts from onboarding-flow (run in parallel)
+   ↓
+4. teardown (onboarding.teardown.ts)
+   └─ Deletes all 3 workouts (cleanup for next test run)
 ```
 
-**Note**: Teardown runs LAST, after all test projects complete. This ensures all workouts are cleaned up once, at the very end.
+**Key Points**:
+- Onboarding-flow creates workouts that are **reused** by calendar tests
+- Setup does **NOT** delete workouts - it verifies they exist
+- Teardown runs **LAST** to clean up for the next test run
+- If teardown fails, the next run may have stale data (re-run teardown manually)
 
 ## Creating Test Users in Supabase
 
@@ -111,15 +126,14 @@ npm run test:e2e:headed
 - Ensure local Supabase is running (`npx supabase status`)
 
 ### "Calendar tests fail with redirect to /onboarding"
-- Setup phase failed - check `setup` project output
-- Main test user might not have 3 workouts
-- Run setup manually: `npx playwright test --project=setup`
+- Onboarding-flow tests failed - user doesn't have 3 workouts
+- Check `onboarding-flow` project output for errors
+- Run onboarding tests manually: `npx playwright test --project=onboarding-flow`
 
 ### "Onboarding tests fail - user already has workouts"
-- Onboarding test user has ≥3 workouts (should be cleaned by teardown)
-- Teardown might have failed - check test output for teardown logs
-- Manually delete workouts via Supabase Studio or API
-- Or run teardown manually: `npx playwright test --project=onboarding-teardown`
+- Previous test run's teardown failed (workouts not cleaned up)
+- Run teardown manually to clean up: `npx playwright test e2e/teardown/onboarding.teardown.ts`
+- Or manually delete workouts via Supabase Studio
 
 ### "Teardown fails to delete workouts"
 - Check if user is authenticated (401 error)

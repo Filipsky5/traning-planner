@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { test as setup, expect } from "@playwright/test";
+import { test as setup, expect, type Page } from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
 import { OnboardingPage } from "../pages/OnboardingPage";
 import { CalendarPage } from "../pages/CalendarPage";
@@ -10,7 +10,7 @@ const authFile = "playwright/.auth/user.json";
  * Helper function to cleanup all workouts for test user
  * Used before setup to ensure clean slate (idempotent tests)
  */
-async function cleanupTestUserWorkouts(page: any) {
+async function cleanupTestUserWorkouts(page: Page) {
   try {
     console.log("Cleaning up existing test user workouts...");
 

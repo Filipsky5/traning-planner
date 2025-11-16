@@ -37,6 +37,7 @@ export function WorkoutPlanForm({ trainingTypes, initialDate, onCancel, onSubmit
 
   // Inicjalizacja formularza z domyślnymi wartościami
   const methods = useForm<ManualWorkoutFormValues>({
+    mode: "onChange", // Triggeruj walidację i watch przy każdej zmianie
     defaultValues: {
       trainingTypeCode: "",
       plannedDate: initialDate,
@@ -71,19 +72,20 @@ export function WorkoutPlanForm({ trainingTypes, initialDate, onCancel, onSubmit
     formState: { errors },
   } = methods;
 
-  // Obserwuj kroki do automatycznego przeliczania sum
-  const steps = watch("steps");
+  // Obserwuj wszystkie wartości formularza (deep watching)
+  const formValues = watch();
   const plannedDate = watch("plannedDate");
   const trainingTypeCode = watch("trainingTypeCode");
 
-  // Automatycznie przeliczaj łączne wartości
-  useEffect(() => {
-    const totalDistance = calculateTotalDistanceKm(steps);
-    const totalDuration = calculateTotalDurationSec(steps);
+  // Oblicz łączne wartości bezpośrednio z kroków (recalculated on every render when steps change)
+  const totalDistance = calculateTotalDistanceKm(formValues.steps);
+  const totalDuration = calculateTotalDurationSec(formValues.steps);
 
-    setValue("totalPlannedDistanceKm", totalDistance);
-    setValue("totalPlannedDurationSec", totalDuration);
-  }, [steps, setValue]);
+  // Synchronizuj obliczone wartości z polami formularza
+  useEffect(() => {
+    setValue("totalPlannedDistanceKm", totalDistance, { shouldValidate: false });
+    setValue("totalPlannedDurationSec", totalDuration, { shouldValidate: false });
+  }, [totalDistance, totalDuration, setValue]);
 
   // Walidacja przed submitem
   const validateForm = (values: ManualWorkoutFormValues): string | null => {
@@ -173,9 +175,7 @@ export function WorkoutPlanForm({ trainingTypes, initialDate, onCancel, onSubmit
   // Filtruj tylko aktywne typy treningów
   const activeTrainingTypes = trainingTypes.filter((type) => type.is_active);
 
-  // Oblicz wartości do wyświetlenia
-  const totalDistance = watch("totalPlannedDistanceKm");
-  const totalDuration = watch("totalPlannedDurationSec");
+  // Formatuj czas do wyświetlenia
   const formattedDuration = formatDurationDisplay(totalDuration);
 
   // Formatuj datę do wyświetlenia

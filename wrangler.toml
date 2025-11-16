@@ -8,10 +8,6 @@ compatibility_date = "2025-11-16"
 # Pages configuration
 pages_build_output_dir = "./dist"
 
-# For local development
-[env.development]
-compatibility_date = "2025-11-16"
-
 # Environment variables for local development should be set in .dev.vars file
 # Example .dev.vars:
 # SUPABASE_URL=https://your-project.supabase.co

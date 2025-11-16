@@ -10,6 +10,7 @@ export interface WorkoutViewModel {
   origin: 'manual' | 'ai' | 'import';
   rating: 'too_easy' | 'just_right' | 'too_hard' | null;
   trainingTypeCode: string;
+  detail: WorkoutDetailDto;
 
   // Pola sformatowane do wyświetlania
   plannedDateFormatted: string; // "DD.MM.YYYY"
@@ -50,9 +51,9 @@ interface UseWorkoutDetailReturn {
 /**
  * Hook zarządzający szczegółami treningu i akcjami na nim
  */
-export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
+export function useWorkoutDetail(workoutId: string | null): UseWorkoutDetailReturn {
   const [workout, setWorkout] = useState<WorkoutViewModel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   /**
@@ -128,6 +129,7 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
       origin: dto.origin,
       rating: dto.rating,
       trainingTypeCode: dto.training_type_code,
+      detail: dto,
 
       plannedDateFormatted: formatDate(dto.planned_date),
       completedAtFormatted: formatDateTime(dto.completed_at),
@@ -151,6 +153,13 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
    * Pobiera dane treningu z API
    */
   const fetchWorkout = useCallback(async () => {
+    if (!workoutId) {
+      setWorkout(null);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -189,6 +198,10 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
    * Ukończ trening
    */
   const completeWorkout = useCallback(async (data: WorkoutCompleteCommand) => {
+    if (!workoutId) {
+      throw new Error('Brak identyfikatora treningu');
+    }
+
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/complete`, {
         method: 'POST',
@@ -213,6 +226,10 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
    * Oceń trening
    */
   const rateWorkout = useCallback(async (data: WorkoutRateCommand) => {
+    if (!workoutId) {
+      throw new Error('Brak identyfikatora treningu');
+    }
+
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/rate`, {
         method: 'POST',
@@ -237,6 +254,10 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
    * Pomiń trening
    */
   const skipWorkout = useCallback(async () => {
+    if (!workoutId) {
+      throw new Error('Brak identyfikatora treningu');
+    }
+
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/skip`, {
         method: 'POST',
@@ -261,6 +282,10 @@ export function useWorkoutDetail(workoutId: string): UseWorkoutDetailReturn {
    * Anuluj trening
    */
   const cancelWorkout = useCallback(async () => {
+    if (!workoutId) {
+      throw new Error('Brak identyfikatora treningu');
+    }
+
     try {
       const response = await fetch(`/api/v1/workouts/${workoutId}/cancel`, {
         method: 'POST',

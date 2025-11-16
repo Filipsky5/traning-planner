@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 /**
  * Generuje ETag (entity tag) dla podanej wartości używając SHA-256.
  * ETag służy do cache'owania HTTP - pozwala klientowi sprawdzić czy zasób się zmienił.
@@ -12,11 +10,20 @@ import { createHash } from "node:crypto";
  *
  * @example
  * const data = [{ id: 1, name: "Easy Run" }];
- * const etag = computeEtag(data);
+ * const etag = await computeEtag(data);
  * // etag = "a3b5c7d9e1f2..."
  */
-export function computeEtag(value: unknown): string {
+export async function computeEtag(value: unknown): Promise<string> {
   const json = typeof value === "string" ? value : JSON.stringify(value);
-  const hash = createHash("sha256").update(json).digest("hex");
+
+  // Use Web Crypto API (compatible with Cloudflare Workers)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(json);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+  // Convert ArrayBuffer to hex string
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
   return `"${hash}"`; // strong ETag (w cudzysłowie zgodnie ze standardem HTTP)
 }

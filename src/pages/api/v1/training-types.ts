@@ -81,7 +81,7 @@ export async function GET(context: APIContext) {
     // 5. Generowanie ETag i obsługa cache (304 Not Modified)
     // ETag = fingerprint danych (SHA-256 hash). Jeśli dane się nie zmieniły, klient
     // dostaje 304 bez ciała odpowiedzi → oszczędność transferu danych
-    const etag = computeEtag(items); // hash tylko danych, nie metadanych paginacji
+    const etag = await computeEtag(items); // hash tylko danych, nie metadanych paginacji
     const ifNoneMatch = context.request.headers.get("if-none-match");
 
     const cacheHeaders = {

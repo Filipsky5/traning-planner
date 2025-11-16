@@ -127,3 +127,4 @@ Komponent będzie komunikował się z jednym endpointem API.
 7.  **Obsługa przypadków brzegowych:** Upewnienie się, że UI poprawnie obsługuje stany ładowania, błędu oraz braku treningów.
 8.  **Stylowanie i dopracowanie wizualne:** Finalne dopasowanie stylów komponentów do reszty aplikacji, w tym kolorystyki typów treningów.
 9.  **Testowanie manualne:** Przetestowanie całego przepływu: otwieranie, zamykanie, ładowanie danych, działanie szybkich akcji oraz responsywność widoku.
+

@@ -16,7 +16,7 @@ if (process.env.CLAUDE_OUTCOME === "success" && process.env.CLAUDE_EXECUTION_FIL
 
 if (!completed) {
   error(
-    "::error::Claude did not complete a review. The action may have skipped execution (for example, because this workflow differs from the default branch). Codex fallback will run for eligible PRs."
+    "::error::Claude did not complete a review. The action may have skipped execution (for example, because this workflow differs from the default branch)."
   );
   process.exitCode = 1;
 } else {

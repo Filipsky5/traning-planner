@@ -94,7 +94,7 @@
 - **GitHub Actions**
   - Buildy i testy przy pull requestach; deploy przez workflow_dispatch
   - Uruchamianie testów
-  - Review PR przez Claude; fallback Codex przy błędzie joba ([konfiguracja](code-review-automation.md))
+  - Review PR przez Claude ([konfiguracja](code-review-automation.md))
   - Ręczny deploy na Cloudflare Workers
   - Ręczny trigger przez `workflow_dispatch`
 

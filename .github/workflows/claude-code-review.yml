@@ -1,4 +1,4 @@
-name: AI Code Review
+name: Claude Code Review
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ on:
     #   - "src/**/*.jsx"
 
 concurrency:
-  group: ai-code-review-${{ github.event.pull_request.number }}
+  group: claude-code-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -68,85 +68,3 @@ jobs:
           CLAUDE_OUTCOME: ${{ steps.claude-review.outcome }}
           CLAUDE_EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
         run: node .github/scripts/verify-claude-review.mjs
-
-  codex-review:
-    name: Codex fallback review
-    needs: claude-review
-    if: >-
-      ${{ always() && !cancelled() &&
-          needs['claude-review'].result == 'failure' &&
-          github.event.pull_request.head.repo.full_name == github.repository }}
-    # Ubuntu 26.04 breaks drop-sudo's socket isolation (openai/codex-action#188).
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    outputs:
-      final_message: ${{ steps.codex.outputs.final-message }}
-    steps:
-      - name: Checkout pull request
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Run Codex review
-        id: codex
-        uses: openai/codex-action@v1
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .github/codex/prompts/review.md
-          sandbox: read-only
-          safety-strategy: drop-sudo
-          codex-args: '["--ephemeral"]'
-
-  post-codex-review:
-    name: Publish Codex fallback review
-    needs: codex-review
-    if: >-
-      ${{ always() && !cancelled() &&
-          needs['codex-review'].result == 'success' &&
-          needs['codex-review'].outputs.final_message != '' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Post review on the reviewed commit
-        uses: actions/github-script@v8
-        env:
-          CODEX_REVIEW: ${{ needs['codex-review'].outputs.final_message }}
-          REVIEWED_SHA: ${{ github.event.pull_request.head.sha }}
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const pull_number = context.payload.pull_request.number;
-            const { data: pull } = await github.rest.pulls.get({ owner, repo, pull_number });
-
-            if (pull.state !== "open" || pull.head.sha !== process.env.REVIEWED_SHA) {
-              core.notice("Skipping feedback because the pull request closed or its head changed.");
-              return;
-            }
-
-            const marker = `<!-- codex-fallback-review:${process.env.REVIEWED_SHA} -->`;
-            const reviews = await github.paginate(github.rest.pulls.listReviews, {
-              owner, repo, pull_number, per_page: 100,
-            });
-
-            if (reviews.some(review => review.user?.login === "github-actions[bot]" && review.body.includes(marker))) {
-              core.notice("Codex fallback feedback already exists for this commit.");
-              return;
-            }
-
-            await github.rest.pulls.createReview({
-              owner,
-              repo,
-              pull_number,
-              commit_id: process.env.REVIEWED_SHA,
-              event: "COMMENT",
-              body: `${marker}\n## Codex fallback review\n\nClaude review failed, so Codex reviewed this commit.\n\n${process.env.CODEX_REVIEW}`,
-            });

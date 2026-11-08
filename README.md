@@ -52,7 +52,7 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
 - DevOps & Deployment
   - Cloudflare Workers
   - GitHub Actions for CI/CD
-  - Claude PR reviews with a Codex fallback on failure ([configuration](.ai/code-review-automation.md))
+  - Claude PR reviews ([configuration](.ai/code-review-automation.md))
 - Testing & DX
   - **E2E Tests**: Playwright (Chromium, desktop + mobile viewports)
   - **Unit/Integration Tests**: Vitest + React Testing Library

@@ -6,6 +6,9 @@ when a pull request is opened, updated, or reopened.
 ## Primary and fallback reviewers
 
 1. `claude-review` runs the existing Claude review, with a 15-minute timeout.
+   A completion guard then requires a successful action step
+   and a successful final result in its JSON execution trace. An exit code of
+   zero from the action alone is insufficient.
 2. `codex-review` starts only when the Claude job fails, the workflow has not been
    canceled, and the PR head belongs to this repository. A Claude review that
    completes successfully and reports findings does not trigger the fallback.
@@ -26,6 +29,11 @@ for the same commit. A new PR update cancels earlier runs of this workflow.
 ## Configuration and limitations
 
 - Existing Claude authentication uses `CLAUDE_CODE_OAUTH_TOKEN`.
+- Claude's action can exit successfully without running its model when the
+  workflow differs from the default branch. Its logs then report a workflow
+  validation skip and its execution outputs are absent. The completion guard
+  treats this as a failed primary review so Codex runs; it does not bypass
+  Claude's workflow-validation security check.
 - Codex requires the repository Actions secret `OPENAI_API_KEY`. Keep its value
   in GitHub Secrets; the workflow references the name only.
 - Codex API usage is charged to the key's API project. Connecting GitHub to the
@@ -46,3 +54,8 @@ and, if it fails, the fallback automatically. Review the Actions run to verify
 the API credentials and model availability in the actual GitHub environment.
 
 Reference: [Official Codex GitHub Action documentation](https://learn.chatgpt.com/docs/github-action).
+
+Run the completion guard regression tests with
+`node --test .github/scripts/verify-claude-review.test.mjs`. They cover successful
+action skips, absent/malformed/incomplete traces, failed results, and completed
+successful reviews.

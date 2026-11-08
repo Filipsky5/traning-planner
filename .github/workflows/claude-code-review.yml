@@ -36,6 +36,9 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Test review completion guard
+        run: node --test .github/scripts/verify-claude-review.test.mjs
+
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
@@ -59,6 +62,12 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
           claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+
+      - name: Verify Claude actually completed a review
+        env:
+          CLAUDE_OUTCOME: ${{ steps.claude-review.outcome }}
+          CLAUDE_EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: node .github/scripts/verify-claude-review.mjs
 
   codex-review:
     name: Codex fallback review

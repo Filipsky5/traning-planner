@@ -18,7 +18,11 @@ when a pull request is opened, updated, or reopened.
 Codex checks out the exact PR head with full history and compares it with the
 event's base commit. `.github/codex/prompts/review.md` defines the review scope.
 The action uses its default model, a read-only sandbox, and the `drop-sudo` safety
-strategy. The generation job has only `contents: read`, and checkout credentials
+strategy. The Codex job is pinned to `ubuntu-24.04`: Ubuntu 26.04 (currently
+`ubuntu-latest`) hits the upstream [D-Bus socket isolation bug](https://github.com/openai/codex-action/issues/188)
+before Codex can execute. Keep this runner pin until the upstream fix is verified;
+do not work around it by disabling privilege isolation.
+The generation job has only `contents: read`, and checkout credentials
 are not persisted. The separate publishing job has `pull-requests: write` and
 does not check out or execute PR code.
 

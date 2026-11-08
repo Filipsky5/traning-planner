@@ -1,3 +1,6 @@
+> Historical Cloudflare Pages documentation, preserved from before the dependency upgrade.
+> Astro 7 uses Workers; follow the [current Workers deployment guide](cloudflare-workers-deployment-guide.md) for the upgraded app.
+
 # Cloudflare Pages Deployment Guide
 
 ## Przegląd
@@ -7,16 +10,19 @@ Ten projekt jest skonfigurowany do automatycznego wdrażania na Cloudflare Pages
 ## Wymagania
 
 ### 1. Konto Cloudflare
+
 - Utwórz konto na [Cloudflare](https://dash.cloudflare.com/sign-up)
 - Darmowy plan Pages wystarczy dla projektu MVP
 
 ### 2. Projekt Cloudflare Pages
+
 1. Zaloguj się do [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. Przejdź do **Workers & Pages** → **Create application** → **Pages**
 3. **Ważne:** Utwórz projekt ale **NIE** łącz go z GitHub (CI/CD będzie przez GitHub Actions)
 4. Zanotuj nazwę projektu (będzie potrzebna w secrets)
 
 ### 3. API Token Cloudflare
+
 1. Przejdź do **My Profile** → **API Tokens**
 2. Kliknij **Create Token**
 3. Użyj template **Edit Cloudflare Workers**
@@ -26,6 +32,7 @@ Ten projekt jest skonfigurowany do automatycznego wdrażania na Cloudflare Pages
 5. Skopiuj wygenerowany token (będzie widoczny tylko raz!)
 
 ### 4. Account ID
+
 1. W Cloudflare Dashboard, przejdź do **Workers & Pages**
 2. Account ID znajduje się w prawej kolumnie pod nazwą konta
 3. Lub w URL: `dash.cloudflare.com/<ACCOUNT_ID>/...`
@@ -84,6 +91,7 @@ E2E_PASSWORD                 # Hasło do testów E2E
    - Możesz ustawić osobne wartości dla preview deployments
 
 **Dlaczego dwa miejsca?**
+
 - GitHub Secrets: Używane podczas build process w GitHub Actions
 - Cloudflare Variables: Używane w runtime przez Workers/Pages
 
@@ -100,6 +108,7 @@ git push origin main
 ```
 
 GitHub Actions automatycznie:
+
 1. ✅ Uruchomi linting
 2. ✅ Uruchomi testy jednostkowe
 3. ✅ Zbuduje aplikację dla Cloudflare
@@ -155,6 +164,7 @@ INTERNAL_ADMIN_TOKEN=your-local-token
 ### Concurrency Control
 
 Workflow używa `concurrency` aby:
+
 - Anulować poprzednie wdrożenia dla tego samego brancha
 - Zapobiec konfliktom przy równoczesnych deployments
 
@@ -167,17 +177,20 @@ concurrency:
 ### Artifacts
 
 Build artifacts są przechowywane 7 dni:
+
 - `cloudflare-build-<sha>` - Zbudowana aplikacja
 - `unit-coverage-<sha>` - Raport pokrycia testami
 
 ## Różnice między Node adapter a Cloudflare adapter
 
 ### Node Adapter (astro.config.mjs)
+
 - Używany dla lokalnego developmentu (`npm run dev`)
 - Używany dla testów E2E (`npm run build:test`)
 - Standalone Node.js server
 
 ### Cloudflare Adapter (astro.config.cloudflare.mjs)
+
 - Używany dla produkcyjnego wdrożenia
 - Zoptymalizowany dla Cloudflare Workers
 - Edge runtime, globalny CDN
@@ -196,11 +209,13 @@ Możesz również skonfigurować custom domain w Cloudflare Pages dashboard:
 ## Monitoring i Logs
 
 ### Real-time Logs
+
 1. Cloudflare Dashboard → **Workers & Pages** → Twój projekt
 2. Kliknij **View logs** lub **Deployment**
 3. Zobacz logi z ostatnich requestów
 
 ### Analytics
+
 1. **Analytics** tab w projekcie Pages
 2. Sprawdź:
    - Requests per second
@@ -209,6 +224,7 @@ Możesz również skonfigurować custom domain w Cloudflare Pages dashboard:
    - Geographic distribution
 
 ### GitHub Actions Logs
+
 1. Repository → **Actions** tab
 2. Wybierz konkretny workflow run
 3. Rozwiń jobs aby zobaczyć szczegółowe logi
@@ -218,50 +234,61 @@ Możesz również skonfigurować custom domain w Cloudflare Pages dashboard:
 Jeśli wdrożenie nie działa poprawnie:
 
 ### Opcja 1: Cloudflare Dashboard
+
 1. Przejdź do projektu → **Deployments**
 2. Znajdź poprzednie działające wdrożenie
 3. Kliknij **Rollback to this deployment**
 
 ### Opcja 2: Git Revert
+
 ```bash
 git revert HEAD
 git push origin main
 ```
+
 Automatycznie wywoła nowe wdrożenie ze starszym kodem.
 
 ## Troubleshooting
 
 ### Build Fails
+
 **Problem:** `npm run build:cloudflare` kończy się błędem
 
 **Rozwiązanie:**
+
 1. Sprawdź logi w GitHub Actions
 2. Uruchom lokalnie: `npm run build:cloudflare`
 3. Sprawdź czy wszystkie dependencies są zainstalowane
 4. Sprawdź compatibility date w `wrangler.toml`
 
 ### Deployment Fails
+
 **Problem:** Wdrożenie nie powiodło się po buildzie
 
 **Rozwiązanie:**
+
 1. Sprawdź czy `CLOUDFLARE_API_TOKEN` jest poprawny
 2. Sprawdź uprawnienia tokena (Edit Cloudflare Workers)
 3. Sprawdź czy `CLOUDFLARE_PROJECT_NAME` pasuje do nazwy w dashboard
 4. Sprawdź czy `CLOUDFLARE_ACCOUNT_ID` jest poprawny
 
 ### Runtime Errors
+
 **Problem:** Aplikacja wdraża się, ale występują błędy runtime
 
 **Rozwiązanie:**
+
 1. Sprawdź logi w Cloudflare Dashboard
 2. Sprawdź czy zmienne środowiskowe są ustawione w Cloudflare Pages
 3. Sprawdź czy wartości zmiennych są poprawne (URL, klucze API)
 4. Przetestuj lokalnie z `npm run preview:cloudflare`
 
 ### Environment Variables Not Working
+
 **Problem:** Zmienne środowiskowe nie są dostępne
 
 **Rozwiązanie:**
+
 1. Zmienne muszą być w **dwóch** miejscach:
    - GitHub Secrets (dla build time)
    - Cloudflare Environment Variables (dla runtime)
@@ -282,6 +309,7 @@ Automatycznie wywoła nowe wdrożenie ze starszym kodem.
 ## Best Practices
 
 1. **Zawsze testuj lokalnie** przed push do main
+
    ```bash
    npm run lint
    npm run test:unit
@@ -309,17 +337,20 @@ Automatycznie wywoła nowe wdrożenie ze starszym kodem.
 Jeśli wcześniej deployment był na DigitalOcean:
 
 ### Co zmienić:
+
 1. ✅ Adapter: `@astrojs/node` → `@astrojs/cloudflare`
 2. ✅ Build command: `npm run build` → `npm run build:cloudflare`
 3. ✅ Deployment target: VPS/Docker → Cloudflare Pages
 
 ### Co zachować:
+
 - ✅ Wszystkie zmienne środowiskowe (tylko przenieś do Cloudflare)
 - ✅ Kod aplikacji (bez zmian)
 - ✅ Baza danych Supabase (bez zmian)
 - ✅ OpenRouter AI (bez zmian)
 
 ### Zalety Cloudflare vs DigitalOcean:
+
 - ✅ **Prostszy deployment** - brak konfiguracji Docker/nginx
 - ✅ **Globalny CDN** - szybsze ładowanie na całym świecie
 - ✅ **Auto-scaling** - obsługa traffic spikes

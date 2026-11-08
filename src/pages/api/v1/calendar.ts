@@ -60,14 +60,14 @@ export async function GET(context: APIContext) {
     // Obsługa błędów walidacji Zod (w tym invalid date range)
     if (err.name === "ZodError") {
       console.warn("GET /api/v1/calendar - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid query parameters",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }

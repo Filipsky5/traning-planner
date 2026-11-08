@@ -110,14 +110,14 @@ export async function PUT(context: APIContext) {
     // Obsługa błędów walidacji Zod
     if (err.name === "ZodError") {
       console.warn("PUT /api/v1/user-goal - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid goal data",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }

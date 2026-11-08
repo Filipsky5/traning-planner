@@ -58,14 +58,14 @@ export async function POST(context: APIContext) {
     // Obsługa błędów walidacji Zod
     if (err.name === "ZodError") {
       console.warn("POST /api/v1/workouts/[id]/rate - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid rating data",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }

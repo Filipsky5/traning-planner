@@ -65,14 +65,14 @@ export async function GET(context: APIContext) {
     // Obsługa błędów walidacji Zod
     if (err.name === "ZodError") {
       console.warn("GET /api/v1/workouts - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid query parameters",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
@@ -136,14 +136,14 @@ export async function POST(context: APIContext) {
     // Obsługa błędów walidacji Zod
     if (err.name === "ZodError") {
       console.warn("POST /api/v1/workouts - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid workout data",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }

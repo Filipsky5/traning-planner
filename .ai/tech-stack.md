@@ -1,32 +1,39 @@
+> Aktualizacja 2026-11-08: wymagany Node 22.23.4 (`.nvmrc`), Astro 7, React 19.3, Zod 4, Vitest 5 i Vite 8. Cloudflare adapter 14 obsługuje Workers zamiast Pages. Szczegóły migracji: [dependency-upgrade.md](dependency-upgrade.md). ESLint pozostaje w wersji 9, TypeScript w 5.9 ze względu na zgodność pluginów.
+
 # Tech Stack - AI Running Training Planner
 
 ## Frontend
 
 ### Framework
-- **Astro 5** (SSR mode)
+
+- **Astro 7** (SSR mode)
   - Szybkie, wydajne strony z minimalnym JavaScript
   - Server-side rendering dla lepszego SEO i performance
   - Adapter: `@astrojs/node` w trybie standalone
 
 ### UI Framework
+
 - **React 19**
   - Komponenty interaktywne (kalendarz, formularze)
   - Hydration tylko tam gdzie potrzebna (Astro Islands)
   - Dyrektywy: `client:load`, `client:visible` dla optymalizacji
 
 ### Styling
+
 - **Tailwind CSS 4**
   - Utility-first CSS framework
   - Szybkie prototypowanie
   - Rekomendowany przez autorów kursu
 
 ### UI Components
+
 - **shadcn/ui**
   - Dostępne, konfigurowalne komponenty React
   - Oparte na Radix UI
   - TypeScript support out of the box
 
 ### Ikony
+
 - **Lucide React**
   - Spójna biblioteka ikon
   - Tree-shakeable
@@ -34,6 +41,7 @@
 ## Backend
 
 ### Database
+
 - **Supabase** (hosted PostgreSQL)
   - Automatyczne REST API
   - Wbudowana autentykacja
@@ -42,6 +50,7 @@
   - Darmowy tier wystarczający na MVP
 
 ### Authentication
+
 - **Supabase Auth**
   - Gotowe rozwiązanie
   - Email/password authentication
@@ -49,12 +58,14 @@
   - Zero konfiguracji
 
 ### API Layer
+
 - **Astro API Routes**
   - Endpointy w `src/pages/api/`
   - Server-side tylko
   - TypeScript support
 
 ### AI Integration
+
 - **OpenRouter.ai**
   - Dostęp do wielu modeli AI (OpenAI, Anthropic, Google)
   - Elastyczność w wyborze modelu
@@ -64,28 +75,33 @@
 ## DevOps & Deployment
 
 ### Containerization
+
 - **Docker**
   - Dockerfile oparty na `node:22-alpine`
   - Single-stage build dla uproszczenia
   - docker-compose dla lokalnego developmentu (opcjonalnie)
 
 ### Hosting
-- **Cloudflare Pages**
+
+- **Cloudflare Workers**
   - Natywne wsparcie dla Astro SSR przez Cloudflare Workers
   - Globalna sieć CDN i wdrożenia na skraju sieci (Edge)
   - Darmowy plan z hojnymi limitami i wsparciem dla projektów komercyjnych
   - Automatyczne wdrożenia z Git
 
 ### CI/CD
+
 - **GitHub Actions**
-  - Automatyczne buildy przy push do main
+  - Buildy i testy przy pull requestach; deploy przez workflow_dispatch
   - Uruchamianie testów
-  - Automatyczny deploy na DigitalOcean
+  - Review PR przez Claude ([konfiguracja](code-review-automation.md))
+  - Ręczny deploy na Cloudflare Workers
   - Ręczny trigger przez `workflow_dispatch`
 
 ### Testing
 
 #### E2E Tests
+
 - **Playwright**
   - End-to-end testing framework
   - Cross-browser testing (Chromium, WebKit, opcjonalnie Firefox)
@@ -96,7 +112,8 @@
   - Scenariusze: autentykacja, onboarding, kalendarz, AI suggestions, cele użytkownika
 
 #### Unit & Integration Tests
-- **Vitest** (rekomendowane) lub **Jest**
+
+- **Vitest 5**
   - Unit tests dla utils, walidacji, services
   - Fast, Vite-native test runner (Vitest)
   - Compatible z ekosystemem Jest
@@ -108,6 +125,7 @@
   - User-centric testing approach
 
 #### API Tests
+
 - **supertest** lub **node-fetch**
   - HTTP endpoint testing dla `src/pages/api/v1/*`
   - Uruchamiane przeciwko testowemu serwerowi Astro (Node adapter)
@@ -115,6 +133,7 @@
   - Alternatywnie: Playwright APIRequestContext
 
 #### Mocking & Helpers
+
 - **MSW** (Mock Service Worker) - opcjonalnie
   - Mockowanie API responses w testach komponentów
   - Deterministyczne odpowiedzi AI dla testów
@@ -123,12 +142,14 @@
 ## Development Tools
 
 ### Type Safety
-- **TypeScript 5**
+
+- **TypeScript 5.9**
   - Statyczne typowanie
   - Lepsze wsparcie IDE
   - Mniej błędów w runtime
 
 ### Code Quality
+
 - **ESLint 9** - linting JavaScript/TypeScript
 - **Prettier** - formatowanie kodu
 - **Husky** - Git hooks
@@ -164,7 +185,7 @@ src/
 ## Koszty Miesięczne (Szacowane)
 
 - **Supabase**: $0 (Free tier - 500MB DB, 2GB transfer)
-- **Cloudflare Pages**: $0 (Free tier z hojnymi limitami)
+- **Cloudflare Workers**: $0 (Free tier z hojnymi limitami)
 - **OpenRouter AI**: $5-20/miesiąc (zależnie od użycia)
 - **GitHub Actions**: $0 (darmowe dla public repos, 2000 min/miesiąc dla private)
 
@@ -172,15 +193,18 @@ src/
 
 ## Alternatywy i Plan B
 
-### Jeśli Cloudflare Pages sprawia problemy:
+### Jeśli Cloudflare Workers sprawia problemy:
+
 1. Deploy na **Vercel** lub **Netlify** (darmowy, 5 minut setup)
 2. Obie platformy automatycznie obsługują Astro SSR
 3. W dokumentacji: "Deployment available on multiple platforms"
 
 ### Jeśli Tailwind 4 sprawia problemy:
+
 - Downgrade do **Tailwind 3.4** (stabilny)
 
 ### Jeśli React jest za trudny:
+
 - **Alpine.js** jako alternatywa (prostszy)
 - Lub czyste **Astro components**
 
@@ -195,7 +219,7 @@ src/
 
 ## Timeline (5 tygodni, 8h/tydzień)
 
-**Tydzień 1**: Setup (Supabase, Cloudflare Pages, GitHub Actions)
+**Tydzień 1**: Setup (Supabase, Cloudflare Workers, GitHub Actions)
 **Tydzień 2**: CRUD + UI (Kalendarz, formularze)
 **Tydzień 3**: AI Generator + logika biznesowa
 **Tydzień 4**: Testy + debugging + dokumentacja

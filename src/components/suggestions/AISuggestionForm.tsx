@@ -150,7 +150,7 @@ export function AISuggestionForm({ trainingTypes, onSubmit, isSubmitting, initia
                 }
               }}
               disabled={isSubmitting}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>

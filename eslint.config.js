@@ -4,7 +4,6 @@ import eslintPluginPrettier from "eslint-plugin-prettier/recommended";
 import eslintPluginAstro from "eslint-plugin-astro";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import pluginReact from "eslint-plugin-react";
-import reactCompiler from "eslint-plugin-react-compiler";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +30,7 @@ const jsxA11yConfig = tseslint.config({
   },
   rules: {
     ...jsxA11y.flatConfigs.recommended.rules,
+    "jsx-a11y/no-autofocus": ["error", { ignoreNonDOM: true }],
   },
 });
 
@@ -46,13 +46,13 @@ const reactConfig = tseslint.config({
   },
   plugins: {
     "react-hooks": eslintPluginReactHooks,
-    "react-compiler": reactCompiler,
   },
   settings: { react: { version: "detect" } },
   rules: {
     ...eslintPluginReactHooks.configs.recommended.rules,
+    // Keep new performance guidance visible while preserving existing SSR hydration/fetch effects.
+    "react-hooks/set-state-in-effect": "warn",
     "react/react-in-jsx-scope": "off",
-    "react-compiler/react-compiler": "error",
   },
 });
 

@@ -1,8 +1,8 @@
 ## AI Running Training Planner (MVP)
 
 <p align="left">
-  <a href="https://nodejs.org/"><img alt="Node" src="https://img.shields.io/badge/node-22.14.0-339933?logo=node.js"></a>
-  <a href="https://astro.build/"><img alt="Astro" src="https://img.shields.io/badge/Astro-5-BC52EE?logo=astro&logoColor=white"></a>
+  <a href="https://nodejs.org/"><img alt="Node" src="https://img.shields.io/badge/node-22.23.4-339933?logo=node.js"></a>
+  <a href="https://astro.build/"><img alt="Astro" src="https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white"></a>
   <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-19-087EA4?logo=react&logoColor=white"></a>
   <a href="https://tailwindcss.com/"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white"></a>
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue">
@@ -11,6 +11,7 @@
 </p>
 
 ### Table of Contents
+
 - [1. Project name](#1-project-name)
 - [2. Project description](#2-project-description)
 - [3. Tech stack](#3-tech-stack)
@@ -29,6 +30,7 @@ AI Running Training Planner
 AI Running Training Planner is a web application that helps beginner and intermediate runners plan their workouts using AI-generated suggestions. The MVP focuses on making training planning simple and approachable without requiring coaching expertise.
 
 Key goals:
+
 - Provide structured workout suggestions with clear parts: Warm-up, Main, Cool-down
 - Adapt to the user based on their last 3 workouts and feedback ratings
 - Keep the interface simple with a calendar-first experience
@@ -38,7 +40,7 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
 ## 3. Tech stack
 
 - Frontend
-  - Astro 5 (SSR) with `@astrojs/node`
+  - Astro 7 (SSR) with `@astrojs/node`
   - React 19 (Astro Islands)
   - Tailwind CSS 4
   - shadcn/ui
@@ -48,11 +50,11 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
   - Astro API Routes under `src/pages/api` (server-only)
   - AI integration via OpenRouter.ai (model-agnostic)
 - DevOps & Deployment
-  - Docker (single-stage, `node:22-alpine`)
-  - Cloudflare Pages
+  - Cloudflare Workers
   - GitHub Actions for CI/CD
+  - Claude PR reviews ([configuration](.ai/code-review-automation.md))
 - Testing & DX
-  - **E2E Tests**: Playwright (Chromium, WebKit, desktop + mobile viewports)
+  - **E2E Tests**: Playwright (Chromium, desktop + mobile viewports)
   - **Unit/Integration Tests**: Vitest + React Testing Library
   - **API Tests**: supertest or node-fetch (for Astro API endpoints)
   - **Mocking** (optional): MSW (Mock Service Worker)
@@ -60,18 +62,20 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
   - ESLint 9, Prettier, Husky, lint-staged
 
 Selected runtime/tooling versions come from the current project setup:
-- Node: `22.14.0` (see `.nvmrc`), engines: `>=22.0.0`
-- Notable dependencies: `astro@^5.13.7`, `react@^19.1.1`, `tailwindcss@^4.1.13`
+
+- Node: `22.23.4` (see `.nvmrc`), engines: `>=22.23.4`
+- Notable dependencies: `astro@^7.4.7`, `react@^19.3.1`, `tailwindcss@^4.3.5`
 
 Additional stack details are documented in [`./.ai/tech-stack.md`](./.ai/tech-stack.md).
 
 ## 4. Getting started locally
 
 - Prerequisites
-  - Node.js 22 (recommended via `nvm`): `22.14.0`
+  - Node.js 22 (recommended via `nvm`): `22.23.4`
   - npm (bundled with Node)
 
 - Clone and install
+
 ```bash
 # clone
 git clone https://github.com/Filipsky5/traning-planner
@@ -81,28 +85,35 @@ cd traning-planner
 nvm use
 
 # install dependencies
-npm install
+npm ci
 ```
 
 - Run the dev server
+
 ```bash
 npm run dev
 ```
+
 The dev server will start and print a local URL (Astro dev).
 
 - Build for production
+
 ```bash
 npm run build
 ```
 
 - Preview the production build
+
 ```bash
 npm run preview
 ```
 
 Notes:
-- No environment variables are required at this stage. Future integrations (Supabase, OpenRouter) will introduce configuration.
-- This project uses Tailwind CSS 4 and Astro 5 with React Islands; minimal client JS is shipped by default.
+
+- Configure `.env` before starting: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, and `INTERNAL_ADMIN_TOKEN` are required. `SUPABASE_KEY` is the Supabase anonymous/publishable key; keep the service-role key server-only.
+- Set `PUBLIC_SITE_URL` to the actual app origin for authentication redirects. OpenRouter model, timeout, and retries have defaults in the Astro config.
+- Cloudflare builds now target **Workers**. Existing Pages deployments require a hosting migration; see [the deployment guide](.ai/cloudflare-workers-deployment-guide.md).
+- This project uses Tailwind CSS 4 and Astro 7 with React Islands; minimal client JS is shipped by default.
 
 ## 5. Available scripts
 
@@ -111,6 +122,10 @@ All scripts are defined in `package.json`:
 - `dev`: Start the Astro dev server
 - `build`: Build the production site
 - `preview`: Preview the built site locally
+- `build:cloudflare` / `preview:cloudflare`: Build and preview the Worker locally
+- `deploy:cloudflare`: Deploy the previously built Worker (requires Cloudflare credentials)
+- `test:unit` / `test:unit:coverage`: Run Vitest with optional coverage
+- `test:e2e`: Run Playwright against the test production bundle (`npm run build:test` first)
 - `astro`: Run the Astro CLI directly
 - `lint`: Run ESLint on the project
 - `lint:fix`: Run ESLint with auto-fix
@@ -135,6 +150,7 @@ All scripts are defined in `package.json`:
   - Mobile applications
 
 Success criteria (targets):
+
 - AI suggestion acceptance rate ≥ 75%
 - AI-generated workouts ≥ 75% of all scheduled workouts
 - Majority of user ratings trending to “Just Right”
@@ -143,14 +159,11 @@ See the PRD for full details: [`./.ai/prd.md`](./.ai/prd.md).
 
 ## 7. Project status
 
-Planned next steps (from Tech Stack & PRD):
-- Implement Supabase (DB + Auth) and Astro API routes under `src/pages/api`
-- Integrate OpenRouter.ai for AI training generation
-- Build calendar UI and training forms; wire rating flow
-- Add CI/CD (GitHub Actions) and containerization (Docker)
-- Add basic E2E test (Playwright) verifying the main user flow
+Implemented flows include authentication, three-workout onboarding, the calendar, manual workouts, completion/rating, goals, and AI suggestion generation.
 
-Timeline guidance and deployment options are described in [`./.ai/tech-stack.md`](./.ai/tech-stack.md).
+Known product gaps include connecting recent workout history and goals to AI generation, calibration/progression rules, and reconciling the regeneration limit with the PRD.
+
+Dependency maintenance was performed on 2026-11-08. See [the migration notes](.ai/dependency-upgrade.md) for version decisions, checks, and remaining advisories.
 
 ## 8. License
 

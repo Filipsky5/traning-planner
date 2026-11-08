@@ -1,16 +1,6 @@
-# Wrangler configuration for Cloudflare Pages
-# This file is used for local development with `npm run preview:cloudflare`
-# For production deployment, configuration is managed via GitHub Actions
-
+# Astro generates the Worker entrypoint and asset settings during the Cloudflare build.
 name = "training-planner"
-compatibility_date = "2025-11-16"
+compatibility_date = "2026-11-08"
+compatibility_flags = ["nodejs_compat"]
 
-# Pages configuration
-pages_build_output_dir = "./dist"
-
-# Environment variables for local development should be set in .dev.vars file
-# Example .dev.vars:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_KEY=your-anon-key
-# OPENROUTER_API_KEY=your-openrouter-key
-# etc.
+# Local secrets belong in .dev.vars. Configure production secrets on the Worker.

@@ -1,3 +1,6 @@
+> Historical Cloudflare Pages documentation, preserved from before the dependency upgrade.
+> Astro 7 uses Workers; follow the [current Workers deployment guide](cloudflare-workers-deployment-guide.md) for the upgraded app.
+
 # Cloudflare Deployment - Setup Summary
 
 ## ✅ Co zostało zrobione
@@ -9,6 +12,7 @@ npm install --save-dev @astrojs/cloudflare wrangler
 ```
 
 **Zainstalowane pakiety:**
+
 - `@astrojs/cloudflare@^12.6.10` - Adapter Astro dla Cloudflare Pages
 - `wrangler@^4.47.0` - CLI Cloudflare dla lokalnego developmentu
 
@@ -17,6 +21,7 @@ npm install --save-dev @astrojs/cloudflare wrangler
 #### Utworzone:
 
 **`astro.config.cloudflare.mjs`** - Konfiguracja Astro dla Cloudflare
+
 ```javascript
 - adapter: cloudflare (mode: "directory")
 - imageService: "compile" (optymalizacja obrazów w build time)
@@ -25,6 +30,7 @@ npm install --save-dev @astrojs/cloudflare wrangler
 ```
 
 **`wrangler.toml`** - Konfiguracja Wrangler dla lokalnego dev
+
 ```toml
 - name: "training-planner"
 - compatibility_date: "2025-11-16"
@@ -32,9 +38,9 @@ npm install --save-dev @astrojs/cloudflare wrangler
 ```
 
 **`.github/workflows/deploy.yml`** - Workflow CI/CD
+
 ```yaml
-Jobs:
-  1. lint - ESLint checking
+Jobs: 1. lint - ESLint checking
   2. unit-tests - Vitest z coverage
   3. build - Build dla Cloudflare
   4. deploy - Deployment na Cloudflare Pages (tylko main branch)
@@ -51,12 +57,14 @@ Concurrency:
 #### Zmodyfikowane:
 
 **`package.json`** - Dodane skrypty
+
 ```json
 "build:cloudflare": "astro build --config astro.config.cloudflare.mjs"
 "preview:cloudflare": "wrangler pages dev ./dist"
 ```
 
 **`.gitignore`** - Dodany `.dev.vars`
+
 ```
 .dev.vars  # Zmienne środowiskowe dla Wrangler
 ```
@@ -64,6 +72,7 @@ Concurrency:
 ### 3. Dokumentacja
 
 **`.ai/cloudflare-deployment-guide.md`** - Kompletny przewodnik zawierający:
+
 - Wymagania i setup konta Cloudflare
 - Konfiguracja GitHub Secrets
 - Zmienne środowiskowe
@@ -100,6 +109,7 @@ Concurrency:
 W repo GitHub → **Settings** → **Secrets and variables** → **Actions**
 
 **Wymagane dla Deployment:**
+
 ```
 CLOUDFLARE_API_TOKEN         # Z kroku 2
 CLOUDFLARE_ACCOUNT_ID        # Z kroku 3
@@ -107,6 +117,7 @@ CLOUDFLARE_PROJECT_NAME      # Nazwa z kroku 1
 ```
 
 **Wymagane dla Aplikacji:**
+
 ```
 SUPABASE_URL
 SUPABASE_KEY
@@ -122,10 +133,12 @@ INTERNAL_ADMIN_TOKEN
 ### 5. Skonfiguruj Environment Variables w Cloudflare
 
 **Dlaczego też w Cloudflare?**
+
 - GitHub Secrets → używane podczas **build time** (GitHub Actions)
 - Cloudflare Variables → używane podczas **runtime** (Cloudflare Workers)
 
 **W Cloudflare Dashboard:**
+
 1. Twój projekt → **Settings** → **Environment variables**
 2. Dodaj te same zmienne co w GitHub Secrets dla **Production** environment:
    - `SUPABASE_URL`
@@ -149,6 +162,7 @@ git push origin main
 ```
 
 GitHub Actions automatycznie:
+
 1. ✅ Sprawdzi kod (lint)
 2. ✅ Uruchomi testy (unit)
 3. ✅ Zbuduje aplikację
@@ -180,6 +194,7 @@ npm run build:cloudflare
 ```
 
 **Rezultat:**
+
 ```
 ✓ Completed in 59ms
 ✓ Built in 5.68s
@@ -187,25 +202,27 @@ npm run build:cloudflare
 ```
 
 **Ostrzeżenia (nieszkodliwe):**
+
 - `[WARN] node:crypto externalized` - normalne dla SSR
 
 ### Deployment Test (Do wykonania)
 
 Po skonfigurowaniu secrets:
+
 1. Push do main **LUB** manual workflow
 2. Sprawdź GitHub Actions logs
 3. Weryfikuj deployment URL w Cloudflare Dashboard
 
 ## 📊 Różnice: Node vs Cloudflare
 
-| Aspekt | Node Adapter | Cloudflare Adapter |
-|--------|--------------|-------------------|
-| **Plik config** | `astro.config.mjs` | `astro.config.cloudflare.mjs` |
-| **Build script** | `npm run build` | `npm run build:cloudflare` |
-| **Preview** | `npm run preview` | `npm run preview:cloudflare` |
-| **Runtime** | Node.js server | Cloudflare Workers (V8) |
-| **Deployment** | VPS/Docker | Cloudflare Pages |
-| **Używany do** | Local dev, E2E tests | Production deployment |
+| Aspekt           | Node Adapter         | Cloudflare Adapter            |
+| ---------------- | -------------------- | ----------------------------- |
+| **Plik config**  | `astro.config.mjs`   | `astro.config.cloudflare.mjs` |
+| **Build script** | `npm run build`      | `npm run build:cloudflare`    |
+| **Preview**      | `npm run preview`    | `npm run preview:cloudflare`  |
+| **Runtime**      | Node.js server       | Cloudflare Workers (V8)       |
+| **Deployment**   | VPS/Docker           | Cloudflare Pages              |
+| **Używany do**   | Local dev, E2E tests | Production deployment         |
 
 **Oba adaptery pozostają w projekcie** - możesz używać Node lokalnie i Cloudflare w produkcji.
 
@@ -250,7 +267,7 @@ Po skonfigurowaniu secrets:
 4. 🔄 **Test deployment** (push do main lub manual trigger)
 5. 🔄 **Sprawdź logi** (GitHub Actions + Cloudflare Dashboard)
 6. 🔄 **Zweryfikuj aplikację** (otwórz deployment URL)
-7. ⏭️  **Opcjonalnie: Custom domain** (jeśli potrzebne)
+7. ⏭️ **Opcjonalnie: Custom domain** (jeśli potrzebne)
 
 ## 🔗 Przydatne Linki
 
@@ -263,17 +280,20 @@ Po skonfigurowaniu secrets:
 ## ⚠️ Troubleshooting Quick Reference
 
 ### Build fails locally
+
 ```bash
 npm ci  # Reinstall dependencies
 npm run build:cloudflare
 ```
 
 ### Deployment fails in GitHub Actions
+
 1. Sprawdź logi w GitHub Actions
 2. Weryfikuj GitHub Secrets (CLOUDFLARE_API_TOKEN, ACCOUNT_ID, PROJECT_NAME)
 3. Sprawdź uprawnienia API tokena
 
 ### Runtime errors in production
+
 1. Sprawdź logi w Cloudflare Dashboard → projekt → Logs
 2. Weryfikuj Environment Variables w Cloudflare
 3. Porównaj z wartościami w .env.example

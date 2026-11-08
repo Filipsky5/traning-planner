@@ -247,7 +247,7 @@ export function WorkoutPlanForm({ trainingTypes, initialDate, onCancel, onSubmit
                   mode="single"
                   selected={plannedDate}
                   onSelect={(date) => date && setValue("plannedDate", date)}
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>

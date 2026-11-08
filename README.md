@@ -112,7 +112,7 @@ Notes:
 
 - Configure `.env` before starting: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, and `INTERNAL_ADMIN_TOKEN` are required. `SUPABASE_KEY` is the Supabase anonymous/publishable key; keep the service-role key server-only.
 - Set `PUBLIC_SITE_URL` to the actual app origin for authentication redirects. OpenRouter model, timeout, and retries have defaults in the Astro config.
-- Cloudflare builds now target **Workers**. Existing Pages deployments require a hosting migration; see [the deployment guide](.ai/cloudflare-deployment-guide.md).
+- Cloudflare builds now target **Workers**. Existing Pages deployments require a hosting migration; see [the deployment guide](.ai/cloudflare-workers-deployment-guide.md).
 - This project uses Tailwind CSS 4 and Astro 7 with React Islands; minimal client JS is shipped by default.
 
 ## 5. Available scripts

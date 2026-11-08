@@ -74,7 +74,7 @@ the generated Wrangler deployment redirect and explicitly uploads Worker secrets
 Existing Pages projects need account-side domain and auth redirect migration;
 these repository changes do not deploy or switch traffic.
 
-See [the Cloudflare deployment guide](cloudflare-deployment-guide.md).
+See [the Cloudflare deployment guide](cloudflare-workers-deployment-guide.md).
 
 ## Validation
 

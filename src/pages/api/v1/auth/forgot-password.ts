@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     // Handle Zod validation errors
     if (error instanceof ZodError) {
-      return createAuthErrorResponse("validation_error", error.errors[0].message, 422);
+      return createAuthErrorResponse("validation_error", error.issues[0].message, 422);
     }
 
     // Handle unexpected errors

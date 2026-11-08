@@ -80,7 +80,7 @@ export async function POST(context: APIContext) {
 
     // Handle Zod validation error
     if (err.name === "ZodError") {
-      const invalidParams = err.errors.map((e: any) => e.path.join("."));
+      const invalidParams = err.issues.map((e: any) => e.path.join("."));
       return errorResponse(
         createApiError(422, "validation_error", "Invalid request body", {
           details: { invalid_params: invalidParams },
@@ -180,7 +180,7 @@ export async function GET(context: APIContext) {
 
     // Handle Zod validation error
     if (err.name === "ZodError") {
-      const invalidParams = err.errors.map((e: any) => e.path.join("."));
+      const invalidParams = err.issues.map((e: any) => e.path.join("."));
       return errorResponse(
         createApiError(422, "validation_error", "Invalid query parameters", {
           details: { invalid_params: invalidParams },

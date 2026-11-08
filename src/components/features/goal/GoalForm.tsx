@@ -251,7 +251,7 @@ export function GoalForm({ initialGoal, isSubmitting, onSave, onDelete }: GoalFo
                           today.setHours(0, 0, 0, 0);
                           return date < today;
                         }}
-                        initialFocus
+                        autoFocus
                       />
                     </PopoverContent>
                   </Popover>

@@ -128,14 +128,14 @@ export async function PATCH(context: APIContext) {
     // Obsługa błędów walidacji Zod (w tym immutable fields)
     if (err.name === "ZodError") {
       console.warn("PATCH /api/v1/workouts/[id] - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({
           error: {
             code: "validation_error",
             message: "Invalid workout data",
-            details: err.errors,
+            details: err.issues,
           },
         }),
         { status: 422, headers: { "content-type": "application/json" } }

@@ -8,6 +8,7 @@ import node from "@astrojs/node";
 
 // https://astro.build/config
 export default defineConfig({
+  site: import.meta.env.PUBLIC_SITE_URL || "http://localhost:3000",
   output: "server",
   integrations: [react(), sitemap()],
   server: { port: 3000 },

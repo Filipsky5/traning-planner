@@ -15,7 +15,7 @@ export const listQuerySchema = z
       .pipe(
         z
           .number({
-            invalid_type_error: "page must be a number",
+            error: "page must be a number",
           })
           .int("page must be an integer")
           .min(1, "page must be >= 1")
@@ -28,7 +28,7 @@ export const listQuerySchema = z
       .pipe(
         z
           .number({
-            invalid_type_error: "per_page must be a number",
+            error: "per_page must be a number",
           })
           .int("per_page must be an integer")
           .min(1, "per_page must be >= 1")
@@ -72,15 +72,15 @@ export type ListQueryParams = z.infer<typeof listQuerySchema>;
 export const createBodySchema = z.object({
   planned_date: z
     .string({
-      required_error: "planned_date is required",
+      error: (issue) => (issue.input === undefined ? "planned_date is required" : undefined),
     })
     .regex(ISO_DATE_REGEX, "planned_date must be in YYYY-MM-DD format"),
   training_type_code: z
     .string({
-      required_error: "training_type_code is required",
+      error: (issue) => (issue.input === undefined ? "training_type_code is required" : undefined),
     })
     .min(1, "training_type_code cannot be empty"),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type CreateBody = z.infer<typeof createBodySchema>;
@@ -101,8 +101,7 @@ export type DetailQueryParams = z.infer<typeof detailQuerySchema>;
 export const acceptBodySchema = z.object({
   position: z
     .union([z.string(), z.number()], {
-      required_error: "position is required",
-      invalid_type_error: "position must be a number",
+      error: (issue) => (issue.input === undefined ? "position is required" : "position must be a number"),
     })
     .transform((value) => Number(value))
     .pipe(z.number().int("position must be an integer").min(1, "position must be >= 1")),
@@ -113,7 +112,7 @@ export type AcceptBody = z.infer<typeof acceptBodySchema>;
 export const regenerateBodySchema = z.object({
   reason: z
     .string({
-      invalid_type_error: "reason must be a string",
+      error: "reason must be a string",
     })
     .trim()
     .min(1, "reason cannot be empty")
@@ -121,7 +120,7 @@ export const regenerateBodySchema = z.object({
     .optional(),
   adjustment_hint: z
     .string({
-      invalid_type_error: "adjustment_hint must be a string",
+      error: "adjustment_hint must be a string",
     })
     .trim()
     .min(1, "adjustment_hint cannot be empty")
@@ -140,7 +139,7 @@ export const eventsQuerySchema = z.object({
     .pipe(
       z
         .number({
-          invalid_type_error: "page must be a number",
+          error: "page must be a number",
         })
         .int("page must be an integer")
         .min(1, "page must be >= 1")
@@ -153,7 +152,7 @@ export const eventsQuerySchema = z.object({
     .pipe(
       z
         .number({
-          invalid_type_error: "per_page must be a number",
+          error: "per_page must be a number",
         })
         .int("per_page must be an integer")
         .min(1, "per_page must be >= 1")

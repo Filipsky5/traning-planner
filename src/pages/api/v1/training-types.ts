@@ -108,7 +108,7 @@ export async function GET(context: APIContext) {
     // Obsługa błędów walidacji Zod
     if (err.name === "ZodError") {
       console.warn("GET /api/v1/training-types - validation error", {
-        errors: err.errors,
+        errors: err.issues,
       });
       return new Response(
         JSON.stringify({

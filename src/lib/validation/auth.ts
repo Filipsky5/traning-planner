@@ -14,11 +14,13 @@ import { z } from "zod";
  */
 export const loginSchema = z.object({
   email: z
-    .string({ required_error: "Email jest wymagany" })
+    .string({ error: (issue) => (issue.input === undefined ? "Email jest wymagany" : undefined) })
     .email("Nieprawidłowy format adresu email")
     .toLowerCase()
     .trim(),
-  password: z.string({ required_error: "Hasło jest wymagane" }).min(8, "Hasło musi mieć minimum 8 znaków"),
+  password: z
+    .string({ error: (issue) => (issue.input === undefined ? "Hasło jest wymagane" : undefined) })
+    .min(8, "Hasło musi mieć minimum 8 znaków"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -35,12 +37,12 @@ export type LoginInput = z.infer<typeof loginSchema>;
  */
 export const registerSchema = z.object({
   email: z
-    .string({ required_error: "Email jest wymagany" })
+    .string({ error: (issue) => (issue.input === undefined ? "Email jest wymagany" : undefined) })
     .email("Nieprawidłowy format adresu email")
     .toLowerCase()
     .trim(),
   password: z
-    .string({ required_error: "Hasło jest wymagane" })
+    .string({ error: (issue) => (issue.input === undefined ? "Hasło jest wymagane" : undefined) })
     .min(8, "Hasło musi mieć minimum 8 znaków")
     .regex(/[A-Za-z]/, "Hasło musi zawierać litery")
     .regex(/[0-9]/, "Hasło musi zawierać cyfry"),
@@ -60,7 +62,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
  */
 export const forgotPasswordSchema = z.object({
   email: z
-    .string({ required_error: "Email jest wymagany" })
+    .string({ error: (issue) => (issue.input === undefined ? "Email jest wymagany" : undefined) })
     .email("Nieprawidłowy format adresu email")
     .toLowerCase()
     .trim(),
@@ -78,7 +80,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
  */
 export const resetPasswordSchema = z.object({
   newPassword: z
-    .string({ required_error: "Nowe hasło jest wymagane" })
+    .string({ error: (issue) => (issue.input === undefined ? "Nowe hasło jest wymagane" : undefined) })
     .min(8, "Hasło musi mieć minimum 8 znaków")
     .regex(/[A-Za-z]/, "Hasło musi zawierać litery")
     .regex(/[0-9]/, "Hasło musi zawierać cyfry"),

@@ -41,7 +41,7 @@ export const aiLogIngestSchema = z.object({
   input_tokens: z.number().int().nonnegative("Input tokens must be non-negative integer").optional(),
   output_tokens: z.number().int().nonnegative("Output tokens must be non-negative integer").optional(),
   cost_usd: z.number().nonnegative("Cost must be non-negative number").optional(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   user_id: z.string().uuid("User ID must be valid UUID").optional(),
 });
 

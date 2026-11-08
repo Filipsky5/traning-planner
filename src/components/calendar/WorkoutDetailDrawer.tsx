@@ -228,8 +228,7 @@ const numericField = (min: number, max: number, messages: { min: string; max: st
     },
     z
       .number({
-        required_error: messages.min,
-        invalid_type_error: "Podaj liczbę",
+        error: (issue) => (issue.input === undefined ? messages.min : "Podaj liczbę"),
       })
       .int("Wartość musi być liczbą całkowitą")
       .min(min, messages.min)
@@ -253,6 +252,7 @@ const completionSchema = z.object({
 });
 
 type CompletionFormValues = z.infer<typeof completionSchema>;
+type CompletionFormInput = z.input<typeof completionSchema>;
 
 const getCompletionDefaults = (workout: WorkoutDetailDto): Partial<CompletionFormValues> => ({
   distance_m: workout.planned_distance_m ?? undefined,
@@ -279,7 +279,7 @@ function CompletionForm({ workout, onSubmit, onCompleted }: CompletionFormProps)
     watch,
     reset,
     setValue,
-  } = useForm<CompletionFormValues>({
+  } = useForm<CompletionFormInput, unknown, CompletionFormValues>({
     resolver: zodResolver(completionSchema),
     defaultValues: getCompletionDefaults(workout),
   });

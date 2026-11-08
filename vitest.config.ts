@@ -38,7 +38,7 @@ export default defineConfig({
   // Resolve aliases (matching Astro's path mapping)
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

@@ -524,7 +524,7 @@ export async function getCalendar(
   userId: string,
   start: string,
   end: string,
-  status?: string
+  status?: WorkoutSummaryDto["status"]
 ): Promise<CalendarDto> {
   let query = supabase
     .from("workouts")

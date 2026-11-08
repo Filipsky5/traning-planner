@@ -82,6 +82,9 @@ jobs:
       - name: Build test bundle
         run: npm run build:test
 
+      - name: Run public-page smoke tests
+        run: npm run test:smoke
+
       - name: Run E2E tests with coverage
         env:
           PLAYWRIGHT_HTML_REPORT: playwright-report
@@ -134,4 +137,3 @@ jobs:
               issue_number: context.issue.number,
               body: commentBody
             });
-

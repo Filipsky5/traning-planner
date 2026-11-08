@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   # Manual trigger
@@ -77,11 +77,14 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: cloudflare-build-${{ github.sha }}
-          path: dist
+          path: |
+            dist
+            .wrangler/deploy/config.json
+          include-hidden-files: true
           retention-days: 7
 
   deploy:
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     environment: production
     needs: build
@@ -93,23 +96,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Project setup
+        uses: ./.github/actions/setup-project
+
       - name: Download build artifacts
         uses: actions/download-artifact@v5
         with:
           name: cloudflare-build-${{ github.sha }}
-          path: dist
+          path: .
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         id: deploy
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
-          # Add environment variables to the deployment
+          command: deploy
+          secrets: |
+            SUPABASE_URL
+            SUPABASE_KEY
+            SUPABASE_SERVICE_ROLE_KEY
+            OPENROUTER_API_KEY
+            INTERNAL_ADMIN_TOKEN
         env:
-          # Cloudflare Pages environment variables
-          # Note: Sensitive variables should be configured in Cloudflare Pages dashboard
+          # Wrangler uploads these values as Worker secrets during deployment.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -128,7 +138,7 @@ jobs:
 
           **Environment:** ${{ github.event.inputs.environment || 'production' }}
           **Commit:** \`${GITHUB_SHA:0:7}\`
-          **URL:** ${{ steps.deploy.outputs.url }}
+          **URL:** ${{ steps.deploy.outputs.deployment-url }}
 
           Deployment completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")
           EOF

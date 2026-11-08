@@ -23,12 +23,14 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
 ## Encje domenowe
 
 ### 1) training_types (słownik)
+
 - Przeznaczenie: kanoniczny słownik typów treningów używany przez plan (workouts) i generator (ai_suggestions).
 - Kluczowe atrybuty: `code` (PK, tekstowy kod), `name` (czytelna nazwa), `is_active` (aktywność), `created_at` (UTC).
 - Zasady: usunięcie typu jest zabronione (RESTRICT) — dla spójności historycznej; wycofanie przez `is_active=false`.
 - Dane początkowe (seed): `easy`, `tempo`, `intervals`, `long_run`, `recovery`, `walk`.
 
 ### 2) workouts (plan i realizacja)
+
 - Przeznaczenie: reprezentuje jednostkę treningową — plan i (opcjonalnie) metryki realizacji.
 - Kluczowe atrybuty planu (zawsze wymagane):
   - `user_id`, `training_type_code` (→ `training_types.code`), `planned_date` (UTC), `position` (kolejność w danym dniu, ≥1, unikalna per `user_id+planned_date`),
@@ -51,6 +53,7 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
   - `user_id` → `auth.users(id)` (CASCADE przy usunięciu użytkownika).
 
 ### 3) ai_suggestions (propozycje AI)
+
 - Przeznaczenie: przechowuje propozycje treningów wygenerowane przez AI przed akceptacją.
 - Kluczowe atrybuty: `user_id`, `training_type_code` (→ słownik), `steps_jsonb` (lista kroków), `status` (shown/accepted/rejected/expired),
   `accepted_workout_id` (1–1 z `workouts`), `created_at`, `updated_at`.
@@ -60,17 +63,20 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
   - Unikalne odwzorowanie 1–1 między zaakceptowaną sugestią a treningiem (po obu stronach).
 
 ### 4) ai_suggestion_events (telemetria re-generacji)
+
 - Przeznaczenie: rejestruje akcje „regenerate” (MVP) na sugestiach AI, do egzekwowania limitów.
 - Kluczowe atrybuty: `user_id`, `ai_suggestion_id`, `kind` (zawsze `regenerate` w MVP), `occurred_at`, `metadata` (opcjonalnie).
 
 ### 5) user_goals (cele użytkownika)
+
 - Przeznaczenie: prosty cel dystansowy w horyzoncie czasowym.
 - Kluczowe atrybuty: `goal_type` (MVP: `distance_by_date`), `target_distance_m` (>0), `due_date` (data), `notes` (opcjonalnie).
 - Zasady: na MVP dokładnie jeden cel na użytkownika (unikalność po `user_id`).
 
 ### 6) ai_logs (logi serwisowe)
+
 - Przeznaczenie: logowanie zdarzeń i metryk interakcji z AI do diagnozy i rozliczeń.
-- Dostęp: tylko dla service-role; RLS typowo wyłączone, kontrola przez uprawnienia. Retencja 30 dni (job zewnętrzny).
+- Dostęp: tylko dla service-role; RLS włączone i blokujące role `anon` oraz `authenticated`. Retencja 30 dni (job zewnętrzny).
 - Przykładowe atrybuty: `event`, `level`, `model`, `provider`, `latency_ms`, `input_tokens`, `output_tokens`, `cost_usd`, `payload`.
 
 ---
@@ -106,14 +112,16 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
 
 - `vw_last3_completed_per_type` — dla każdego użytkownika i typu treningu zwraca maks. 3 ostatnie wiersze o `status='completed'` posortowane po `completed_at DESC`.
 - `vw_last3_completed_overall` — dla każdego użytkownika zwraca maks. 3 ostatnie wiersze o `status='completed'` posortowane po `completed_at DESC`.
+- Oba widoki używają `security_invoker = true`, więc dostęp przez widok podlega politykom RLS tabeli `workouts`: użytkownik widzi tylko własne dane, a rola `anon` nie widzi żadnych treningów.
 
 ---
 
 ## Zasady bezpieczeństwa (RLS)
 
-- RLS włączone dla: `workouts`, `ai_suggestions`, `ai_suggestion_events`, `user_goals`.
-- Polityki: SELECT/INSERT/UPDATE/DELETE wyłącznie gdy `user_id = auth.uid()` (USING i WITH CHECK). Dzięki temu każdy użytkownik widzi tylko swoje dane.
-- `ai_logs` — dostęp tylko dla service-role; dane techniczne, bez RLS.
+- RLS włączone dla wszystkich sześciu tabel publicznych, w tym `training_types` i `ai_logs`.
+- Polityki właścicielskie: SELECT/INSERT/UPDATE/DELETE wyłącznie gdy `user_id = (select auth.uid())` (USING i WITH CHECK). Podzapytanie pozwala obliczać identyfikator użytkownika raz na zapytanie. UPDATE zachowuje oba warunki, blokując zmianę właściciela.
+- `ai_logs` — RLS blokuje role `anon` i `authenticated`; dostęp techniczny przez service-role omijającą RLS.
+- Indeksy `workouts (training_type_code)` i `ai_suggestions (training_type_code)` wspierają klucze obce do słownika typów treningu. Istniejące indeksy właścicielskie i unikalne pozostają zachowane.
 
 ---
 
@@ -138,8 +146,8 @@ Ten dokument opisuje model danych MVP aplikacji AI Running Training Planner w fo
   - Funkcja `public.app_expire_ai_suggestions()` (PL/pgSQL) wykonująca pojedynczy `update` (idempotentna: wielokrotne wywołanie nie zmienia stanu poza pierwszym razem).
   - Harmonogram poprzez rozszerzenie `pg_cron`: job `expire_ai_suggestions_hourly` uruchamiany co godzinę o pełnej godzinie (`0 * * * *`).
 - Bezpieczeństwo:
-  - Funkcja jest `security definer` i ustawia `search_path` na `public`, aby bezpiecznie ominąć RLS i działać w kontekście właściciela tabel.
-  - Funkcja nie jest udostępniana żadnym rolom aplikacyjnym; wywołuje ją wyłącznie harmonogram `pg_cron`.
+  - Funkcja jest `security definer` i ustawia pusty `search_path`; korzysta z kwalifikowanej nazwy `public.ai_suggestions` i działa w kontekście właściciela.
+  - Uprawnienie EXECUTE jest odebrane rolom `PUBLIC`, `anon` i `authenticated`. Istniejący harmonogram `pg_cron` działa jako `postgres` i zachowuje dostęp; zaufane uprawnienia service-role pozostają bez zmian.
 - Operacyjność:
   - Migracja tworzy lub wznawia harmonogram; poprzednie zadanie o tej samej nazwie jest zastępowane (unikamy duplikatów).
   - Alternatywa, gdy `pg_cron` nie jest dostępny: zaplanowana Edge Function w Supabase wywołująca endpoint serwerowy, który wywołuje tę samą logikę.
@@ -219,5 +227,3 @@ erDiagram
   WORKOUTS       }o--|| AI_SUGGESTIONS      : "ai_suggestion_id ↔ id (0 : 1)"
   AI_SUGGESTIONS ||--o{ AI_SUGGESTION_EVENTS: "id ➜ ai_suggestion_id"
 ```
-
-

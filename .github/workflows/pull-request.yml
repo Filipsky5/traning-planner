@@ -49,6 +49,32 @@ jobs:
           path: coverage
           if-no-files-found: ignore
 
+  database-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.58.5
+
+      - name: Start local database and apply migrations
+        run: |
+          supabase db start
+          supabase migration up --local
+
+      - name: Run database security regression tests
+        run: supabase test db
+
+      - name: Stop local database
+        if: ${{ always() }}
+        run: supabase stop --no-backup
+
   e2e-tests:
     runs-on: ubuntu-latest
     environment: integration
@@ -111,6 +137,7 @@ jobs:
     needs:
       - lint
       - unit-tests
+      - database-tests
       - e2e-tests
     if: ${{ github.event_name == 'pull_request' }}
     permissions:
@@ -128,6 +155,7 @@ jobs:
               "",
               `- Lint: **${{ needs.lint.result }}**`,
               `- Testy jednostkowe: **${{ needs['unit-tests'].result }}**`,
+              `- Testy bazy danych: **${{ needs['database-tests'].result }}**`,
               `- Testy e2e: **${{ needs['e2e-tests'].result }}**`
             ].join("\n");
 

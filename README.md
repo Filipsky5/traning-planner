@@ -64,6 +64,7 @@ For a detailed product specification, see the PRD: [`./.ai/prd.md`](./.ai/prd.md
 Selected runtime/tooling versions come from the current project setup:
 
 - Node: `22.23.4` (see `.nvmrc`), engines: `>=22.23.4`
+- Supabase CLI: `3.0.0`, pinned in development dependencies; run with `npm run supabase -- <command>`. See the [CLI guide](.ai/supabase-cli.md) for local database tests and hosted migrations.
 - Notable dependencies: `astro@^7.4.7`, `react@^19.3.1`, `tailwindcss@^4.3.5`
 
 Additional stack details are documented in [`./.ai/tech-stack.md`](./.ai/tech-stack.md).

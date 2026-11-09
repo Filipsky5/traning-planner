@@ -6,6 +6,7 @@
     "node": ">=22.23.4"
   },
   "scripts": {
+    "supabase": "supabase",
     "dev": "astro dev",
     "build": "astro build",
     "build:test": "astro build --mode test",
@@ -95,6 +96,7 @@
     "lint-staged": "17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-astro": "1.1.2",
+    "supabase": "3.0.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "8.72.1",
     "vite": "^8.3.6",

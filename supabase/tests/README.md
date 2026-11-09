@@ -2,15 +2,17 @@
 
 These pgTAP tests run against a local Supabase database with all migrations applied. They create synthetic users and training data inside a transaction and roll everything back. Do not target a hosted database.
 
-With Docker running and Supabase CLI **2.58.5** installed:
+Use Node 22 (`nvm use`), install dependencies with `npm ci`, and start Docker. The project pins Supabase CLI **3.0.0** as a development dependency:
 
 ```sh
-supabase db start
-supabase migration up --local
-supabase test db
+npm run supabase -- db start
+npm run supabase -- migration up
+npm run supabase -- test db
 ```
 
-The CLI version matches the database-test CI job and the existing `config.toml` format. Review the Supabase CLI migration guide before upgrading to v3, which changes configuration keys and command defaults.
+The database-test CI job installs the same CLI from `package-lock.json`. CLI 3 targets the local stack by default, so these commands do not use `--remote`. See [the project CLI guide](../../.ai/supabase-cli.md) for hosted migration commands and configuration changes.
+
+After testing, stop the local stack with `npm run supabase -- stop`. CI uses `stop --no-backup` to delete its disposable test volumes.
 
 `database/security_advisors.test.sql` covers:
 

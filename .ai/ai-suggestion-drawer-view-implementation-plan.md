@@ -1,99 +1,101 @@
-# Plan implementacji widoku: AI Suggestion Drawer
+# AI Suggestion Drawer View Implementation Plan
 
-## 1. Przegląd
+## 1. Overview
 
-Widok "AI Suggestion Drawer" to wysuwany panel (drawer), który umożliwia użytkownikowi interakcję z silnikiem AI w celu wygenerowania, przeglądania, akceptacji lub odrzucenia spersonalizowanej propozycji treningowej na konkretny dzień. Widok jest kluczowym elementem pętli feedbacku, pozwalając na dostosowanie przyszłych sugestii na podstawie historii użytkownika i jego preferencji.
+The "AI Suggestion Drawer" is a sliding panel for interacting with the AI engine to generate, review, accept, or reject a personalized workout suggestion for a specific day. It is a key part of the feedback loop, allowing future suggestions to adapt to the user's history and preferences.
 
-## 2. Routing widoku
+## 2. View Routing
 
-- **Ścieżka**: Widok jest nakładką (overlay) na głównym widoku kalendarza (`/`). Nie posiada własnego, dedykowanego URL.
-- **Aktywacja**: Otwarcie panelu jest inicjowane przez akcję użytkownika w widoku kalendarza, np. kliknięcie przycisku "Generuj" na pustym dniu.
+- **Path**: An overlay on the main calendar view (`/`). No dedicated URL.
+- **Activation**: Opened by a calendar action, e.g., clicking "Generate" on an empty day.
 
-## 3. Struktura komponentów
+## 3. Component Structure
 
-Komponenty zostaną zaimplementowane w React i umieszczone w `src/components/suggestions/`.
+Components will be implemented in React in `src/components/suggestions/`.
 
 ```
-<AISuggestionDrawer> (Komponent główny, kontener)
+<AISuggestionDrawer> (Main container component)
 |
 ├── <AISuggestionForm>
-|   ├── <Select> (dla training_type_code)
-|   └── <DatePicker> (dla planned_date)
+|   ├── <Select> (for training_type_code)
+|   └── <DatePicker> (for planned_date)
 |
 ├── <SuggestionPreview>
-|   ├── <SuggestionMeta> (dystans/czas, typ)
-|   ├── <SuggestionSteps> (rozgrzewka, część główna, schłodzenie)
-|   └── <Badge> (dla statusu)
+|   ├── <SuggestionMeta> (distance/time, type)
+|   ├── <SuggestionSteps> (warm-up, main part, cool-down)
+|   └── <Badge> (for status)
 |
 ├── <SuggestionControls>
-|   ├── <Button> (Akceptuj)
-|   ├── <Button> (Odrzuć i wygeneruj nowy)
-|   └── <p> (Licznik regeneracji: X/3)
+|   ├── <Button> (Accept)
+|   ├── <Button> (Reject and generate another)
+|   └── <p> (Regeneration counter: X/3)
 |
 ├── <ExpiredSuggestionState>
-|   ├── <p> (Informacja o wygaśnięciu)
-|   └── <Button> (Wygeneruj nową)
+|   ├── <p> (Expiration notice)
+|   └── <Button> (Generate new)
 |
 └── <ConflictDialog>
     ├── <DialogHeader>
     ├── <DialogDescription>
     └── <DialogFooter>
-        └── <Button> (Zmień pozycję i akceptuj)
+        └── <Button> (Change position and accept)
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
-### `AISuggestionDrawer` (Komponent Kontener)
+### `AISuggestionDrawer` (Container Component)
 
-- **Opis**: Główny komponent zarządzający stanem całego widoku. Odpowiada za orkiestrację przepływu danych między formularzem, podglądem i kontrolkami, a także za komunikację z API.
-- **Główne elementy**: Wykorzystuje komponent `Sheet` z `shadcn/ui` jako bazę. Renderuje warunkowo komponenty-dzieci (`AISuggestionForm`, `SuggestionPreview`, `SuggestionControls`, `ExpiredSuggestionState`) w zależności od aktualnego stanu (`loading`, `error`, `data`).
-- **Obsługiwane zdarzenia**: `onGenerate`, `onAccept`, `onRegenerate`.
-- **Typy**: `AISuggestionViewModel`, `TrainingType`.
-- **Propsy**:
-  - `isOpen: boolean`: Kontroluje widoczność panelu.
-  - `onOpenChange: (isOpen: boolean) => void`: Handler do zamykania panelu.
-  - `initialData: { plannedDate: Date; trainingTypeCode?: string }`: Dane do pre-fillowania formularza.
+- **Description**: Main component managing the entire view's state. Orchestrates data flow between form, preview, and controls, and handles API communication.
+- **Main elements**: Uses `Sheet` from `shadcn/ui` as a base. Conditionally renders children (`AISuggestionForm`, `SuggestionPreview`, `SuggestionControls`, `ExpiredSuggestionState`) according to state (`loading`, `error`, `data`).
+- **Supported events**: `onGenerate`, `onAccept`, `onRegenerate`.
+- **Types**: `AISuggestionViewModel`, `TrainingType`.
+- **Props**:
+  - `isOpen: boolean`: Controls panel visibility.
+  - `onOpenChange: (isOpen: boolean) => void`: Panel close handler.
+  - `initialData: { plannedDate: Date; trainingTypeCode?: string }`: Form prefill data.
 
 ### `AISuggestionForm`
 
-- **Opis**: Formularz do wprowadzania danych dla nowej sugestii.
-- **Główne elementy**: Pola `<Select>` i `<DatePicker>` z `shadcn/ui`. Przycisk "Generuj sugestię".
-- **Obsługiwane zdarzenia**: `onSubmit: (data: { plannedDate: Date; trainingTypeCode: string }) => void`.
-- **Warunki walidacji**:
-  - `trainingTypeCode`: Musi być wybraną, niepustą wartością.
-  - `plannedDate`: Musi być wybraną, prawidłową datą.
-- **Typy**: `TrainingType`.
-- **Propsy**:
-  - `trainingTypes: TrainingType[]`: Lista dostępnych typów treningów.
-  - `onSubmit: (data: ...) => void`: Funkcja zwrotna wywoływana po zwalidowaniu i wysłaniu formularza.
-  - `isSubmitting: boolean`: Blokuje formularz na czas generowania sugestii.
-  - `initialData: { plannedDate: Date; trainingTypeCode?: string }`: Wartości początkowe.
+- **Description**: Form for entering new suggestion data.
+- **Main elements**: `<Select>` and `<DatePicker>` from `shadcn/ui`. "Generate suggestion" button.
+- **Supported events**: `onSubmit: (data: { plannedDate: Date; trainingTypeCode: string }) => void`.
+- **Validation conditions**:
+  - `trainingTypeCode`: Must be selected and non-empty.
+  - `plannedDate`: Must be a selected valid date.
+- **Types**: `TrainingType`.
+- **Props**:
+  - `trainingTypes: TrainingType[]`: Available workout types.
+  - `onSubmit: (data: ...) => void`: Callback after form validation and submission.
+  - `isSubmitting: boolean`: Disables form during generation.
+  - `initialData: { plannedDate: Date; trainingTypeCode?: string }`: Initial values.
 
 ### `SuggestionPreview`
 
-- **Opis**: Wyświetla szczegóły wygenerowanej lub istniejącej sugestii AI.
-- **Główne elementy**: Komponenty `Card` do wizualizacji metadanych (`SuggestionMeta`) i kroków (`SuggestionSteps`). `Badge` do pokazania statusu.
-- **Typy**: `AISuggestionViewModel`.
-- **Propsy**:
-  - `suggestion: AISuggestionViewModel`: Obiekt sugestii do wyświetlenia.
+- **Description**: Displays generated or existing AI suggestion details.
+- **Main elements**: `Card` components for metadata (`SuggestionMeta`) and steps (`SuggestionSteps`). Status `Badge`.
+- **Types**: `AISuggestionViewModel`.
+- **Props**:
+  - `suggestion: AISuggestionViewModel`: Suggestion to display.
 
 ### `SuggestionControls`
 
-- **Opis**: Zestaw przycisków akcji dla aktywnej (niewygasłej) sugestii.
-- **Główne elementy**: Dwa przyciski `Button`: "Akceptuj" i "Odrzuć i wygeneruj nowy". Wyświetla licznik dostępnych regeneracji.
-- **Obsługiwane zdarzenia**: `onAccept: () => void`, `onRegenerate: () => void`.
-- **Warunki walidacji**: Przycisk "Odrzuć i wygeneruj nowy" jest nieaktywny, jeśli `regenerationCount >= 3`.
-- **Propsy**:
+- **Description**: Action buttons for an active (unexpired) suggestion.
+- **Main elements**: Two `Button` components: "Accept" and "Reject and generate another". Displays remaining regenerations.
+- **Supported events**: `onAccept: () => void`, `onRegenerate: () => void`.
+- **Validation conditions**: "Reject and generate another" is disabled if `regenerationCount >= 3`.
+- **Props**:
   - `onAccept: () => void`.
   - `onRegenerate: () => void`.
   - `regenerationCount: number`.
   - `isAccepting: boolean`.
   - `isRegenerating: boolean`.
 
-## 5. Typy
+## 5. Types
 
 ### `AISuggestionDTO` (Data Transfer Object)
-Odzwierciedla strukturę danych zwracaną przez API.
+
+Mirrors the API response data structure.
+
 ```typescript
 interface AISuggestionDTO {
   id: string; // uuid
@@ -101,12 +103,12 @@ interface AISuggestionDTO {
   training_type_code: string;
   planned_date: string; // YYYY-MM-DD
   steps: Array<{
-    part: 'warmup' | 'main' | 'cooldown';
+    part: "warmup" | "main" | "cooldown";
     duration_s?: number;
     distance_m?: number;
     description: string;
   }>;
-  status: 'shown' | 'accepted' | 'rejected' | 'expired';
+  status: "shown" | "accepted" | "rejected" | "expired";
   accepted_workout_id: string | null;
   created_at: string; // ISO 8601
   updated_at: string; // ISO 8601
@@ -114,8 +116,10 @@ interface AISuggestionDTO {
 }
 ```
 
-### `AISuggestionViewModel` (Model widoku)
-Typ dostosowany do potrzeb UI, z przetworzonymi polami.
+### `AISuggestionViewModel` (View Model)
+
+Type tailored to UI needs, with processed fields.
+
 ```typescript
 interface AISuggestionViewModel {
   id: string;
@@ -124,77 +128,76 @@ interface AISuggestionViewModel {
   totalDurationSec: number;
   totalDistanceMeters: number;
   steps: Array<{
-    part: 'warmup' | 'main' | 'cooldown';
-    label: string; // "Rozgrzewka", "Główny", "Schłodzenie"
-    details: string; // np. "10 min" lub "5 km"
+    part: "warmup" | "main" | "cooldown";
+    label: string; // "Warm-up", "Main", "Cool-down"
+    details: string; // e.g., "10 min" or "5 km"
   }>;
-  status: 'shown' | 'accepted' | 'rejected' | 'expired';
+  status: "shown" | "accepted" | "rejected" | "expired";
   isExpired: boolean;
   expiresAt: Date;
 }
 ```
 
-## 6. Zarządzanie stanem
+## 6. State Management
 
-Zarządzanie stanem będzie scentralizowane w komponencie `AISuggestionDrawer` przy użyciu hooka `useState`. Główne zmienne stanu:
+State management will be centralized in `AISuggestionDrawer` using `useState`. Main state variables:
 
-- `suggestion: AISuggestionViewModel | null`: Przechowuje aktualnie wyświetlaną sugestię.
-- `isLoading: boolean`: Wskazuje na proces ładowania (generowania, akceptacji, etc.).
-- `error: Error | null`: Przechowuje błędy z API.
-- `regenerationCount: number`: Licznik wykonanych regeneracji dla danego planned_date (limit 3).
-- `isConflictDialogOpen: boolean`: Kontroluje widoczność modala konfliktu pozycji.
+- `suggestion: AISuggestionViewModel | null`: Currently displayed suggestion.
+- `isLoading: boolean`: Loading process (generation, acceptance, etc.).
+- `error: Error | null`: API errors.
+- `regenerationCount: number`: Regenerations performed for a given planned_date (limit 3).
+- `isConflictDialogOpen: boolean`: Position conflict modal visibility.
 
-Nie ma potrzeby tworzenia dedykowanego custom hooka (`useAISuggestion`), ponieważ logika jest związana bezpośrednio z cyklem życia pojedynczego komponentu `AISuggestionDrawer`.
+No dedicated custom hook (`useAISuggestion`) is needed because logic is tied directly to the lifecycle of the single `AISuggestionDrawer` component.
 
-## 7. Integracja API
+## 7. API Integration
 
-Integracja z API będzie realizowana przez dedykowane funkcje-serwisy w `src/lib/services/aiSuggestionsService.ts`.
+API integration uses dedicated service functions in `src/lib/services/aiSuggestionsService.ts`.
 
-- **Generowanie sugestii**: `POST /api/v1/ai/suggestions`
+- **Generate suggestion**: `POST /api/v1/ai/suggestions`
   - **Request Body**: `{ planned_date: string; training_type_code: string; }`
   - **Response (201)**: `{ data: AISuggestionDTO }`
-  - **Akcja frontendowa**: Wywołanie po submicie `AISuggestionForm`. Wynik zasila stan `suggestion`.
-- **Akceptacja sugestii**: `POST /api/v1/ai/suggestions/{id}/accept`
-  - **Request Body**: `{ position: number }` (domyślnie `1`)
+  - **Frontend action**: Called after `AISuggestionForm` submission. Result populates `suggestion` state.
+- **Accept suggestion**: `POST /api/v1/ai/suggestions/{id}/accept`
+  - **Request Body**: `{ position: number }` (default `1`)
   - **Response (201)**: `{ data: WorkoutDTO }`
-  - **Akcja frontendowa**: Po kliknięciu "Akceptuj". Po sukcesie, zamyka panel i odświeża dane kalendarza.
-- **Regeneracja sugestii**: `POST /api/v1/ai/suggestions/{id}/regenerate`
-  - **Request Body**: (puste)
-  - **Response (201)**: `{ data: AISuggestionDTO }` (nowa sugestia)
-  - **Akcja frontendowa**: Po kliknięciu "Odrzuć i wygeneruj nowy". Zastępuje starą sugestię nową i inkrementuje `regenerationCount`.
+  - **Frontend action**: After clicking "Accept". On success, closes the panel and refreshes calendar data.
+- **Regenerate suggestion**: `POST /api/v1/ai/suggestions/{id}/regenerate`
+  - **Request Body**: (empty)
+  - **Response (201)**: `{ data: AISuggestionDTO }` (new suggestion)
+  - **Frontend action**: After clicking "Reject and generate another". Replaces the old suggestion and increments `regenerationCount`.
 
-## 8. Interakcje użytkownika
+## 8. User Interactions
 
-- **Otwarcie panelu z danymi**: Użytkownik klika na dzień w kalendarzu. Panel się otwiera, `AISuggestionForm` jest pre-fillowany datą.
-- **Generowanie sugestii**: Użytkownik wypełnia formularz i klika "Generuj". `AISuggestionForm` jest blokowany, `isLoading`=true. Po otrzymaniu odpowiedzi, `SuggestionPreview` i `SuggestionControls` są renderowane.
-- **Akceptacja sugestii**: Użytkownik klika "Akceptuj". `isLoading`=true. Jeśli API zwróci 201, panel się zamyka, a widok kalendarza jest odświeżany.
-- **Regeneracja sugestii**: Użytkownik klika "Odrzuć i wygeneruj nowy". `isLoading`=true. Nowa sugestia jest ładowana i zastępuje starą. Licznik regeneracji jest aktualizowany.
-- **Zamknięcie panelu**: Użytkownik klika przycisk zamknięcia lub klika poza panelem. Stan jest resetowany.
+- **Open panel with data**: User clicks a calendar day. Panel opens with the date prefilled in `AISuggestionForm`.
+- **Generate suggestion**: User completes the form and clicks "Generate". `AISuggestionForm` is disabled, `isLoading`=true. On response, render `SuggestionPreview` and `SuggestionControls`.
+- **Accept suggestion**: User clicks "Accept". `isLoading`=true. On API 201, close the panel and refresh the calendar.
+- **Regenerate suggestion**: User clicks "Reject and generate another". `isLoading`=true. Load a new suggestion, replace the old one, and update the counter.
+- **Close panel**: User clicks close or outside the panel. Reset state.
 
-## 9. Warunki i walidacja
+## 9. Conditions and Validation
 
-- **Limit regeneracji**: W `SuggestionControls`, przycisk regeneracji jest wyszarzony i nieaktywny, jeśli `regenerationCount >= 3` dla danego planned_date. Komponent `AISuggestionDrawer` weryfikuje ten stan przed wysłaniem żądania do API.
-- **Wygasła sugestia**: Jeśli `suggestion.isExpired` jest `true`, `SuggestionControls` są ukryte, a `ExpiredSuggestionState` jest pokazywany z przyciskiem do generowania nowej sugestii. Wszystkie akcje (akceptacja, regeneracja) są zablokowane.
-- **Walidacja formularza**: `AISuggestionForm` waliduje, czy typ treningu i data zostały wybrane przed wysłaniem.
+- **Regeneration limit**: In `SuggestionControls`, disable and gray out regeneration if `regenerationCount >= 3` for the planned_date. `AISuggestionDrawer` checks this before sending a request.
+- **Expired suggestion**: If `suggestion.isExpired` is `true`, hide `SuggestionControls` and show `ExpiredSuggestionState` with a button to generate a new suggestion. All actions (accept, regenerate) are blocked.
+- **Form validation**: `AISuggestionForm` checks that type and date are selected before submission.
 
-## 10. Obsługa błędów
+## 10. Error Handling
 
-- **404 Not Found**: Wyświetla ogólny komunikat błędu "Nie znaleziono sugestii".
-- **409 Conflict (Position)**: Po próbie akceptacji, `AISuggestionDrawer` ustawia `isConflictDialogOpen` na `true`, otwierając `ConflictDialog`. Dialog pozwala użytkownikowi podjąć decyzję o zmianie pozycji.
-- **410 Gone (Expired)**: Traktowany jako stan wygaśnięcia. Widok przechodzi w tryb `read-only` (`ExpiredSuggestionState`).
-- **429 Too Many Requests (Regeneration Limit)**: Wyświetla komunikat błędu "Przekroczono limit regeneracji na dziś." i blokuje przycisk regeneracji.
-- **Inne błędy (500, błędy sieci)**: Wyświetlany jest ogólny komunikat o błędzie z opcją ponownej próby.
+- **404 Not Found**: Display "Suggestion not found".
+- **409 Conflict (Position)**: After an acceptance attempt, `AISuggestionDrawer` sets `isConflictDialogOpen` to `true`, opening `ConflictDialog` so the user can choose to change position.
+- **410 Gone (Expired)**: Treat as expired. Switch to `read-only` (`ExpiredSuggestionState`).
+- **429 Too Many Requests (Regeneration Limit)**: Display "Today's regeneration limit has been exceeded." and disable regeneration.
+- **Other errors (500, network errors)**: Display a generic error with a retry option.
 
-## 11. Kroki implementacji
+## 11. Implementation Steps
 
-1. **Struktura plików**: Utwórz folder `src/components/suggestions` oraz pliki dla komponentów: `AISuggestionDrawer.tsx`, `AISuggestionForm.tsx`, `SuggestionPreview.tsx`, `SuggestionControls.tsx`, itd.
-2. **Definicje typów**: Zdefiniuj typy `AISuggestionDTO` i `AISuggestionViewModel` w `src/types.ts` lub w dedykowanym pliku w `src/components/suggestions`.
-3. **Implementacja `AISuggestionDrawer`**: Zbuduj główny komponent z logiką zarządzania stanem (`useState`), obsługą propsów `isOpen` i `initialData`. Zintegruj `Sheet` z `shadcn/ui`.
-4. **Implementacja `AISuggestionForm`**: Zbuduj formularz z walidacją i obsługą `onSubmit`.
-5. **Implementacja `SuggestionPreview`**: Zaimplementuj komponent do wyświetlania danych `AISuggestionViewModel`, dbając o formatowanie czasu/dystansu.
-6. **Implementacja `SuggestionControls` i `ExpiredSuggestionState`**: Dodaj logikę warunkową do wyświetlania kontrolek lub informacji o wygaśnięciu na podstawie `suggestion.isExpired` i `regenerationCount`.
-7. **Integracja z API**: Stwórz lub zaktualizuj `aiSuggestionsService.ts` o funkcje `generateSuggestion`, `acceptSuggestion`, `regenerateSuggestion`.
-8. **Połączenie logiki**: Zintegruj wywołania API w `AISuggestionDrawer` w odpowiedzi na zdarzenia z komponentów-dzieci. Zaimplementuj pełną obsługę stanów `loading` i `error`.
-9. **Obsługa błędów**: Zaimplementuj logikę obsługi poszczególnych kodów błędów API (409, 410, 429). Stwórz komponent `ConflictDialog`.
-10. **Finalne testy i stylowanie**: Przetestuj cały przepływ manualnie, dostosuj style i upewnij się, że komponenty są w pełni responsywne.
-
+1. **File structure**: Create `src/components/suggestions` and component files: `AISuggestionDrawer.tsx`, `AISuggestionForm.tsx`, `SuggestionPreview.tsx`, `SuggestionControls.tsx`, etc.
+2. **Type definitions**: Define `AISuggestionDTO` and `AISuggestionViewModel` in `src/types.ts` or a dedicated file in `src/components/suggestions`.
+3. **Implement `AISuggestionDrawer`**: Build the main component with `useState`, `isOpen`/`initialData` props, and `Sheet` from `shadcn/ui`.
+4. **Implement `AISuggestionForm`**: Build the form with validation and `onSubmit`.
+5. **Implement `SuggestionPreview`**: Display `AISuggestionViewModel`, formatting time/distance.
+6. **Implement `SuggestionControls` and `ExpiredSuggestionState`**: Conditionally show controls or expiration information based on `suggestion.isExpired` and `regenerationCount`.
+7. **API integration**: Create or update `aiSuggestionsService.ts` with `generateSuggestion`, `acceptSuggestion`, `regenerateSuggestion`.
+8. **Connect logic**: Integrate API calls in `AISuggestionDrawer` in response to child events. Fully handle `loading` and `error` states.
+9. **Error handling**: Handle individual API codes (409, 410, 429). Create `ConflictDialog`.
+10. **Final testing and styling**: Manually test the entire flow, adjust styles, and ensure components are fully responsive.

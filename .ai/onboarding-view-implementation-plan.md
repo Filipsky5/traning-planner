@@ -1,71 +1,79 @@
-# Plan implementacji widoku Onboarding
+# Onboarding View Implementation Plan
 
-## 1. Przegląd
-Widok Onboarding ma na celu zebranie od nowego użytkownika danych o jego trzech ostatnich aktywnościach treningowych. Informacje te posłużą jako początkowa baza dla AI do generowania przyszłych sugestii treningowych. Widok składa się z 3-krokowego formularza, w którym użytkownik wprowadza podstawowe metryki każdego z treningów: dystans, czas trwania, średnie tętno oraz datę. Proces ten jest obowiązkowy dla nowych użytkowników i stanowi warunek dostępu do głównej części aplikacji.
+## 1. Overview
 
-## 2. Routing widoku
-- **Ścieżka**: `/onboarding`
-- **Logika dostępu**:
-    - Nowi użytkownicy (mający mniej niż 3 zarejestrowane treningi) próbujący uzyskać dostęp do ścieżki `/` (strona główna) powinni być automatycznie przekierowani do `/onboarding`.
-    - Przekierowanie powinno zachować oryginalny cel w URL, np. `/onboarding?next=/calendar`.
-    - Logika przekierowania zostanie zaimplementowana w middleware aplikacji (`src/middleware/index.ts`).
+The Onboarding view collects data about a new user's three most recent workouts. This information provides an initial basis for AI to generate future workout suggestions. The view consists of a 3-step form where users enter each workout's basic metrics: distance, duration, average heart rate, and date. This process is mandatory for new users and is a prerequisite for access to the main application.
 
-## 3. Struktura komponentów
-Komponenty zostaną zaimplementowane w React i osadzone na stronie Astro jako "wyspa" (island).
+## 2. View Routing
+
+- **Path**: `/onboarding`
+- **Access logic**:
+  - New users (with fewer than 3 recorded workouts) attempting to access `/` (the home page) should be automatically redirected to `/onboarding`.
+  - The redirect should preserve the original destination in the URL, e.g., `/onboarding?next=/calendar`.
+  - Redirect logic will be implemented in application middleware (`src/middleware/index.ts`).
+
+## 3. Component Structure
+
+Components will be implemented in React and embedded in the Astro page as an island.
 
 ```
 /src/pages/onboarding.astro
 └── /src/components/views/OnboardingView.tsx (client:load)
     ├── /src/components/onboarding/Stepper.tsx
-    ├── <h2> (tytuł kroku, np. "Trening 1 z 3")
+    ├── <h2> (step title, e.g., "Workout 1 of 3")
     └── /src/components/onboarding/WorkoutOnboardingForm.tsx
-        ├── /src/components/ui/input.tsx (dystans)
-        ├── /src/components/onboarding/DurationInput.tsx (czas trwania HH:MM:SS)
-        ├── /src/components/ui/input.tsx (średnie tętno)
-        ├── /src/components/ui/datepicker.tsx (data treningu)
-        ├── /src/components/ui/button.tsx (przycisk "Dalej" / "Zakończ")
-        └── /src/components/ui/sonner.tsx (komunikaty o błędach API)
+        ├── /src/components/ui/input.tsx (distance)
+        ├── /src/components/onboarding/DurationInput.tsx (duration HH:MM:SS)
+        ├── /src/components/ui/input.tsx (average heart rate)
+        ├── /src/components/ui/datepicker.tsx (workout date)
+        ├── /src/components/ui/button.tsx ("Next" / "Finish" button)
+        └── /src/components/ui/sonner.tsx (API error messages)
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
 ### `OnboardingView.tsx`
-- **Opis**: Główny komponent-kontener zarządzający całym procesem onboardingu. Odpowiada za stan formularza, nawigację między krokami oraz komunikację z API.
-- **Główne elementy**: Wyświetla komponent `Stepper` oraz `WorkoutOnboardingForm` dla aktualnego kroku.
-- **Obsługiwane interakcje**: Przechwycenie zdarzenia `onSubmit` z formularza `WorkoutOnboardingForm`.
-- **Typy**: `WorkoutOnboardingFormViewModel`, `CreateCompletedWorkoutDto`.
-- **Propsy**: `nextUrl: string` (opcjonalny, do przekierowania po zakończeniu).
+
+- **Description**: Main container managing the entire onboarding process. Responsible for form state, step navigation, and API communication.
+- **Main elements**: Displays `Stepper` and `WorkoutOnboardingForm` for the current step.
+- **Supported interactions**: Handles `onSubmit` from `WorkoutOnboardingForm`.
+- **Types**: `WorkoutOnboardingFormViewModel`, `CreateCompletedWorkoutDto`.
+- **Props**: `nextUrl: string` (optional, for redirect after completion).
 
 ### `Stepper.tsx`
-- **Opis**: Prosty komponent wizualny wskazujący postęp w procesie (np. "Krok 2 z 3").
-- **Główne elementy**: Seria elementów `<div>` lub `<span>` stylizowanych w zależności od tego, czy krok jest aktywny, ukończony, czy oczekujący.
-- **Obsługiwane interakcje**: Brak.
-- **Typy**: Brak.
-- **Propsy**: `currentStep: number`, `totalSteps: number`.
+
+- **Description**: Simple visual component indicating progress (e.g., "Step 2 of 3").
+- **Main elements**: A series of `<div>` or `<span>` elements styled according to whether the step is active, completed, or pending.
+- **Supported interactions**: None.
+- **Types**: None.
+- **Props**: `currentStep: number`, `totalSteps: number`.
 
 ### `WorkoutOnboardingForm.tsx`
-- **Opis**: Formularz do wprowadzenia danych pojedynczego treningu. Będzie reużywany dla każdego z trzech kroków.
-- **Główne elementy**: Pola `<Input>` dla dystansu i tętna, niestandardowy komponent `DurationInput` dla czasu, `DatePicker` dla daty i przycisk `Button` do przesyłania danych.
-- **Obsługiwane interakcje**: `onSubmit` (wysyła dane do rodzica `OnboardingView`), `onChange` na polach formularza.
-- **Warunki walidacji**:
-    - `dystans`: musi być liczbą dodatnią, większą od 0.1 km.
-    - `czas trwania`: co najmniej jedna z wartości (godziny, minuty, sekundy) musi być większa od 0. Całkowity czas musi być większy niż 60 sekund.
-    - `średnie tętno`: musi być liczbą całkowitą w zakresie 40-220.
-    - `data treningu`: musi być datą z przeszłości.
-- **Typy**: `WorkoutOnboardingFormViewModel`.
-- **Propsy**: `onSubmit: (data: WorkoutOnboardingFormViewModel) => void`, `isLoading: boolean`, `stepNumber: number`.
+
+- **Description**: Form for entering one workout's data. Reused for each of the three steps.
+- **Main elements**: `<Input>` fields for distance and heart rate, custom `DurationInput` for time, `DatePicker` for date, and a submit `Button`.
+- **Supported interactions**: `onSubmit` (sends data to parent `OnboardingView`), `onChange` on form fields.
+- **Validation conditions**:
+  - `distance`: must be a positive number greater than 0.1 km.
+  - `duration`: at least one value (hours, minutes, seconds) must be greater than 0. Total time must exceed 60 seconds.
+  - `average heart rate`: must be an integer in the range 40-220.
+  - `workout date`: must be a past date.
+- **Types**: `WorkoutOnboardingFormViewModel`.
+- **Props**: `onSubmit: (data: WorkoutOnboardingFormViewModel) => void`, `isLoading: boolean`, `stepNumber: number`.
 
 ### `DurationInput.tsx`
-- **Opis**: Niestandardowy komponent do wprowadzania czasu trwania w segmentach (godziny, minuty, sekundy), ułatwiający użytkownikowi wprowadzanie danych.
-- **Główne elementy**: Trzy pola `<Input type="number">` dla HH, MM, SS z odpowiednimi etykietami.
-- **Obsługiwane interakcje**: `onChange` na każdym polu, przekazując obiekt `{ hours, minutes, seconds }` do formularza.
-- **Typy**: `DurationState = { hours: string; minutes: string; seconds: string; }`.
-- **Propsy**: `value: DurationState`, `onChange: (value: DurationState) => void`, `disabled: boolean`.
 
-## 5. Typy
+- **Description**: Custom component for entering duration in segments (hours, minutes, seconds), simplifying data entry.
+- **Main elements**: Three `<Input type="number">` fields for HH, MM, SS with appropriate labels.
+- **Supported interactions**: `onChange` on each field, passing `{ hours, minutes, seconds }` to the form.
+- **Types**: `DurationState = { hours: string; minutes: string; seconds: string; }`.
+- **Props**: `value: DurationState`, `onChange: (value: DurationState) => void`, `disabled: boolean`.
+
+## 5. Types
 
 ### `WorkoutOnboardingFormViewModel` (ViewModel)
-Typ reprezentujący stan formularza w komponencie `WorkoutOnboardingForm`.
+
+Type representing form state in `WorkoutOnboardingForm`.
 
 ```typescript
 interface WorkoutOnboardingFormViewModel {
@@ -81,82 +89,90 @@ interface WorkoutOnboardingFormViewModel {
 ```
 
 ### `CreateCompletedWorkoutDto` (DTO)
-Obiekt transferu danych, który zostanie wysłany do API. Będzie on tworzony na podstawie `WorkoutOnboardingFormViewModel`. Pola, których nie podaje użytkownik, zostaną uzupełnione domyślnymi wartościami.
+
+Data transfer object sent to the API. Created from `WorkoutOnboardingFormViewModel`. Fields not entered by the user will receive defaults.
 
 ```typescript
-// Zgodny z createWorkoutSchema w /src/lib/validation/workouts.ts
+// Compatible with createWorkoutSchema in /src/lib/validation/workouts.ts
 interface CreateCompletedWorkoutDto {
-  training_type_code: string;       // Uzupełnione: 'easy'
-  planned_date: string;             // Uzupełnione: data z completed_at (format YYYY-MM-DD)
-  position: number;                 // Uzupełnione: 1
-  planned_distance_m: number;       // Uzupełnione: równe distance_m
-  planned_duration_s: number;       // Uzupełnione: równe duration_s
-  steps: Array<{                    // Uzupełnione: jeden krok 'main'
-    part: 'main';
+  training_type_code: string; // Default: 'easy'
+  planned_date: string; // Default: date from completed_at (YYYY-MM-DD format)
+  position: number; // Default: 1
+  planned_distance_m: number; // Default: equal to distance_m
+  planned_duration_s: number; // Default: equal to duration_s
+  steps: Array<{
+    // Default: one 'main' step
+    part: "main";
     distance_m: number;
     duration_s: number;
   }>;
-  status: 'completed';              // Uzupełnione: stała wartość
-  distance_m: number;               // Z formularza
-  duration_s: number;               // Z formularza
-  avg_hr_bpm: number;               // Z formularza
-  completed_at: string;             // Z formularza (format ISO)
-  rating: 'just_right';             // Uzupełnione: domyślna ocena dla treningów startowych
+  status: "completed"; // Default: constant value
+  distance_m: number; // From the form
+  duration_s: number; // From the form
+  avg_hr_bpm: number; // From the form
+  completed_at: string; // From the form (ISO format)
+  rating: "just_right"; // Default rating for initial workouts
 }
 ```
 
-## 6. Zarządzanie stanem
-Do zarządzania logiką wieloetapowego formularza zostanie stworzony niestandardowy hook `useOnboarding`.
+## 6. State Management
+
+A custom `useOnboarding` hook will manage the multistep form logic.
 
 ### `useOnboarding(nextUrl?: string)`
-- **Cel**: Hermetyzacja logiki stanu, nawigacji między krokami i wysyłania danych.
-- **Zarządzany stan**:
-    - `currentStep: number`: Aktualny krok (1-3).
-    - `workouts: CreateCompletedWorkoutDto[]`: Tablica przechowująca dane trzech treningów.
-    - `isLoading: boolean`: Flaga informująca o trwającym procesie wysyłania danych do API.
-- **Zwracane funkcje**:
-    - `handleFormSubmit(data: WorkoutOnboardingFormViewModel)`: Funkcja wywoływana po zatwierdzeniu formularza. Waliduje dane, transformuje je do DTO, dodaje do tablicy `workouts` i przechodzi do kolejnego kroku. W ostatnim kroku inicjuje wysyłkę wszystkich trzech treningów.
-    - `currentWorkoutData: WorkoutOnboardingFormViewModel`: Dane do pre-populacji formularza (gdybyśmy chcieli wracać do kroków).
 
-## 7. Integracja API
+- **Goal**: Encapsulate state logic, step navigation, and data submission.
+- **Managed state**:
+  - `currentStep: number`: Current step (1-3).
+  - `workouts: CreateCompletedWorkoutDto[]`: Array holding data for three workouts.
+  - `isLoading: boolean`: Flag indicating API data submission is in progress.
+- **Returned functions**:
+  - `handleFormSubmit(data: WorkoutOnboardingFormViewModel)`: Called on form submission. Validates data, transforms it into a DTO, adds it to `workouts`, and advances to the next step. At the last step, initiates submission of all three workouts.
+  - `currentWorkoutData: WorkoutOnboardingFormViewModel`: Data for prefilling the form (if returning to previous steps is desired).
+
+## 7. API Integration
+
 - **Endpoint**: `POST /api/v1/workouts`
-- **Proces**:
-    1. Po ukończeniu trzeciego kroku, funkcja `handleFormSubmit` z haka `useOnboarding` zostanie wywołana.
-    2. Hook zainicjuje wysłanie trzech żądań `POST` do `/api/v1/workouts`, używając `Promise.all` do ich równoległego wykonania. Każde żądanie będzie zawierało DTO jednego treningu.
-    3. Na czas trwania operacji, flaga `isLoading` będzie ustawiona na `true`, co spowoduje zablokowanie przycisku w formularzu.
-- **Typy żądania**: `CreateCompletedWorkoutDto` (zgodnie z `createWorkoutSchema`).
-- **Typy odpowiedzi**: `ApiResponse<WorkoutDetailDto>` (status `201 Created`).
+- **Process**:
+  1. After the third step, `handleFormSubmit` from `useOnboarding` is called.
+  2. The hook initiates three `POST` requests to `/api/v1/workouts`, using `Promise.all` to execute them concurrently. Each request contains one workout DTO.
+  3. During the operation, `isLoading` is `true`, disabling the form button.
+- **Request types**: `CreateCompletedWorkoutDto` (according to `createWorkoutSchema`).
+- **Response types**: `ApiResponse<WorkoutDetailDto>` (status `201 Created`).
 
-## 8. Interakcje użytkownika
-- **Wypełnianie formularza**: Użytkownik wprowadza dane w polach. Walidacja odbywa się na bieżąco po utracie fokusu lub przy próbie przejścia dalej.
-- **Kliknięcie "Dalej"**: Dane są walidowane. Jeśli są poprawne, stan `currentStep` jest inkrementowany, a formularz jest czyszczony i gotowy na dane kolejnego treningu. Jeśli nie, wyświetlane są błędy walidacji.
-- **Kliknięcie "Zakończ" (w ostatnim kroku)**: Dane są walidowane. Jeśli są poprawne, rozpoczyna się wysyłka do API. Przycisk jest blokowany. Po pomyślnym zakończeniu, użytkownik jest przekierowywany na stronę główną (`/`) lub pod adres z parametru `next`.
-- **Błąd API**: Jeśli którakolwiek z operacji `POST` zakończy się błędem, użytkownik zobaczy komunikat (np. toast/sonner) z informacją o problemie i możliwością ponowienia próby.
+## 8. User Interactions
 
-## 9. Warunki i walidacja
-- **Poziom komponentu**: `WorkoutOnboardingForm` będzie używać biblioteki `zod` do walidacji `WorkoutOnboardingFormViewModel` przed wysłaniem go do rodzica. Błędy będą wyświetlane pod odpowiednimi polami.
-- **Mapowanie na DTO**: Frontend zapewni, że wszystkie wymagane przez `createWorkoutSchema` pola zostaną poprawnie uzupełnione, nawet jeśli użytkownik ich nie podał (np. `planned_distance_m` przyjmie wartość `distance_m`).
-    - `distanceKm` zostanie przeliczone na `distance_m` (km * 1000).
-    - `{ hours, minutes, seconds }` zostaną przeliczone na `duration_s`.
-- **Warunki biznesowe**: Aplikacja wymusza dodanie dokładnie 3 treningów poprzez mechanizm kroków.
+- **Completing the form**: The user enters data. Validation occurs on blur or when attempting to proceed.
+- **Clicking "Next"**: Data is validated. If valid, `currentStep` increments and the form clears for the next workout. Otherwise validation errors appear.
+- **Clicking "Finish" (last step)**: Data is validated. If valid, API submission begins and the button is disabled. On success, the user is redirected to `/` or the address in the `next` parameter.
+- **API error**: If any `POST` operation fails, the user sees a message (e.g., toast/sonner) describing the problem and offering a retry.
 
-## 10. Obsługa błędów
-- **Błędy walidacji formularza**: Wyświetlanie komunikatów o błędach bezpośrednio pod polami formularza, które nie przeszły walidacji. Stan błędu będzie zarządzany wewnątrz `WorkoutOnboardingForm`.
-- **Błędy sieciowe / serwera (API)**: W przypadku błędu podczas wysyłania danych (np. status 500, brak połączenia), komponent `OnboardingView` wyświetli globalny komunikat za pomocą `sonner` (toast) z prośbą o ponowienie próby. Flaga `isLoading` zostanie ustawiona na `false`, odblokowując przycisk "Zakończ".
-- **Błąd walidacji po stronie serwera (422)**: Chociaż walidacja po stronie klienta powinna temu zapobiegać, w razie wystąpienia zostanie obsłużony jak standardowy błąd serwera, z komunikatem dla użytkownika.
+## 9. Conditions and Validation
 
-## 11. Kroki implementacji
-1.  **Modyfikacja Middleware**: Zaktualizuj plik `src/middleware/index.ts`, dodając logikę sprawdzającą liczbę treningów użytkownika. Jeśli jest ich mniej niż 3, a żądanie nie dotyczy `/onboarding` (ani powiązanych zasobów statycznych/api), wykonaj przekierowanie `307 Temporary Redirect` do `/onboarding`.
-2.  **Stworzenie strony i komponentów szkieletowych**: Utwórz plik `src/pages/onboarding.astro` oraz pliki dla komponentów React: `OnboardingView.tsx`, `Stepper.tsx`, `WorkoutOnboardingForm.tsx`, `DurationInput.tsx`.
-3.  **Implementacja `DurationInput`**: Zbuduj niestandardowy, w pełni funkcjonalny komponent do wprowadzania czasu w segmentach.
-4.  **Implementacja `WorkoutOnboardingForm`**: Zbuduj formularz z polami, walidacją po stronie klienta przy użyciu `zod` oraz obsługą stanu `isLoading`.
-5.  **Implementacja haka `useOnboarding`**: Stwórz logikę zarządzania stanem, krokami oraz transformacją danych z `ViewModel` na `DTO`.
-6.  **Implementacja `OnboardingView`**: Zintegruj wszystkie komponenty, użyj haka `useOnboarding` i obsłuż logikę wysyłania danych do API za pomocą `Promise.all`. Dodaj obsługę błędów API za pomocą `sonner`.
-7.  **Stylowanie**: Ostyluj wszystkie komponenty za pomocą Tailwind CSS, zgodnie z systemem designu aplikacji (shadcn/ui).
-8.  **Testowanie manualne**: Przetestuj cały przepływ:
-    - Przekierowanie dla nowego użytkownika.
-    - Walidację formularza na każdym kroku.
-    - Poprawne działanie przycisku "Dalej" i "Zakończ".
-    - Obsługę błędów API.
-    - Poprawne przekierowanie po pomyślnym zakończeniu onboardingu.
+- **Component level**: `WorkoutOnboardingForm` uses `zod` to validate `WorkoutOnboardingFormViewModel` before passing it to the parent. Errors appear below the relevant fields.
+- **DTO mapping**: The frontend ensures all fields required by `createWorkoutSchema` are correctly populated, even when not entered by the user (e.g., `planned_distance_m` takes `distance_m`).
+  - `distanceKm` is converted to `distance_m` (km * 1000).
+  - `{ hours, minutes, seconds }` is converted to `duration_s`.
+- **Business conditions**: The application enforces exactly 3 workouts through the step mechanism.
 
+## 10. Error Handling
+
+- **Form validation errors**: Display messages directly below invalid fields. Error state is managed inside `WorkoutOnboardingForm`.
+- **Network / server errors (API)**: On submission failure (e.g., status 500, no connection), `OnboardingView` displays a global `sonner` toast asking the user to retry. Set `isLoading` to `false`, enabling "Finish".
+- **Server-side validation error (422)**: Although client validation should prevent it, handle it as a standard server error with a user message.
+
+## 11. Implementation Steps
+
+1.  **Modify Middleware**: Update `src/middleware/index.ts` to check the user's workout count. If fewer than 3 and the request is not for `/onboarding` (or related static/API resources), return `307 Temporary Redirect` to `/onboarding`.
+2.  **Create the page and component skeletons**: Create `src/pages/onboarding.astro` and React components: `OnboardingView.tsx`, `Stepper.tsx`, `WorkoutOnboardingForm.tsx`, `DurationInput.tsx`.
+3.  **Implement `DurationInput`**: Build a fully functional custom component for segmented time entry.
+4.  **Implement `WorkoutOnboardingForm`**: Build fields, client-side `zod` validation, and `isLoading` handling.
+5.  **Implement `useOnboarding`**: Create state and step management and `ViewModel` to `DTO` transformation logic.
+6.  **Implement `OnboardingView`**: Integrate all components, use `useOnboarding`, and submit API data with `Promise.all`. Add API error handling with `sonner`.
+7.  **Styling**: Style all components with Tailwind CSS according to the application design system (shadcn/ui).
+8.  **Manual testing**: Test the entire flow:
+    - Redirect for a new user.
+    - Form validation at each step.
+    - Correct "Next" and "Finish" button behavior.
+    - API error handling.
+    - Correct redirect after successful onboarding.

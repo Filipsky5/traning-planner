@@ -1,55 +1,57 @@
 # API Endpoint Implementation Plan: AI Suggestion Events
 
-## 1. Przegląd punktu końcowego
+## 1. Endpoint Overview
 
-Endpoint służy do pobierania listy zdarzeń (events) powiązanych z konkretną sugestią AI. W MVP głównym rodzajem zdarzenia jest `regenerate`, które rejestruje akcje regeneracji sugestii przez użytkownika. Endpoint umożliwia audyt historii zmian sugestii oraz służy do egzekwowania limitów (np. liczby regeneracji).
+This endpoint retrieves events associated with a specific AI suggestion. In the MVP, the main event kind is `regenerate`, recording user regeneration actions. It supports auditing suggestion history and enforcing limits (e.g., regeneration counts).
 
-**Funkcjonalność:**
-- Pobieranie historii zdarzeń dla pojedynczej sugestii AI
-- Paginacja wyników
-- Sortowanie po dacie wystąpienia (najnowsze pierwsze)
-- Weryfikacja ownership (tylko eventy własnych sugestii)
+**Functionality:**
 
-**Zakres:** GET `/api/v1/ai/suggestions/{id}/events`
+- Retrieve event history for a single AI suggestion
+- Paginate results
+- Sort by occurrence date (newest first)
+- Verify ownership (events of own suggestions only)
 
-## 2. Szczegóły żądania
+**Scope:** GET `/api/v1/ai/suggestions/{id}/events`
 
-**Metoda HTTP:** GET
+## 2. Request Details
 
-**Struktura URL:** `/api/v1/ai/suggestions/{id}/events`
+**HTTP Method:** GET
 
-**Parametry:**
+**URL Structure:** `/api/v1/ai/suggestions/{id}/events`
 
-**Wymagane (Path):**
-- `id` (string, UUID) - ID sugestii AI, której eventy chcemy pobrać
+**Parameters:**
 
-**Opcjonalne (Query):**
-- `page` (number, default: 1, min: 1) - Numer strony wyników
-- `per_page` (number, default: 20, min: 1, max: 100) - Liczba wyników na stronę
+**Required (Path):**
+
+- `id` (string, UUID) - AI suggestion ID whose events are requested
+
+**Optional (Query):**
+
+- `page` (number, default: 1, min: 1) - Result page number
+- `per_page` (number, default: 20, min: 1, max: 100) - Results per page
 
 **Request Headers:**
-- `Authorization: Bearer {token}` - Supabase session token (wymagany)
 
-**Request Body:** Brak (metoda GET)
+- `Authorization: Bearer {token}` - Supabase session token (required)
 
-**Przykładowe zapytania:**
+**Request Body:** None (GET method)
+
+**Example requests:**
+
 ```http
 GET /api/v1/ai/suggestions/550e8400-e29b-41d4-a716-446655440000/events
 GET /api/v1/ai/suggestions/550e8400-e29b-41d4-a716-446655440000/events?page=1&per_page=10
 ```
 
-## 3. Wykorzystywane typy
+## 3. Types Used
 
-**Istniejące w `src/types.ts`:**
+**Existing in `src/types.ts`:**
 
 ```typescript
-// DTO odpowiedzi
-export type AiSuggestionEventDto = Pick<
-  AiSuggestionEventRow,
-  "id" | "kind" | "occurred_at" | "metadata"
->;
+// Response DTO
+export type AiSuggestionEventDto = Pick<AiSuggestionEventRow, "id" | "kind" | "occurred_at" | "metadata">;
 
-// Koperta odpowiedzi z paginacją
+// Paginated response envelope
 export interface ApiListResponse<T> {
   data: T[];
   page: number;
@@ -58,29 +60,23 @@ export interface ApiListResponse<T> {
 }
 ```
 
-**Nowe (do utworzenia w `src/lib/validation/aiSuggestions.ts`):**
+**New (create in `src/lib/validation/aiSuggestions.ts`):**
 
 ```typescript
-// Schema walidacji query params dla eventów
+// Event query parameter validation schema
 export const eventsQuerySchema = z.object({
   page: z
     .union([z.string(), z.number()])
     .optional()
     .transform((value) => (value === undefined ? undefined : Number(value)))
-    .pipe(
-      z.number().int("page must be an integer").min(1, "page must be >= 1")
-    )
+    .pipe(z.number().int("page must be an integer").min(1, "page must be >= 1"))
     .default(1),
   per_page: z
     .union([z.string(), z.number()])
     .optional()
     .transform((value) => (value === undefined ? undefined : Number(value)))
     .pipe(
-      z
-        .number()
-        .int("per_page must be an integer")
-        .min(1, "per_page must be >= 1")
-        .max(100, "per_page must be <= 100")
+      z.number().int("per_page must be an integer").min(1, "per_page must be >= 1").max(100, "per_page must be <= 100")
     )
     .default(20),
 });
@@ -88,9 +84,9 @@ export const eventsQuerySchema = z.object({
 export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
 ```
 
-## 4. Szczegóły odpowiedzi
+## 4. Response Details
 
-**Sukces (200 OK):**
+**Success (200 OK):**
 
 ```json
 {
@@ -112,58 +108,60 @@ export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
 }
 ```
 
-**Struktura odpowiedzi:**
-- `data` - Array obiektów `AiSuggestionEventDto`
-- `page` - Aktualny numer strony
-- `per_page` - Liczba wyników na stronę
-- `total` - Całkowita liczba eventów dla tej sugestii
+**Response structure:**
 
-**Kody statusu:**
-- `200 OK` - Pomyślne pobranie eventów (może być pusta lista)
-- `400 Bad Request` - Nieprawidłowy format UUID lub query params
-- `401 Unauthorized` - Brak autentykacji
-- `404 Not Found` - Sugestia nie istnieje lub należy do innego użytkownika
-- `500 Internal Server Error` - Błąd serwera/bazy danych
+- `data` - Array of `AiSuggestionEventDto` objects
+- `page` - Current page number
+- `per_page` - Results per page
+- `total` - Total events for this suggestion
 
-## 5. Przepływ danych
+**Status codes:**
+
+- `200 OK` - Events retrieved successfully (may be empty)
+- `400 Bad Request` - Invalid UUID or query parameter format
+- `401 Unauthorized` - Unauthenticated
+- `404 Not Found` - Suggestion does not exist or belongs to another user
+- `500 Internal Server Error` - Server/database error
+
+## 5. Data Flow
 
 ```
 1. Request → Astro API Route Handler
    ↓
-2. Walidacja path param (id: UUID)
+2. Validate path parameter (id: UUID)
    ↓
-3. Walidacja query params (page, per_page)
+3. Validate query parameters (page, per_page)
    ↓
-4. Autentykacja (requireUserId)
+4. Authentication (requireUserId)
    ↓
-5. Weryfikacja ownership sugestii
+5. Verify suggestion ownership
    │  └─ fetchSuggestionRow(supabase, userId, id)
-   │     ├─ 404 jeśli nie istnieje lub nie należy do usera
+   │     ├─ 404 if missing or not owned by the user
    │     └─ OK - kontynuuj
    ↓
 6. Service: listSuggestionEvents(supabase, userId, suggestionId, pagination)
-   │  ├─ SELECT z ai_suggestion_events
+   │  ├─ SELECT from ai_suggestion_events
    │  ├─ WHERE user_id = userId AND ai_suggestion_id = suggestionId
    │  ├─ ORDER BY occurred_at DESC
-   │  ├─ LIMIT/OFFSET dla paginacji
-   │  └─ COUNT(*) dla total
+   │  ├─ LIMIT/OFFSET for pagination
+   │  └─ COUNT(*) for total
    ↓
-7. Mapowanie do AiSuggestionEventDto[]
+7. Map to AiSuggestionEventDto[]
    ↓
 8. Konstrukcja ApiListResponse
    ↓
 9. Response 200 + JSON
 ```
 
-**Interakcje z bazą danych:**
+**Database interactions:**
 
-1. **Weryfikacja ownership:**
-   - Tabela: `ai_suggestions`
+1. **Ownership verification:**
+   - Table: `ai_suggestions`
    - Query: `SELECT id FROM ai_suggestions WHERE id = ? AND user_id = ?`
-   - RLS: Automatycznie filtruje po `user_id = auth.uid()`
+   - RLS: Automatically filters by `user_id = auth.uid()`
 
-2. **Pobieranie eventów:**
-   - Tabela: `ai_suggestion_events`
+2. **Fetch events:**
+   - Table: `ai_suggestion_events`
    - Query:
      ```sql
      SELECT id, kind, occurred_at, metadata, COUNT(*) OVER() as total_count
@@ -172,64 +170,69 @@ export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
      ORDER BY occurred_at DESC
      LIMIT ? OFFSET ?
      ```
-   - RLS: Automatycznie filtruje po `user_id = auth.uid()`
+   - RLS: Automatically filters by `user_id = auth.uid()`
 
-**Indeksy (już istniejące w DB):**
-- `idx_ai_suggestion_events_user_suggestion` na `(user_id, ai_suggestion_id, occurred_at DESC)` - dla wydajności queries
+**Indexes (already in DB):**
 
-## 6. Względy bezpieczeństwa
+- `idx_ai_suggestion_events_user_suggestion` on `(user_id, ai_suggestion_id, occurred_at DESC)` - query performance
 
-### Autentykacja
-- **Wymagana:** Token Supabase w header `Authorization: Bearer {token}`
-- **Implementacja:** Użyj `requireUserId(context)` z `src/lib/http/auth.ts`
+## 6. Security Considerations
+
+### Authentication
+
+- **Required:** Supabase token in `Authorization: Bearer {token}`
+- **Implementation:** Use `requireUserId(context)` from `src/lib/http/auth.ts`
 - **Failure mode:** 401 Unauthorized
 
-### Autoryzacja (Ownership Verification)
-- **Wymaganie:** User może widzieć tylko eventy swoich sugestii
-- **Implementacja dwuwarstwowa:**
-  1. **Application layer:** Najpierw `fetchSuggestionRow(supabase, userId, id)` - weryfikuje czy suggestion należy do usera
-  2. **Database layer:** RLS na `ai_suggestion_events` z policy `user_id = auth.uid()`
-- **Failure mode:** 404 Not Found (nie ujawniamy czy sugestia istnieje ale należy do kogoś innego)
+### Authorization (Ownership Verification)
 
-### Walidacja danych wejściowych
-- **UUID format:** Zod schema `z.string().uuid()` dla parametru `id`
-- **Query params:** Zod schema z limitami (page >= 1, per_page 1-100)
-- **Sanitization:** Nie potrzebna - używamy parametryzowanych queries przez Supabase client
+- **Requirement:** Users may see only their own suggestion events
+- **Two-layer implementation:**
+  1. **Application layer:** First `fetchSuggestionRow(supabase, userId, id)` - checks ownership
+  2. **Database layer:** RLS on `ai_suggestion_events` with `user_id = auth.uid()`
+- **Failure mode:** 404 Not Found (do not reveal existence when owned by someone else)
+
+### Input Validation
+
+- **UUID format:** Zod schema `z.string().uuid()` for `id`
+- **Query params:** Zod schema with limits (page >= 1, per_page 1-100)
+- **Sanitization:** Not needed - parameterized queries through Supabase client
 
 ### Rate Limiting
-- **Nie implementowane w MVP** - można dodać w przyszłości:
-  - Limit requestów per user per minute
-  - Implementacja przez middleware lub Supabase Edge Functions
+
+- **Not implemented in MVP** - possible future additions:
+  - Requests per user per minute limit
+  - Middleware or Supabase Edge Functions implementation
 
 ### Information Disclosure Prevention
-- **404 dla wszystkich niepowodzeń access:** Nie ujawniaj czy resource istnieje, jeśli user nie ma do niego dostępu
-- **Konsystentny timing:** Unikaj timing attacks (weryfikacja ownership przed query eventów)
+
+- **404 for all access failures:** Do not reveal resource existence if the user lacks access
+- **Consistent timing:** Avoid timing attacks (verify ownership before querying events)
 
 ### SQL Injection
-- **Mitigation:** Supabase client używa parametryzowanych queries (prepared statements)
-- **No raw SQL:** Nie używamy `supabase.rpc()` z surowym SQL
 
-## 7. Obsługa błędów
+- **Mitigation:** Supabase client uses parameterized queries (prepared statements)
+- **No raw SQL:** No `supabase.rpc()` with raw SQL
 
-### Scenariusze błędów i kody statusu:
+## 7. Error Handling
 
-| Kod | Scenariusz | Warunek | Response Body |
-|-----|-----------|---------|---------------|
-| 400 | Invalid UUID | `id` nie jest prawidłowym UUID | `{"error": {"code": "validation_error", "message": "Invalid suggestion ID format"}}` |
-| 400 | Invalid pagination | `page < 1` lub `per_page > 100` | `{"error": {"code": "validation_error", "message": "Invalid query parameters", "details": [...]}}` |
-| 401 | Unauthorized | Brak lub invalid session token | `{"error": {"code": "unauthorized", "message": "Authentication required"}}` |
-| 404 | Not Found | Suggestion nie istnieje LUB należy do innego usera | `{"error": {"code": "not_found", "message": "AI suggestion not found"}}` |
-| 500 | Database Error | Supabase query failure | `{"error": {"code": "internal_error", "message": "Failed to load events"}}` |
+### Error Scenarios and Status Codes:
 
-### Implementacja error handling:
+| Code | Scenario           | Condition                                   | Response Body                                                                                      |
+| ---- | ------------------ | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 400  | Invalid UUID       | `id` is not a valid UUID                    | `{"error": {"code": "validation_error", "message": "Invalid suggestion ID format"}}`               |
+| 400  | Invalid pagination | `page < 1` or `per_page > 100`              | `{"error": {"code": "validation_error", "message": "Invalid query parameters", "details": [...]}}` |
+| 401  | Unauthorized       | Missing or invalid session token            | `{"error": {"code": "unauthorized", "message": "Authentication required"}}`                        |
+| 404  | Not Found          | Suggestion missing OR owned by another user | `{"error": {"code": "not_found", "message": "AI suggestion not found"}}`                           |
+| 500  | Database Error     | Supabase query failure                      | `{"error": {"code": "internal_error", "message": "Failed to load events"}}`                        |
+
+### Error Handling Implementation:
 
 ```typescript
 function handleError(error: unknown): Response {
   // Zod validation error
   if (error instanceof Error && error.name === "ZodError") {
-    return errorResponse(
-      createApiError(400, "validation_error", "Invalid query parameters", { cause: error })
-    );
+    return errorResponse(createApiError(400, "validation_error", "Invalid query parameters", { cause: error }));
   }
 
   // API errors (from service layer)
@@ -239,16 +242,14 @@ function handleError(error: unknown): Response {
 
   // Unexpected errors
   console.error("AI suggestion events endpoint failed", error);
-  return errorResponse(
-    createApiError(500, "internal_error", "Failed to load events", { cause: error })
-  );
+  return errorResponse(createApiError(500, "internal_error", "Failed to load events", { cause: error }));
 }
 ```
 
-### Logging błędów:
+### Error Logging:
 
 ```typescript
-// Server-side logging dla 500 errors
+// Server-side logging for 500 errors
 console.error("AI suggestion events endpoint failed", {
   suggestionId: id,
   userId,
@@ -257,52 +258,57 @@ console.error("AI suggestion events endpoint failed", {
 });
 ```
 
-**Nie używamy `ai_logs` tabeli** - to endpoint tylko do odczytu, nie wywołujący AI.
+**Do not use `ai_logs`** - this is a read-only endpoint that does not call AI.
 
-## 8. Rozważania dotyczące wydajności
+## 8. Performance Considerations
 
-### Potencjalne wąskie gardła:
+### Potential Bottlenecks:
 
-1. **N+1 Query Problem:** ❌ Nie występuje - single query dla eventów
-2. **Large result sets:** Mitigation poprzez paginację (max 100 per request)
-3. **Database indexing:** Indeks już istnieje: `(user_id, ai_suggestion_id, occurred_at DESC)`
+1. **N+1 Query Problem:** ❌ Not present - single events query
+2. **Large result sets:** Mitigated by pagination (max 100 per request)
+3. **Database indexing:** Existing index: `(user_id, ai_suggestion_id, occurred_at DESC)`
 
-### Strategie optymalizacji:
+### Optimization Strategies:
 
 **Database:**
-- ✅ Indeks na `ai_suggestion_events(user_id, ai_suggestion_id, occurred_at DESC)` - pokrywa sorting + WHERE clause
-- ✅ RLS z indexed columns - wydajne filtrowanie po `user_id`
-- ✅ Pagination zamiast pełnego load
+
+- ✅ Index on `ai_suggestion_events(user_id, ai_suggestion_id, occurred_at DESC)` - covers sorting + WHERE
+- ✅ RLS on indexed columns - efficient `user_id` filtering
+- ✅ Pagination instead of full load
 
 **Application:**
-- ✅ Streaming response dla dużych result sets (Astro automatycznie)
-- ✅ Lazy evaluation przez Supabase client
-- 🔄 **Opcjonalnie:** HTTP caching (ETag) jeśli eventy rzadko się zmieniają
+
+- ✅ Streaming response for large results (Astro automatically)
+- ✅ Lazy evaluation through Supabase client
+- 🔄 **Optional:** HTTP caching (ETag) if events change rarely
 
 **Monitoring:**
-- Metric: Response time (target: < 200ms dla p95)
+
+- Metric: Response time (target: < 200ms p95)
 - Metric: Database query time
-- Alert: Jeśli > 500ms dla p99
+- Alert: If > 500ms p99
 
-### Oszacowanie wydajności:
+### Performance Estimate:
 
-- **Expected load:** Low (audyt / debugging, nie critical path)
-- **Query complexity:** O(log n) dzięki indeksowi + O(k) dla LIMIT k
-- **Typical response size:** < 5KB (20 eventów * ~200B)
+- **Expected load:** Low (audit / debugging, not on critical path)
+- **Query complexity:** O(log n) thanks to the index + O(k) for LIMIT k
+- **Typical response size:** < 5KB (20 events * ~200B)
 - **Database round trips:** 2 (ownership check + events query)
 
-**Optymalizacja przyszłości (jeśli potrzebna):**
-- Combine ownership check + events fetch w jeden query (JOIN)
-- Add Redis caching dla często odczytywanych suggestion events
-- Implement GraphQL DataLoader pattern dla batch requests
+**Future optimization (if needed):**
 
-## 9. Etapy wdrożenia
+- Combine ownership check + event fetch into one query (JOIN)
+- Add Redis caching for frequently read suggestion events
+- Implement GraphQL DataLoader pattern for batch requests
 
-### Krok 1: Walidacja (Zod schemas)
-**Plik:** `src/lib/validation/aiSuggestions.ts`
+## 9. Implementation Stages
+
+### Step 1: Validation (Zod Schemas)
+
+**File:** `src/lib/validation/aiSuggestions.ts`
 
 ```typescript
-// Dodaj nowy schema dla query params eventów
+// Add a new event query parameter schema
 export const eventsQuerySchema = z.object({
   page: z
     .union([z.string(), z.number()])
@@ -322,6 +328,7 @@ export type EventsQueryParams = z.infer<typeof eventsQuerySchema>;
 ```
 
 **Test:**
+
 ```typescript
 // Verify schema handles edge cases
 eventsQuerySchema.parse({ page: "1", per_page: "20" }); // OK
@@ -331,11 +338,12 @@ eventsQuerySchema.parse({ per_page: 101 }); // Should throw
 
 ---
 
-### Krok 2: Service Layer - Paginacja eventów
-**Plik:** `src/lib/services/aiSuggestionsService.ts`
+### Step 2: Service Layer - Event Pagination
+
+**File:** `src/lib/services/aiSuggestionsService.ts`
 
 ```typescript
-// Dodaj nową funkcję obok istniejącej fetchSuggestionEvents
+// Add a new function beside existing fetchSuggestionEvents
 export interface ListEventsFilters {
   page: number;
   per_page: number;
@@ -388,14 +396,16 @@ export async function listSuggestionEvents(
 ```
 
 **Test:**
-- Weryfikuj że paginacja działa (offset/limit poprawne)
-- Weryfikuj że count jest accurate
-- Weryfikuj że sortowanie DESC po occurred_at
+
+- Verify pagination works (correct offset/limit)
+- Verify count is accurate
+- Verify occurred_at DESC sorting
 
 ---
 
-### Krok 3: API Route Handler
-**Plik:** `src/pages/api/v1/ai/suggestions/[id]/events.ts`
+### Step 3: API Route Handler
+
+**File:** `src/pages/api/v1/ai/suggestions/[id]/events.ts`
 
 ```typescript
 import type { APIContext } from "astro";
@@ -432,7 +442,7 @@ export async function GET(context: APIContext) {
     // Fetch events with pagination
     const result = await listSuggestionEvents(context.locals.supabase, userId, id, filters);
 
-    const payload: ApiListResponse<typeof result.data[number]> = {
+    const payload: ApiListResponse<(typeof result.data)[number]> = {
       data: result.data,
       page: result.page,
       per_page: result.perPage,
@@ -471,37 +481,39 @@ function handleError(error: unknown): Response {
 ```
 
 **Test:**
+
 - Verify route is accessible at `/api/v1/ai/suggestions/{id}/events`
-- Verify 401 bez auth token
-- Verify 404 dla nieistniejącej sugestii
-- Verify 404 dla sugestii innego usera (security)
+- Verify 401 without auth token
+- Verify 404 for nonexistent suggestion
+- Verify 404 for another user's suggestion (security)
 
 ---
 
-### Krok 4: Testy integracyjne
-**Plik:** `.curls/ai-suggestions-events.sh`
+### Step 4: Integration Tests
+
+**File:** `.curls/ai-suggestions-events.sh`
 
 ```bash
 #!/bin/bash
 
-# Test Suite dla GET /api/v1/ai/suggestions/{id}/events
+# Test Suite for GET /api/v1/ai/suggestions/{id}/events
 
 BASE_URL="http://localhost:3000"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "🔐 Pobieranie tokena autoryzacyjnego..."
+echo "🔐 Fetching authorization token..."
 AUTH_TOKEN=$("${SCRIPT_DIR}/auth-test-user.sh")
 
 if [[ -z "$AUTH_TOKEN" ]]; then
-  echo "❌ Nie udało się uzyskać tokena."
+  echo "❌ Could not obtain token."
   exit 1
 fi
 
 echo "✅ Token uzyskany"
 echo ""
 
-# Najpierw stwórz sugestię (potrzebna do testów eventów)
-echo "🆕 Tworzenie testowej sugestii..."
+# First create a suggestion (needed for event tests)
+echo "🆕 Creating test suggestion..."
 CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -X POST \
   "${BASE_URL}/api/v1/ai/suggestions" \
@@ -513,7 +525,7 @@ CREATE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
 CREATE_STATUS=$(echo "$CREATE_RESPONSE" | tail -n1)
 
 if [[ "$CREATE_STATUS" != "201" ]]; then
-  echo "❌ Nie udało się stworzyć sugestii (status: $CREATE_STATUS)"
+  echo "❌ Could not create suggestion (status: $CREATE_STATUS)"
   exit 1
 fi
 
@@ -521,8 +533,8 @@ SUGGESTION_ID=$(echo "$CREATE_BODY" | jq -r '.data.id')
 echo "✅ Sugestia utworzona: $SUGGESTION_ID"
 echo ""
 
-# Test 1: GET events bez parametrów
-echo "📋 Test 1: GET /events bez parametrów (default pagination)"
+# Test 1: GET events without parameters
+echo "📋 Test 1: GET /events without parameters (default pagination)"
 curl -s -w "\n%{http_code}" \
   -X GET \
   "${BASE_URL}/api/v1/ai/suggestions/${SUGGESTION_ID}/events" \
@@ -530,7 +542,7 @@ curl -s -w "\n%{http_code}" \
   (read body; read status; echo "$body" | jq '.'; echo "Status: $status")
 echo ""
 
-# Test 2: GET events z custom pagination
+# Test 2: GET events with custom pagination
 echo "📋 Test 2: GET /events?page=1&per_page=5"
 curl -s -w "\n%{http_code}" \
   -X GET \
@@ -539,16 +551,16 @@ curl -s -w "\n%{http_code}" \
   (read body; read status; echo "$body" | jq '.'; echo "Status: $status")
 echo ""
 
-# Test 3: GET events bez auth (expect 401)
-echo "🔒 Test 3: GET /events bez auth (expect 401)"
+# Test 3: GET events without auth (expect 401)
+echo "🔒 Test 3: GET /events without auth (expect 401)"
 curl -s -w "\n%{http_code}" \
   -X GET \
   "${BASE_URL}/api/v1/ai/suggestions/${SUGGESTION_ID}/events" | \
   (read body; read status; echo "$body" | jq '.'; echo "Status: $status")
 echo ""
 
-# Test 4: GET events dla nieistniejącej sugestii (expect 404)
-echo "❌ Test 4: GET /events dla nieistniejącej sugestii (expect 404)"
+# Test 4: GET events for nonexistent suggestion (expect 404)
+echo "❌ Test 4: GET /events for nonexistent suggestion (expect 404)"
 curl -s -w "\n%{http_code}" \
   -X GET \
   "${BASE_URL}/api/v1/ai/suggestions/00000000-0000-0000-0000-000000000000/events" \
@@ -565,10 +577,11 @@ curl -s -w "\n%{http_code}" \
   (read body; read status; echo "$body" | jq '.'; echo "Status: $status")
 echo ""
 
-echo "✅ Test suite zakończony"
+echo "✅ Test suite completed"
 ```
 
-**Uruchomienie:**
+**Running:**
+
 ```bash
 chmod +x .curls/ai-suggestions-events.sh
 ./.curls/ai-suggestions-events.sh > .curls/ai-suggestions-events-results.log 2>&1
@@ -576,22 +589,25 @@ chmod +x .curls/ai-suggestions-events.sh
 
 ---
 
-### Krok 5: Dokumentacja
-**Plik:** Aktualizacja `README.md` lub API docs
+### Step 5: Documentation
 
-```markdown
+**File:** Update `README.md` or API docs
+
+````markdown
 ### GET /api/v1/ai/suggestions/{id}/events
 
-Pobiera listę zdarzeń (events) dla konkretnej sugestii AI.
+Retrieves events for a specific AI suggestion.
 
-**Autentykacja:** Wymagana (Bearer token)
+**Authentication:** Required (Bearer token)
 
-**Parametry:**
-- `id` (path, UUID) - ID sugestii AI
-- `page` (query, number, optional, default: 1) - Numer strony
-- `per_page` (query, number, optional, default: 20, max: 100) - Liczba wyników na stronę
+**Parameters:**
+
+- `id` (path, UUID) - AI suggestion ID
+- `page` (query, number, optional, default: 1) - Page number
+- `per_page` (query, number, optional, default: 20, max: 100) - Results per page
 
 **Response 200:**
+
 ```json
 {
   "data": [
@@ -609,34 +625,39 @@ Pobiera listę zdarzeń (events) dla konkretnej sugestii AI.
 ```
 
 **Errors:**
+
 - 400 - Invalid parameters
 - 401 - Unauthorized
 - 404 - Suggestion not found
 - 500 - Server error
-```
+````
 
 ---
 
-### Krok 6: Weryfikacja i testy manualne
+### Step 6: Verification and Manual Tests
 
-1. **Uruchom serwer dev:**
+1. **Start dev server:**
    ```bash
    npm run dev
    ```
 
-2. **Uruchom test suite:**
+````
+
+2. **Run test suite:**
+
    ```bash
    ./.curls/ai-suggestions-events.sh
    ```
 
-3. **Weryfikuj responses:**
-   - ✅ 200 dla valid requests z pustą listą (nowa sugestia nie ma eventów)
-   - ✅ 200 z eventami po wykonaniu regenerate
-   - ✅ 401 bez auth
-   - ✅ 404 dla nieistniejącej sugestii
-   - ✅ 400 dla invalid pagination
+3. **Verify responses:**
+   - ✅ 200 for valid requests with empty list (new suggestion has no events)
+   - ✅ 200 with events after regeneration
+   - ✅ 401 without auth
+   - ✅ 404 for nonexistent suggestion
+   - ✅ 400 for invalid pagination
 
 4. **Performance test:**
+
    ```bash
    # Apache Bench - 100 requests, 10 concurrent
    ab -n 100 -c 10 -H "Authorization: Bearer {token}" \
@@ -644,36 +665,36 @@ Pobiera listę zdarzeń (events) dla konkretnej sugestii AI.
    ```
 
 5. **Security test:**
-   - Próba dostępu do sugestii innego usera → 404
-   - Próba z invalid/expired token → 401
+   - Access another user's suggestion → 404
+   - Invalid/expired token → 401
    - SQL injection attempts → Blocked by Supabase
 
 ---
 
-### Checklist końcowy
+### Final Checklist
 
-- [ ] Zod schema dla query params (`eventsQuerySchema`)
-- [ ] Service function z paginacją (`listSuggestionEvents`)
+- [ ] Query parameter Zod schema (`eventsQuerySchema`)
+- [ ] Paginated service function (`listSuggestionEvents`)
 - [ ] API route handler (`/api/v1/ai/suggestions/[id]/events.ts`)
-- [ ] Error handling dla wszystkich scenariuszy
+- [ ] Error handling for all scenarios
 - [ ] Test suite bash script
-- [ ] Weryfikacja ownership (security)
-- [ ] Response format zgodny ze specyfikacją
-- [ ] Dokumentacja endpoint
+- [ ] Ownership verification (security)
+- [ ] Response format matches specification
+- [ ] Endpoint documentation
 - [ ] Performance test (< 200ms p95)
 - [ ] Security test (cross-user access blocked)
 
 ---
 
-## 10. Potencjalne rozszerzenia (poza MVP)
+## 10. Potential Extensions (Beyond the MVP)
 
-1. **Filtrowanie po `kind`:**
+1. **Filter by `kind`:**
    - Query param: `kind=regenerate`
-   - Przydatne gdy będzie więcej typów eventów (create, accept, reject)
+   - Useful when more event types exist (create, accept, reject)
 
-2. **Sortowanie:**
+2. **Sorting:**
    - Query param: `sort=occurred_at:asc|desc`
-   - Default: `desc` (najnowsze pierwsze)
+   - Default: `desc` (newest first)
 
 3. **HTTP Caching:**
    - ETag based on last event `occurred_at`
@@ -682,12 +703,13 @@ Pobiera listę zdarzeń (events) dla konkretnej sugestii AI.
 4. **Batch endpoint:**
    - POST `/api/v1/ai/suggestions/events/batch`
    - Body: `{ suggestion_ids: [...] }`
-   - Zwraca eventy dla wielu sugestii naraz
+   - Returns events for multiple suggestions at once
 
 5. **Real-time updates:**
-   - WebSocket/SSE dla live event stream
+   - WebSocket/SSE for a live event stream
    - Supabase Realtime subscriptions
 
 6. **Aggregations:**
    - Count per event kind
-   - Timeline/histogram eventów
+   - Event timeline/histogram
+````

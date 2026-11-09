@@ -1,4 +1,4 @@
-> Aktualizacja 2026-11-08: wymagany Node 22.23.4 (`.nvmrc`), Astro 7, React 19.3, Zod 4, Vitest 5 i Vite 8. Cloudflare adapter 14 obsługuje Workers zamiast Pages. Szczegóły migracji: [dependency-upgrade.md](dependency-upgrade.md). ESLint pozostaje w wersji 9, TypeScript w 5.9 ze względu na zgodność pluginów.
+> Update 2026-11-08: Node 22.23.4 (`.nvmrc`), Astro 7, React 19.3, Zod 4, Vitest 5, and Vite 8 are required. Cloudflare adapter 14 supports Workers instead of Pages. Migration details: [dependency-upgrade.md](dependency-upgrade.md). ESLint remains at version 9 and TypeScript at 5.9 for plugin compatibility.
 
 # Tech Stack - AI Running Training Planner
 
@@ -7,35 +7,35 @@
 ### Framework
 
 - **Astro 7** (SSR mode)
-  - Szybkie, wydajne strony z minimalnym JavaScript
-  - Server-side rendering dla lepszego SEO i performance
-  - Adapter: `@astrojs/node` w trybie standalone
+  - Fast, efficient pages with minimal JavaScript
+  - Server-side rendering for better SEO and performance
+  - Adapter: `@astrojs/node` in standalone mode
 
 ### UI Framework
 
 - **React 19**
-  - Komponenty interaktywne (kalendarz, formularze)
-  - Hydration tylko tam gdzie potrzebna (Astro Islands)
-  - Dyrektywy: `client:load`, `client:visible` dla optymalizacji
+  - Interactive components (calendar, forms)
+  - Hydration only where needed (Astro Islands)
+  - Directives: `client:load`, `client:visible` for optimization
 
 ### Styling
 
 - **Tailwind CSS 4**
   - Utility-first CSS framework
-  - Szybkie prototypowanie
-  - Rekomendowany przez autorów kursu
+  - Rapid prototyping
+  - Recommended by the course authors
 
 ### UI Components
 
 - **shadcn/ui**
-  - Dostępne, konfigurowalne komponenty React
-  - Oparte na Radix UI
+  - Accessible, customizable React components
+  - Based on Radix UI
   - TypeScript support out of the box
 
-### Ikony
+### Icons
 
 - **Lucide React**
-  - Spójna biblioteka ikon
+  - Consistent icon library
   - Tree-shakeable
 
 ## Backend
@@ -43,60 +43,60 @@
 ### Database
 
 - **Supabase** (hosted PostgreSQL)
-  - Automatyczne REST API
-  - Wbudowana autentykacja
-  - Real-time subscriptions (opcjonalnie na przyszłość)
-  - Row Level Security (RLS) dla bezpieczeństwa
-  - Darmowy tier wystarczający na MVP
+  - Automatic REST API
+  - Built-in authentication
+  - Real-time subscriptions (optional for the future)
+  - Row Level Security (RLS) for security
+  - Free tier sufficient for the MVP
 
 ### Authentication
 
 - **Supabase Auth**
-  - Gotowe rozwiązanie
+  - Ready-made solution
   - Email/password authentication
   - Session management
-  - Zero konfiguracji
+  - Zero configuration
 
 ### API Layer
 
 - **Astro API Routes**
-  - Endpointy w `src/pages/api/`
-  - Server-side tylko
+  - Endpoints in `src/pages/api/`
+  - Server-side only
   - TypeScript support
 
 ### AI Integration
 
 - **OpenRouter.ai**
-  - Dostęp do wielu modeli AI (OpenAI, Anthropic, Google)
-  - Elastyczność w wyborze modelu
-  - Ustawienie limitów finansowych na klucze API
-  - Jeden interfejs dla różnych providerów
+  - Access to multiple AI models (OpenAI, Anthropic, Google)
+  - Flexible model selection
+  - Spending limits on API keys
+  - One interface for different providers
 
 ## DevOps & Deployment
 
 ### Containerization
 
 - **Docker**
-  - Dockerfile oparty na `node:22-alpine`
-  - Single-stage build dla uproszczenia
-  - docker-compose dla lokalnego developmentu (opcjonalnie)
+  - Dockerfile based on `node:22-alpine`
+  - Single-stage build for simplicity
+  - docker-compose for local development (optional)
 
 ### Hosting
 
 - **Cloudflare Workers**
-  - Natywne wsparcie dla Astro SSR przez Cloudflare Workers
-  - Globalna sieć CDN i wdrożenia na skraju sieci (Edge)
-  - Darmowy plan z hojnymi limitami i wsparciem dla projektów komercyjnych
-  - Automatyczne wdrożenia z Git
+  - Native support for Astro SSR through Cloudflare Workers
+  - Global CDN network and edge deployments
+  - Free plan with generous limits and support for commercial projects
+  - Automatic Git deployments
 
 ### CI/CD
 
 - **GitHub Actions**
-  - Buildy i testy przy pull requestach; deploy przez workflow_dispatch
-  - Uruchamianie testów
-  - Review PR przez Claude ([konfiguracja](code-review-automation.md))
-  - Ręczny deploy na Cloudflare Workers
-  - Ręczny trigger przez `workflow_dispatch`
+  - Builds and tests on pull requests; deployment via workflow_dispatch
+  - Running tests
+  - PR review by Claude ([configuration](code-review-automation.md))
+  - Manual deployment to Cloudflare Workers
+  - Manual trigger via `workflow_dispatch`
 
 ### Testing
 
@@ -104,20 +104,20 @@
 
 - **Playwright**
   - End-to-end testing framework
-  - Cross-browser testing (Chromium, WebKit, opcjonalnie Firefox)
+  - Cross-browser testing (Chromium, WebKit, optionally Firefox)
   - Multi-viewport testing (desktop: 1440×900, mobile: 390×844)
   - TypeScript support out of the box
-  - Uruchamiane przeciwko production build (`npm run build` + `npm run preview`)
-  - Minimum 1 test weryfikujący główny flow użytkownika (wymagane dla certyfikatu)
-  - Scenariusze: autentykacja, onboarding, kalendarz, AI suggestions, cele użytkownika
+  - Run against the production build (`npm run build` + `npm run preview`)
+  - At least 1 test verifying the main user flow (required for certification)
+  - Scenarios: authentication, onboarding, calendar, AI suggestions, user goals
 
 #### Unit & Integration Tests
 
 - **Vitest 5**
-  - Unit tests dla utils, walidacji, services
+  - Unit tests for utilities, validation, and services
   - Fast, Vite-native test runner (Vitest)
-  - Compatible z ekosystemem Jest
-  - Pokrycie: min. 60–70% dla `src/lib/utils`, `src/lib/validation`, `src/lib/services`
+  - Compatible with the Jest ecosystem
+  - Coverage: at least 60–70% for `src/lib/utils`, `src/lib/validation`, `src/lib/services`
 
 - **React Testing Library**
   - Component integration tests
@@ -126,52 +126,52 @@
 
 #### API Tests
 
-- **supertest** lub **node-fetch**
-  - HTTP endpoint testing dla `src/pages/api/v1/*`
-  - Uruchamiane przeciwko testowemu serwerowi Astro (Node adapter)
-  - Weryfikacja RLS i filtrów bazodanowych
-  - Alternatywnie: Playwright APIRequestContext
+- **supertest** or **node-fetch**
+  - HTTP endpoint testing for `src/pages/api/v1/*`
+  - Run against a test Astro server (Node adapter)
+  - Verification of RLS and database filters
+  - Alternatively: Playwright APIRequestContext
 
 #### Mocking & Helpers
 
-- **MSW** (Mock Service Worker) - opcjonalnie
-  - Mockowanie API responses w testach komponentów
-  - Deterministyczne odpowiedzi AI dla testów
-  - Izolacja testów od zewnętrznych serwisów (OpenRouter.ai)
+- **MSW** (Mock Service Worker) - optional
+  - Mocking API responses in component tests
+  - Deterministic AI responses for tests
+  - Isolating tests from external services (OpenRouter.ai)
 
 ## Development Tools
 
 ### Type Safety
 
 - **TypeScript 5.9**
-  - Statyczne typowanie
-  - Lepsze wsparcie IDE
-  - Mniej błędów w runtime
+  - Static typing
+  - Better IDE support
+  - Fewer runtime errors
 
 ### Code Quality
 
-- **ESLint 9** - linting JavaScript/TypeScript
-- **Prettier** - formatowanie kodu
+- **ESLint 9** - JavaScript/TypeScript linting
+- **Prettier** - code formatting
 - **Husky** - Git hooks
-- **lint-staged** - linting tylko zmienionych plików
+- **lint-staged** - linting only changed files
 
-## Struktura Projektu
+## Project Structure
 
 ```
 src/
 ├── pages/
 │   ├── api/              # API endpoints (Astro SSR)
-│   │   ├── auth/         # Autentykacja
-│   │   ├── trainings/    # CRUD treningów
-│   │   └── ai/           # Generator AI
-│   ├── dashboard/        # Główny widok kalendarza
-│   ├── login/            # Strona logowania
-│   └── register/         # Rejestracja
+│   │   ├── auth/         # Authentication
+│   │   ├── trainings/    # Workout CRUD
+│   │   └── ai/           # AI generator
+│   ├── dashboard/        # Main calendar view
+│   ├── login/            # Login page
+│   └── register/         # Registration
 ├── components/
-│   ├── ui/               # shadcn/ui komponenty
-│   ├── Calendar.tsx      # Komponent kalendarza
-│   ├── TrainingForm.tsx  # Formularz treningu
-│   └── AIGenerator.tsx   # Generator AI
+│   ├── ui/               # shadcn/ui components
+│   ├── Calendar.tsx      # Calendar component
+│   ├── TrainingForm.tsx  # Workout form
+│   └── AIGenerator.tsx   # AI generator
 ├── lib/
 │   ├── supabase.ts       # Supabase client
 │   ├── openrouter.ts     # OpenRouter client
@@ -179,48 +179,48 @@ src/
 ├── types/
 │   └── index.ts          # TypeScript types
 └── styles/
-    └── global.css        # Style globalne
+    └── global.css        # Global styles
 ```
 
-## Koszty Miesięczne (Szacowane)
+## Monthly Costs (Estimated)
 
 - **Supabase**: $0 (Free tier - 500MB DB, 2GB transfer)
-- **Cloudflare Workers**: $0 (Free tier z hojnymi limitami)
-- **OpenRouter AI**: $5-20/miesiąc (zależnie od użycia)
-- **GitHub Actions**: $0 (darmowe dla public repos, 2000 min/miesiąc dla private)
+- **Cloudflare Workers**: $0 (Free tier with generous limits)
+- **OpenRouter AI**: $5-20/month (depending on usage)
+- **GitHub Actions**: $0 (free for public repos, 2000 min/month for private repos)
 
-**RAZEM: $5-20/miesiąc**
+**TOTAL: $5-20/month**
 
-## Alternatywy i Plan B
+## Alternatives and Plan B
 
-### Jeśli Cloudflare Workers sprawia problemy:
+### If Cloudflare Workers causes problems:
 
-1. Deploy na **Vercel** lub **Netlify** (darmowy, 5 minut setup)
-2. Obie platformy automatycznie obsługują Astro SSR
-3. W dokumentacji: "Deployment available on multiple platforms"
+1. Deploy to **Vercel** or **Netlify** (free, 5-minute setup)
+2. Both platforms automatically support Astro SSR
+3. In the documentation: "Deployment available on multiple platforms"
 
-### Jeśli Tailwind 4 sprawia problemy:
+### If Tailwind 4 causes problems:
 
-- Downgrade do **Tailwind 3.4** (stabilny)
+- Downgrade to **Tailwind 3.4** (stable)
 
-### Jeśli React jest za trudny:
+### If React is too difficult:
 
-- **Alpine.js** jako alternatywa (prostszy)
-- Lub czyste **Astro components**
+- **Alpine.js** as an alternative (simpler)
+- Or plain **Astro components**
 
-## Dlaczego Ten Stack?
+## Why This Stack?
 
-1. **Spełnia wymagania certyfikacyjne** - wszystkie obowiązkowe punkty pokryte
-2. **Dobry dla iOS developera** - React koncepty podobne do React Native/SwiftUI
-3. **TypeScript** - type safety jak w Swift
-4. **Supabase** - prosty setup, podobny do Firebase
-5. **GitHub Actions** - wystarczająco konfigurowalne
-6. **Realistyczny timeframe** - 25-30h na implementację
+1. **Meets certification requirements** - all mandatory points covered
+2. **Good for an iOS developer** - React concepts are similar to React Native/SwiftUI
+3. **TypeScript** - type safety like Swift
+4. **Supabase** - simple setup, similar to Firebase
+5. **GitHub Actions** - sufficiently configurable
+6. **Realistic timeframe** - 25-30h for implementation
 
-## Timeline (5 tygodni, 8h/tydzień)
+## Timeline (5 weeks, 8h/week)
 
-**Tydzień 1**: Setup (Supabase, Cloudflare Workers, GitHub Actions)
-**Tydzień 2**: CRUD + UI (Kalendarz, formularze)
-**Tydzień 3**: AI Generator + logika biznesowa
-**Tydzień 4**: Testy + debugging + dokumentacja
-**Tydzień 5**: Buffer na nieprzewidziane problemy
+**Week 1**: Setup (Supabase, Cloudflare Workers, GitHub Actions)
+**Week 2**: CRUD + UI (calendar, forms)
+**Week 3**: AI generator + business logic
+**Week 4**: Tests + debugging + documentation
+**Week 5**: Buffer for unexpected problems

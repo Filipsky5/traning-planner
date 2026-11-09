@@ -1,35 +1,39 @@
-# Plan Implementacji Usługi OpenRouter
+# OpenRouter Service Implementation Plan
 
-## 1. Opis Usługi
+## 1. Service Description
 
-Usługa OpenRouter to klasa TypeScript zapewniająca integrację z API OpenRouter do generowania sugestii treningowych wspomaganych przez AI. Obsługuje budowanie promptów, komunikację z API, parsowanie odpowiedzi, obsługę błędów oraz śledzenie wykorzystania. Usługa integruje się z istniejącą infrastrukturą logowania AI i stosuje ustalone wzorce serwisów w kodzie projektu.
+The OpenRouter service is a TypeScript class integrating with the OpenRouter API to generate AI-assisted workout suggestions. It handles prompt construction, API communication, response parsing, errors, and usage tracking. It integrates with existing AI logging infrastructure and follows established service patterns in the codebase.
 
-### Kluczowe Odpowiedzialności:
-- Generowanie sugestii treningowych przy użyciu LLM poprzez API OpenRouter
-- Zapewnienie strukturyzowanych odpowiedzi JSON poprzez walidację schematu
-- Śledzenie metryk wykorzystania (tokeny, koszty, opóźnienia)
-- Elegancka obsługa błędów z ponawianiem prób i rozwiązaniami awaryjnymi
-- Integracja z logowaniem AI dla analityki
+### Key Responsibilities:
 
-### Lokalizacja pliku: `src/lib/services/openrouter.ts`
+- Generate workout suggestions using LLMs through OpenRouter
+- Ensure structured JSON responses through schema validation
+- Track usage metrics (tokens, costs, latency)
+- Handle errors gracefully with retries and fallbacks
+- Integrate AI logging for analytics
 
-## 2. Opis Konstruktora
+### File Location: `src/lib/services/openrouter.ts`
 
-### Sygnatura
+## 2. Constructor Description
+
+### Signature
+
 ```typescript
 constructor(options?: OpenRouterOptions)
 ```
 
-### Parametry
-- `options` (opcjonalny): Obiekt konfiguracyjny
-  - `apiKey?: string` - Klucz API OpenRouter (domyślnie ze zmiennej środowiskowej)
-  - `baseUrl?: string` - Bazowy URL API (domyślnie: "https://openrouter.ai/api/v1")
-  - `defaultModel?: string` - Domyślny model do użycia (domyślnie: "x-ai/grok-code-fast-1")
-  - `timeout?: number` - Timeout żądania w ms (domyślnie: 30000)
-  - `maxRetries?: number` - Maksymalna liczba prób (domyślnie: 3)
-  - `retryDelay?: number` - Początkowe opóźnienie ponawiania w ms (domyślnie: 1000)
+### Parameters
 
-### Szczegóły Implementacji
+- `options` (optional): Configuration object
+  - `apiKey?: string` - OpenRouter API key (defaults to environment variable)
+  - `baseUrl?: string` - API base URL (default: "https://openrouter.ai/api/v1")
+  - `defaultModel?: string` - Default model (default: "x-ai/grok-code-fast-1")
+  - `timeout?: number` - Request timeout in ms (default: 30000)
+  - `maxRetries?: number` - Maximum attempts (default: 3)
+  - `retryDelay?: number` - Initial retry delay in ms (default: 1000)
+
+### Implementation Details
+
 ```typescript
 export interface OpenRouterOptions {
   apiKey?: string;
@@ -49,15 +53,15 @@ export class OpenRouterService {
   private readonly retryDelay: number;
 
   constructor(options: OpenRouterOptions = {}) {
-    // Załaduj klucz API ze środowiska jeśli nie podano
+    // Load API key from environment if not provided
     this.apiKey = options.apiKey || import.meta.env.OPENROUTER_API_KEY;
 
-    // Walidacja obecności klucza API
+    // Validate API key presence
     if (!this.apiKey) {
-      throw new Error("Klucz API OpenRouter jest wymagany");
+      throw new Error("OpenRouter API key is required");
     }
 
-    // Ustaw domyślne wartości dla pozostałych opcji
+    // Set defaults for remaining options
     this.baseUrl = options.baseUrl || "https://openrouter.ai/api/v1";
     this.defaultModel = options.defaultModel || "x-ai/grok-code-fast-1";
     this.timeout = options.timeout || 30000;
@@ -67,20 +71,22 @@ export class OpenRouterService {
 }
 ```
 
-## 3. Publiczne Metody i Pola
+## 3. Public Methods and Fields
 
 ### 3.1 generateTrainingSuggestion
 
-**Cel:** Generowanie sugestii treningowej na podstawie kontekstu i wymagań użytkownika.
+**Goal:** Generate a workout suggestion based on user context and requirements.
 
-**Sygnatura:**
+**Signature:**
+
 ```typescript
 async generateTrainingSuggestion(
   params: GenerateTrainingParams
 ): Promise<TrainingSuggestionResponse>
 ```
 
-**Parametry:**
+**Parameters:**
+
 ```typescript
 interface GenerateTrainingParams {
   userId: string;
@@ -99,12 +105,13 @@ interface GenerateTrainingParams {
     rating?: "too_easy" | "just_right" | "too_hard";
   }>;
   context?: Record<string, unknown>;
-  model?: string; // Nadpisuje domyślny model
-  temperature?: number; // Kontrola kreatywności (0.0-1.0)
+  model?: string; // Overrides the default model
+  temperature?: number; // Creativity control (0.0-1.0)
 }
 ```
 
-**Zwraca:**
+**Returns:**
+
 ```typescript
 interface TrainingSuggestionResponse {
   steps: WorkoutStepDto[];
@@ -123,19 +130,20 @@ interface TrainingSuggestionResponse {
 }
 ```
 
-**Przykład Implementacji:**
+**Implementation Example:**
+
 ```typescript
 async generateTrainingSuggestion(params: GenerateTrainingParams): Promise<TrainingSuggestionResponse> {
   const startTime = Date.now();
 
   try {
-    // Zbuduj prompt z kontekstu
+    // Build prompt from context
     const { systemPrompt, userPrompt } = this.buildPrompts(params);
 
-    // Zdefiniuj schemat odpowiedzi
+    // Define response schema
     const responseFormat = this.getResponseFormat();
 
-    // Wykonaj wywołanie API z ponawianiem
+    // Call API with retries
     const response = await this.callOpenRouterWithRetry({
       model: params.model || this.defaultModel,
       messages: [
@@ -147,7 +155,7 @@ async generateTrainingSuggestion(params: GenerateTrainingParams): Promise<Traini
       max_tokens: 1000
     });
 
-    // Sparsuj i zwaliduj odpowiedź
+    // Parse and validate response
     const suggestion = this.parseResponse(response);
 
     // Oblicz metryki
@@ -187,7 +195,7 @@ async generateTrainingSuggestion(params: GenerateTrainingParams): Promise<Traini
       }
     };
   } catch (error) {
-    // Zaloguj błąd (fire-and-forget)
+    // Log error (fire-and-forget)
     void logAiError({
       event: "suggestion.generate",
       level: "error",
@@ -206,22 +214,24 @@ async generateTrainingSuggestion(params: GenerateTrainingParams): Promise<Traini
 
 ### 3.2 validateApiKey
 
-**Cel:** Walidacja formatu klucza API i opcjonalne sprawdzenie poprawności z OpenRouter.
+**Goal:** Validate API key format and optionally verify it with OpenRouter.
 
-**Sygnatura:**
+**Signature:**
+
 ```typescript
 async validateApiKey(checkRemote?: boolean): Promise<boolean>
 ```
 
-**Implementacja:**
+**Implementation:**
+
 ```typescript
 async validateApiKey(checkRemote = false): Promise<boolean> {
-  // Podstawowa walidacja formatu
+  // Basic format validation
   if (!this.apiKey || !this.apiKey.startsWith("sk-or-")) {
     return false;
   }
 
-  // Opcjonalna zdalna walidacja
+  // Optional remote validation
   if (checkRemote) {
     try {
       const response = await fetch(`${this.baseUrl}/models`, {
@@ -243,46 +253,48 @@ async validateApiKey(checkRemote = false): Promise<boolean> {
 
 ### 3.3 getAvailableModels
 
-**Cel:** Pobranie listy dostępnych modeli z OpenRouter.
+**Goal:** Retrieve available models from OpenRouter.
 
-**Sygnatura:**
+**Signature:**
+
 ```typescript
 async getAvailableModels(): Promise<ModelInfo[]>
 ```
 
-**Zwraca:**
+**Returns:**
+
 ```typescript
 interface ModelInfo {
   id: string; // np. "openai/gpt-4o-mini"
   name: string;
   pricing: {
-    prompt: number; // Koszt za 1M tokenów
-    completion: number; // Koszt za 1M tokenów
+    prompt: number; // Cost per 1M tokens
+    completion: number; // Cost per 1M tokens
   };
   contextLength: number;
   maxOutput?: number;
 }
 ```
 
-## 4. Prywatne Metody i Pola
+## 4. Private Methods and Fields
 
 ### 4.1 buildPrompts
 
-**Cel:** Konstruowanie promptów systemowych i użytkownika z kontekstu treningowego.
+**Goal:** Construct system and user prompts from workout context.
 
 ```typescript
 private buildPrompts(params: GenerateTrainingParams): { systemPrompt: string; userPrompt: string } {
-  const systemPrompt = `Jesteś doświadczonym trenerem biegania tworzącym spersonalizowane plany treningowe.
-Twoim celem jest wygenerowanie ustrukturyzowanego planu treningu odpowiedniego dla poziomu sprawności i celów biegacza.
+  const systemPrompt = `You are an experienced running coach creating personalized training plans.
+Your goal is to generate a structured workout plan suited to the runner's fitness level and goals.
 
-Kluczowe zasady:
-- Rozgrzewka powinna stanowić 10-15% całkowitego czasu treningu
-- Główny trening powinien odpowiadać typowi treningu (łatwy, tempo, interwałowy, długi, regeneracyjny)
-- Schładzanie powinno stanowić 5-10% całkowitego czasu treningu
-- Dołącz konkretne wskazówki dla każdej części treningu
-- Weź pod uwagę ostatnie wyniki i opinie biegacza
+Key rules:
+- Warm-up should account for 10-15% of total workout time
+- The main part should match the workout type (easy, tempo, intervals, long run, recovery)
+- Cool-down should account for 5-10% of total workout time
+- Include specific guidance for each workout part
+- Consider the runner's recent performance and feedback
 
-Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
+Respond with a valid JSON object matching the provided schema.`;
 
   const userPrompt = this.buildUserPrompt(params);
 
@@ -292,29 +304,29 @@ Odpowiedz poprawnym obiektem JSON zgodnym z podanym schematem.`;
 private buildUserPrompt(params: GenerateTrainingParams): string {
   const parts: string[] = [];
 
-  // Podstawowe żądanie
-  parts.push(`Stwórz sesję treningową typu ${params.trainingTypeCode} na ${params.plannedDate}.`);
+  // Basic request
+  parts.push(`Create a ${params.trainingTypeCode} workout session for ${params.plannedDate}.`);
 
-  // Dodaj kontekst celu
+  // Add goal context
   if (params.userGoal) {
-    parts.push(`Cel biegacza: ${params.userGoal.goalType} w dniu ${params.userGoal.dueDate}.`);
+    parts.push(`Runner's goal: ${params.userGoal.goalType} by ${params.userGoal.dueDate}.`);
   }
 
-  // Dodaj kontekst ostatnich treningów
+  // Add recent workout context
   if (params.recentWorkouts && params.recentWorkouts.length > 0) {
     const recent = params.recentWorkouts.slice(0, 3);
-    parts.push("\nOstatnie treningi:");
+    parts.push("\nRecent workouts:");
     recent.forEach(w => {
       const pace = w.distanceM > 0 ? (w.durationS / (w.distanceM / 1000)) : 0;
       const paceMin = Math.floor(pace / 60);
       const paceSec = Math.round(pace % 60);
-      parts.push(`- ${w.trainingTypeCode}: ${(w.distanceM/1000).toFixed(1)}km w ${Math.round(w.durationS/60)}min (${paceMin}:${paceSec.toString().padStart(2, '0')}/km) - ${w.rating || 'bez oceny'}`);
+      parts.push(`- ${w.trainingTypeCode}: ${(w.distanceM/1000).toFixed(1)}km in ${Math.round(w.durationS/60)}min (${paceMin}:${paceSec.toString().padStart(2, '0')}/km) - ${w.rating || 'unrated'}`);
     });
   }
 
-  // Dodaj niestandardowy kontekst
+  // Add custom context
   if (params.context) {
-    parts.push(`\nDodatkowy kontekst: ${JSON.stringify(params.context)}`);
+    parts.push(`\nAdditional context: ${JSON.stringify(params.context)}`);
   }
 
   return parts.join("\n");
@@ -323,7 +335,7 @@ private buildUserPrompt(params: GenerateTrainingParams): string {
 
 ### 4.2 getResponseFormat
 
-**Cel:** Definiowanie schematu JSON dla strukturyzowanej odpowiedzi.
+**Goal:** Define the JSON schema for structured responses.
 
 ```typescript
 private getResponseFormat(): OpenRouterResponseFormat {
@@ -368,7 +380,7 @@ private getResponseFormat(): OpenRouterResponseFormat {
           },
           reasoning: {
             type: "string",
-            description: "Krótkie wyjaśnienie projektu treningu",
+            description: "Brief explanation of the workout design",
             maxLength: 500
           }
         },
@@ -381,7 +393,7 @@ private getResponseFormat(): OpenRouterResponseFormat {
 
 ### 4.3 callOpenRouterWithRetry
 
-**Cel:** Wykonanie wywołania API z logiką ponawiania z wykładniczym cofaniem.
+**Goal:** Execute an API call with exponential backoff retries.
 
 ```typescript
 private async callOpenRouterWithRetry(params: OpenRouterRequest): Promise<OpenRouterResponse> {
@@ -393,24 +405,24 @@ private async callOpenRouterWithRetry(params: OpenRouterRequest): Promise<OpenRo
     } catch (error) {
       lastError = error as Error;
 
-      // Nie ponawiaj przy błędach klienta (4xx oprócz 429)
+      // Do not retry client errors (4xx except 429)
       if (error instanceof OpenRouterError && error.status >= 400 && error.status < 500 && error.status !== 429) {
         throw error;
       }
 
-      // Oblicz opóźnienie z wykładniczym cofaniem
+      // Calculate exponential backoff delay
       const delay = this.retryDelay * Math.pow(2, attempt);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError || new Error("Przekroczono maksymalną liczbę prób");
+  throw lastError || new Error("Maximum attempts exceeded");
 }
 ```
 
 ### 4.4 callOpenRouter
 
-**Cel:** Bezpośrednia komunikacja API z OpenRouter.
+**Goal:** Direct API communication with OpenRouter.
 
 ```typescript
 private async callOpenRouter(params: OpenRouterRequest): Promise<OpenRouterResponse> {
@@ -428,7 +440,7 @@ private async callOpenRouter(params: OpenRouterRequest): Promise<OpenRouterRespo
       },
       body: JSON.stringify({
         ...params,
-        stream: false // Zawsze używaj trybu bez streamowania dla strukturyzowanych odpowiedzi
+        stream: false // Always use non-streaming mode for structured responses
       }),
       signal: controller.signal
     });
@@ -436,7 +448,7 @@ private async callOpenRouter(params: OpenRouterRequest): Promise<OpenRouterRespo
     if (!response.ok) {
       const error = await response.json();
       throw new OpenRouterError(
-        error.error?.message || "Błąd API OpenRouter",
+        error.error?.message || "OpenRouter API error",
         response.status,
         error.error?.code
       );
@@ -451,15 +463,15 @@ private async callOpenRouter(params: OpenRouterRequest): Promise<OpenRouterRespo
 
 ### 4.5 parseResponse
 
-**Cel:** Parsowanie i walidacja odpowiedzi OpenRouter.
+**Goal:** Parse and validate OpenRouter responses.
 
 ```typescript
 private parseResponse(response: OpenRouterResponse): ParsedSuggestion {
-  // Wyciągnij JSON z odpowiedzi
+  // Extract JSON from response
   const content = response.choices[0]?.message?.content;
 
   if (!content) {
-    throw new Error("Brak zawartości w odpowiedzi");
+    throw new Error("No response content");
   }
 
   // Sparsuj JSON
@@ -467,22 +479,22 @@ private parseResponse(response: OpenRouterResponse): ParsedSuggestion {
   try {
     parsed = JSON.parse(content);
   } catch (error) {
-    throw new Error(`Nieprawidłowy JSON w odpowiedzi: ${content.substring(0, 100)}...`);
+    throw new Error(`Invalid JSON in response: ${content.substring(0, 100)}...`);
   }
 
-  // Zwaliduj strukturę
+  // Validate structure
   if (!parsed.steps || !Array.isArray(parsed.steps) || parsed.steps.length === 0) {
-    throw new Error("Nieprawidłowa struktura odpowiedzi: brak lub pusta tablica kroków");
+    throw new Error("Invalid response structure: missing or empty steps array");
   }
 
-  // Zwaliduj każdy krok
+  // Validate each step
   const validatedSteps: WorkoutStepDto[] = parsed.steps.map((step: any, index: number) => {
     if (!step.part) {
-      throw new Error(`Krok ${index} nie ma wymaganego pola 'part'`);
+      throw new Error(`Step ${index} is missing required field 'part'`);
     }
 
     if (!step.distance_m && !step.duration_s) {
-      throw new Error(`Krok ${index} musi mieć distance_m lub duration_s`);
+      throw new Error(`Step ${index} must have distance_m or duration_s`);
     }
 
     return {
@@ -499,11 +511,11 @@ private parseResponse(response: OpenRouterResponse): ParsedSuggestion {
 
 ### 4.6 calculateCost
 
-**Cel:** Obliczanie kosztu użycia na podstawie modelu i tokenów.
+**Goal:** Calculate usage cost from model and tokens.
 
 ```typescript
 private calculateCost(usage: TokenUsage, model: string): number {
-  // Cennik modeli za 1M tokenów (w USD)
+  // Model pricing per 1M tokens (USD)
   const pricing: Record<string, { prompt: number; completion: number }> = {
     "openai/gpt-4o-mini": { prompt: 0.15, completion: 0.60 },
     "openai/gpt-3.5-turbo": { prompt: 0.50, completion: 1.50 },
@@ -514,52 +526,52 @@ private calculateCost(usage: TokenUsage, model: string): number {
     "meta-llama/llama-3.1-8b-instruct": { prompt: 0.06, completion: 0.06 }
   };
 
-  const modelPricing = pricing[model] || { prompt: 0.50, completion: 1.50 }; // Domyślny fallback
+  const modelPricing = pricing[model] || { prompt: 0.50, completion: 1.50 }; // Default fallback
 
   const promptCost = (usage.prompt_tokens / 1_000_000) * modelPricing.prompt;
   const completionCost = (usage.completion_tokens / 1_000_000) * modelPricing.completion;
 
-  return Math.round((promptCost + completionCost) * 10000) / 10000; // Zaokrąglij do 4 miejsc po przecinku
+  return Math.round((promptCost + completionCost) * 10000) / 10000; // Round to 4 decimal places
 }
 ```
 
 ### 4.7 mapError
 
-**Cel:** Konwersja różnych typów błędów na przyjazne komunikaty dla użytkownika.
+**Goal:** Convert different error types into user-friendly messages.
 
 ```typescript
 private mapError(error: unknown): Error {
   if (error instanceof OpenRouterError) {
     switch (error.status) {
       case 401:
-        return new Error("Nieprawidłowy klucz API. Sprawdź konfigurację OpenRouter.");
+        return new Error("Invalid API key. Check your OpenRouter configuration.");
       case 402:
-        return new Error("Niewystarczające środki. Dodaj fundusze na koncie OpenRouter.");
+        return new Error("Insufficient credits. Add funds to your OpenRouter account.");
       case 429:
-        return new Error("Przekroczono limit żądań. Spróbuj ponownie później.");
+        return new Error("Request limit exceeded. Please try again later.");
       case 500:
       case 502:
       case 503:
-        return new Error("Usługa OpenRouter tymczasowo niedostępna. Spróbuj ponownie później.");
+        return new Error("OpenRouter is temporarily unavailable. Please try again later.");
       default:
-        return new Error(`Błąd OpenRouter: ${error.message}`);
+        return new Error(`OpenRouter error: ${error.message}`);
     }
   }
 
   if (error instanceof Error) {
     if (error.name === "AbortError") {
-      return new Error("Żądanie przekroczyło limit czasu. Spróbuj ponownie.");
+      return new Error("Request timed out. Please try again.");
     }
     return error;
   }
 
-  return new Error("Wystąpił nieoczekiwany błąd");
+  return new Error("An unexpected error occurred");
 }
 ```
 
-## 5. Obsługa Błędów
+## 5. Error Handling
 
-### Klasy Błędów
+### Error Classes
 
 ```typescript
 export class OpenRouterError extends Error {
@@ -574,24 +586,24 @@ export class OpenRouterError extends Error {
 }
 ```
 
-### Scenariusze Błędów i Obsługa
+### Error Scenarios and Handling
 
-| Scenariusz | Status HTTP | Kod błędu | Akcja |
-|------------|-------------|-----------|-------|
-| Brak klucza API | - | - | Rzuć błąd natychmiast w konstruktorze |
-| Nieprawidłowy klucz API | 401 | `invalid_api_key` | Bez ponowienia, przyjazny komunikat |
-| Niewystarczające środki | 402 | `insufficient_credits` | Bez ponowienia, poproś o doładowanie |
-| Limit żądań | 429 | `rate_limit_exceeded` | Ponów z wykładniczym cofaniem |
-| Nieprawidłowe żądanie | 400 | `invalid_request` | Bez ponowienia, sprawdź parametry |
-| Model nie znaleziony | 404 | `model_not_found` | Bez ponowienia, użyj domyślnego modelu |
-| Polityka treści | 400 | `content_policy_violation` | Bez ponowienia, dostosuj prompt |
-| Timeout | - | - | Ponów z cofaniem |
-| Błąd serwisu | 500-503 | - | Ponów z cofaniem |
-| Błąd sieci | - | - | Ponów z cofaniem |
+| Scenario             | HTTP Status | Error Code                 | Action                           |
+| -------------------- | ----------- | -------------------------- | -------------------------------- |
+| Missing API key      | -           | -                          | Throw immediately in constructor |
+| Invalid API key      | 401         | `invalid_api_key`          | No retry, friendly message       |
+| Insufficient credits | 402         | `insufficient_credits`     | No retry, ask for top-up         |
+| Request limit        | 429         | `rate_limit_exceeded`      | Retry with exponential backoff   |
+| Invalid request      | 400         | `invalid_request`          | No retry, check parameters       |
+| Model not found      | 404         | `model_not_found`          | No retry, use default model      |
+| Content policy       | 400         | `content_policy_violation` | No retry, adjust prompt          |
+| Timeout              | -           | -                          | Retry with backoff               |
+| Service error        | 500-503     | -                          | Retry with backoff               |
+| Network error        | -           | -                          | Retry with backoff               |
 
-### Integracja z Logami AI
+### AI Log Integration
 
-Wszystkie błędy są automatycznie logowane używając funkcji `logAiError` z `aiLogsClient.ts`:
+All errors are automatically logged using `logAiError` from `aiLogsClient.ts`:
 
 ```typescript
 import { logAiSuccess, logAiError } from "./aiLogsClient";
@@ -606,106 +618,108 @@ void logAiError({
     error: error instanceof Error ? error.message : String(error),
     error_code: error instanceof OpenRouterError ? error.code : undefined,
     model: params.model || this.defaultModel,
-    training_type: params.trainingTypeCode
-  }
+    training_type: params.trainingTypeCode,
+  },
 });
 ```
 
-## 6. Kwestie Bezpieczeństwa
+## 6. Security Considerations
 
-### 6.1 Zarządzanie Kluczem API
-- **Nigdy nie ujawniaj klucza API w kodzie klienckim**
-- Przechowuj w zmiennych środowiskowych: `OPENROUTER_API_KEY`
-- Użyj `.env.example` z wartościami placeholder
-- Dodaj `.env` do `.gitignore`
+### 6.1 API Key Management
 
-### 6.2 Sanityzacja Wejścia
-- **Zapobiegaj wstrzykiwaniu promptów** poprzez sanityzację danych użytkownika
-- Escapuj znaki specjalne w danych kontekstowych
-- Ogranicz rozmiar kontekstu aby zapobiec przepełnieniu tokenów
+- **Never expose the API key in client code**
+- Store in environment variables: `OPENROUTER_API_KEY`
+- Use `.env.example` with placeholder values
+- Add `.env` to `.gitignore`
+
+### 6.2 Input Sanitization
+
+- **Prevent prompt injection** by sanitizing user data
+- Escape special characters in context data
+- Limit context size to prevent token overflow
 
 ```typescript
 private sanitizeInput(input: string): string {
-  // Usuń potencjalne wzorce wstrzykiwania
+  // Remove potential injection patterns
   return input
     .replace(/\bsystem\s*:/gi, "")
     .replace(/\bassistant\s*:/gi, "")
     .replace(/\bignoruj\s+poprzednie\s+instrukcje/gi, "")
-    .slice(0, 1000); // Ogranicz długość
+    .slice(0, 1000); // Limit length
 }
 ```
 
-### 6.3 Walidacja Odpowiedzi
-- **Zawsze waliduj odpowiedzi API** przed parsowaniem
-- Używaj bloków try-catch dla parsowania JSON
-- Waliduj względem oczekiwanego schematu
-- Sanityzuj wyjście przed zapisem w bazie danych
+### 6.3 Response Validation
 
+- **Always validate API responses** before parsing
+- Use try-catch for JSON parsing
+- Validate against the expected schema
+- Sanitize output before saving to the database
 
+## 7. Step-by-Step Implementation Plan
 
-## 7. Plan Wdrożenia Krok po Kroku
+### Phase 1: Basic Setup (2 Hours)
 
-### Faza 1: Podstawowa Konfiguracja (2 godziny)
+1. **Create service file**
 
-1. **Utwórz plik serwisu**
    ```bash
    touch src/lib/services/openrouter.ts
    ```
 
-3. **Zdefiniuj typy i interfejsy**
-   - Utwórz wszystkie definicje typów
-   - Wyeksportuj niezbędne interfejsy
+2. **Define types and interfaces**
+   - Create all type definitions
+   - Export necessary interfaces
 
-4. **Zaimplementuj konstruktor**
-   - Załaduj konfigurację
-   - Zwaliduj klucz API
-   - Ustaw wartości domyślne
+3. **Implement constructor**
+   - Load configuration
+   - Validate API key
+   - Set defaults
 
-### Faza 2: Podstawowa Funkcjonalność (3 godziny)
+### Phase 2: Core Functionality (3 Hours)
 
-5. **Zaimplementuj komunikację API**
-   - Metoda `callOpenRouter`
-   - Podstawowa obsługa błędów
-   - Parsowanie odpowiedzi
+5. **Implement API communication**
+   - `callOpenRouter` method
+   - Basic error handling
+   - Response parsing
 
-6. **Dodaj budowanie promptów**
-   - Szablon promptu systemowego
-   - Konstrukcja promptu użytkownika
-   - Formatowanie kontekstu
+6. **Add prompt construction**
+   - System prompt template
+   - User prompt construction
+   - Context formatting
 
-7. **Zaimplementuj format odpowiedzi**
-   - Definicja schematu JSON
-   - Konfiguracja strukturyzowanego wyjścia
+7. **Implement response format**
+   - JSON schema definition
+   - Structured output configuration
 
-8. **Stwórz główną metodę generowania**
+8. **Create main generation method**
    - `generateTrainingSuggestion`
-   - Podstawowy przepływ bez ponowień
+   - Basic flow without retries
 
-### Faza 3: Obsługa Błędów i Ponawianie (2 godziny)
+### Phase 3: Error Handling and Retries (2 Hours)
 
-9. **Dodaj logikę ponawiania**
-   - Wykładnicze cofanie
-   - Selektywne warunki ponawiania
-   - Konfiguracja maksymalnych prób
+9. **Add retry logic**
+   - Exponential backoff
+   - Selective retry conditions
+   - Maximum attempts configuration
 
-10. **Zaimplementuj mapowanie błędów**
-    - Przyjazne komunikaty dla użytkownika
-    - Klasyfikacja błędów
-    - Integracja z logowaniem
+10. **Implement error mapping**
+    - User-friendly messages
+    - Error classification
+    - Logging integration
 
-11. **Dodaj obsługę timeoutów**
-    - Konfiguracja AbortController
-    - Konfiguracja timeout
-    - Logika czyszczenia
+11. **Add timeout handling**
+    - AbortController configuration
+    - Timeout configuration
+    - Cleanup logic
 
-### Faza 4: Integracja (2 godziny)
+### Phase 4: Integration (2 Hours)
 
-12. **Zintegruj z logami AI**
-    - Importuj funkcje logowania
-    - Dodaj logowanie sukcesów
-    - Dodaj logowanie błędów
+12. **Integrate AI logs**
+    - Import logging functions
+    - Add success logging
+    - Add error logging
 
-13. **Zaktualizuj AI Engine**
+13. **Update AI Engine**
     ```typescript
     // src/lib/services/aiEngine.ts
     import { OpenRouterService } from "./openrouter";
@@ -716,34 +730,31 @@ private sanitizeInput(input: string): string {
       userId: string,
       input: AiSuggestionCreateCommand
     ): Promise<AiGeneratedSuggestion> {
-      // Wywołaj serwis OpenRouter
+      // Call OpenRouter service
       const result = await openrouter.generateTrainingSuggestion({
         userId,
         trainingTypeCode: input.training_type_code,
         plannedDate: input.planned_date,
-        context: input.context
+        context: input.context,
       });
 
       return {
         steps: result.steps,
-        metadata: result.metadata
+        metadata: result.metadata,
       };
     }
     ```
 
+### Phase 5: Testing and Optimization (1 Hour)
 
-### Faza 5: Testowanie i Optymalizacja (1 godzina)
+18. **Documentation**
+    - API documentation
+    - Usage examples
+    - Configuration guide
 
+## Usage Examples
 
-
-18. **Dokumentacja**
-    - Dokumentacja API
-    - Przykłady użycia
-    - Przewodnik konfiguracji
-
-## Przykłady Użycia
-
-### Podstawowe Użycie
+### Basic Usage
 
 ```typescript
 import { OpenRouterService } from "./lib/services/openrouter";
@@ -751,22 +762,22 @@ import { OpenRouterService } from "./lib/services/openrouter";
 // Inicjalizacja serwisu
 const openrouter = new OpenRouterService();
 
-// Wygeneruj sugestię treningową
+// Generate a workout suggestion
 const suggestion = await openrouter.generateTrainingSuggestion({
   userId: "user-123",
   trainingTypeCode: "easy",
   plannedDate: "2025-11-15",
   userGoal: {
     goalType: "marathon",
-    dueDate: "2025-05-01"
-  }
+    dueDate: "2025-05-01",
+  },
 });
 
 console.log(suggestion.steps);
-// Wynik: Tablica kroków treningu z rozgrzewką, częścią główną i schładzaniem
+// Result: Array of workout steps with warm-up, main part, and cool-down
 ```
 
-### Z Kontekstem Ostatnich Treningów
+### With Recent Workout Context
 
 ```typescript
 const suggestion = await openrouter.generateTrainingSuggestion({
@@ -779,109 +790,109 @@ const suggestion = await openrouter.generateTrainingSuggestion({
       completedAt: "2025-11-13T18:00:00Z",
       distanceM: 5000,
       durationS: 1800,
-      rating: "too_easy"
+      rating: "too_easy",
     },
     {
       trainingTypeCode: "interval",
       completedAt: "2025-11-11T18:00:00Z",
       distanceM: 8000,
       durationS: 2400,
-      rating: "just_right"
-    }
+      rating: "just_right",
+    },
   ],
-  model: "anthropic/claude-3-haiku", // Użyj konkretnego modelu
-  temperature: 0.8 // Wyższa kreatywność
+  model: "anthropic/claude-3-haiku", // Use a specific model
+  temperature: 0.8, // Higher creativity
 });
 ```
 
-### Obsługa Błędów
+### Error Handling
 
 ```typescript
 try {
   const suggestion = await openrouter.generateTrainingSuggestion(params);
-  // Użyj sugestii
+  // Use suggestion
 } catch (error) {
-  if (error.message.includes("Nieprawidłowy klucz API")) {
-    // Poproś użytkownika o sprawdzenie konfiguracji
-  } else if (error.message.includes("limit żądań")) {
-    // Pokaż komunikat o ponowieniu
+  if (error.message.includes("Invalid API key")) {
+    // Ask user to check configuration
+  } else if (error.message.includes("Request limit")) {
+    // Show retry message
   } else {
-    // Ogólna obsługa błędów
+    // General error handling
   }
 }
 ```
 
-## Zmienne Środowiskowe
+## Environment Variables
 
-Dodaj do `.env`:
+Add to `.env`:
 
 ```bash
 
-# Opcjonalne: Nadpisz domyślne
+# Optional: Override defaults
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_DEFAULT_MODEL=x-ai/grok-code-fast-1
 OPENROUTER_TIMEOUT_MS=30000
 OPENROUTER_MAX_RETRIES=3
 
-# URL strony dla nagłówka HTTP-Referer
+# Site URL for HTTP-Referer header
 PUBLIC_SITE_URL=https://twoja-domena.com
 ```
 
-Dodaj do `.env.example`:
+Add to `.env.example`:
 
 ```bash
 
-# Opcjonalna konfiguracja
+# Optional configuration
 OPENROUTER_DEFAULT_MODEL=x-ai/grok-code-fast-1
 OPENROUTER_TIMEOUT_MS=30000
 ```
 
 ##
 
-## Uwagi Wydajnościowe
+## Performance Notes
 
-3. **Dostrajanie Timeoutu**: Dostosuj timeout na podstawie modelu i złożoności
-4. **Przetwarzanie Wsadowe**: Wspieraj wiele sugestii w jednym żądaniu
-5. **Ponowne Użycie Połączenia**: Utrzymuj połączenia HTTP przy życiu
+3. **Timeout Tuning**: Adjust based on model and complexity
+4. **Batch Processing**: Support multiple suggestions in one request
+5. **Connection Reuse**: Keep HTTP connections alive
 
-## Migracja z Placeholdera
+## Migration from Placeholder
 
-Aby migrować z obecnej implementacji placeholder:
+To migrate from the current placeholder implementation:
 
-1. Zaimplementuj OpenRouterService jak opisano
-2. Zaktualizuj `aiEngine.ts` aby używał nowego serwisu
-3. Usuń kod placeholder i TODO
-4. Przetestuj z prawdziwym kluczem API
-5. Monitoruj koszty i wydajność poprzez logi AI
-6. Dostosuj parametry na podstawie rzeczywistego użycia
+1. Implement OpenRouterService as described
+2. Update `aiEngine.ts` to use the new service
+3. Remove placeholder code and TODOs
+4. Test with a real API key
+5. Monitor costs and performance through AI logs
+6. Adjust parameters based on actual usage
 
-## Uwagi dla Developera iOS
+## Notes for the iOS Developer
 
-### Analogie do Konceptów iOS/Swift
+### iOS/Swift Concept Analogies
 
-| Koncept OpenRouter | Analogia iOS/Swift |
-|--------------------|-------------------|
-| Klasa serwisu | Klasa Swift z dependency injection |
-| Async/await | Takie same jak Swift async/await |
-| Mapowanie błędów | Protokół Error w Swift z niestandardowymi typami |
-| Logika ponawiania | URLSession retry z URLSessionTaskDelegate |
-| Parsowanie JSON | Protokół Codable |
-| Zmienne środowiskowe | Konfiguracja Info.plist |
-| AbortController | URLSessionTask.cancel() |
-| Walidacja odpowiedzi | Instrukcje guard w Swift |
+| OpenRouter Concept    | iOS/Swift Analogy                            |
+| --------------------- | -------------------------------------------- |
+| Service class         | Swift class with dependency injection        |
+| Async/await           | Same as Swift async/await                    |
+| Error mapping         | Swift Error protocol with custom types       |
+| Retry logic           | URLSession retry with URLSessionTaskDelegate |
+| JSON parsing          | Codable protocol                             |
+| Environment variables | Info.plist configuration                     |
+| AbortController       | URLSessionTask.cancel()                      |
+| Response validation   | Swift guard statements                       |
 
-### Kluczowe Różnice od Developmentu iOS
+### Key Differences from iOS Development
 
-1. **Brak sprawdzania typów w czasie kompilacji dla odpowiedzi API** - Musisz walidować w runtime
-2. **Zmienne środowiskowe zamiast Info.plist** - Użyj pliku `.env`
-3. **Fetch API zamiast URLSession** - Podobne koncepty, inna składnia
-4. **Walidacja schematu JSON** - Bardziej jawna niż Codable
-5. **Logowanie fire-and-forget** - Użyj operatora void aby zignorować Promise
+1. **No compile-time type checking for API responses** - Validate at runtime
+2. **Environment variables instead of Info.plist** - Use `.env`
+3. **Fetch API instead of URLSession** - Similar concepts, different syntax
+4. **JSON schema validation** - More explicit than Codable
+5. **Fire-and-forget logging** - Use void to ignore the Promise
 
-### Częste Pułapki do Uniknięcia
+### Common Pitfalls to Avoid
 
-1. **Nie czekaj na wywołania logowania** - Użyj `void` dla fire-and-forget
-2. **Zawsze obsługuj timeouty sieci** - Sieci są mniej niezawodne niż iOS
-3. **Waliduj wszystkie zewnętrzne dane** - Brak gwarancji w czasie kompilacji
-4. **Sprawdzaj undefined/null** - Częstsze niż opcjonalne w Swift
-5. **Używaj try-catch intensywnie** - Wyjątki częstsze niż typy Result
+1. **Do not await logging calls** - Use `void` for fire-and-forget
+2. **Always handle network timeouts** - Networks are less reliable than iOS
+3. **Validate all external data** - No compile-time guarantees
+4. **Check undefined/null** - More common than Swift optionals
+5. **Use try-catch extensively** - Exceptions are more common than Result types

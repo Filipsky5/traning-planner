@@ -1,35 +1,39 @@
 # API Endpoint Implementation Plan: User Goal
 
-## 1. Przegląd punktu końcowego
+## 1. Endpoint Overview
 
-Endpoint User Goal zarządza pojedynczym celem treningowym użytkownika. W wersji MVP każdy użytkownik może mieć dokładnie jeden cel typu "distance_by_date" (osiągnięcie określonego dystansu do wybranej daty).
+The User Goal endpoint manages a user's single training goal. In the MVP, each user may have exactly one "distance_by_date" goal (achieving a specified distance by a chosen date).
 
-**Kluczowe funkcjonalności:**
-- Pobranie aktualnego celu użytkownika (GET)
-- Utworzenie lub aktualizacja celu (PUT - upsert)
-- Usunięcie celu (DELETE)
+**Key functionality:**
 
-**Ograniczenia MVP:**
-- Jeden cel na użytkownika
-- Tylko typ `distance_by_date`
-- Brak historii celów (tylko aktualny stan)
+- Retrieve current user goal (GET)
+- Create or update a goal (PUT - upsert)
+- Delete a goal (DELETE)
+
+**MVP constraints:**
+
+- One goal per user
+- Only `distance_by_date`
+- No goal history (current state only)
 
 ---
 
-## 2. Szczegóły żądań
+## 2. Request Details
 
 ### 2.1 GET `/api/v1/user-goal`
 
-**Metoda HTTP:** GET
+**HTTP Method:** GET
 
-**Struktura URL:** `/api/v1/user-goal`
+**URL Structure:** `/api/v1/user-goal`
 
-**Parametry:**
-- Wymagane: brak
-- Opcjonalne: brak
+**Parameters:**
+
+- Required: none
+- Optional: none
 
 **Headers:**
-- `Authorization: Bearer <token>` (wymagane)
+
+- `Authorization: Bearer <token>` (required)
 
 **Request Body:** N/A
 
@@ -37,19 +41,22 @@ Endpoint User Goal zarządza pojedynczym celem treningowym użytkownika. W wersj
 
 ### 2.2 PUT `/api/v1/user-goal`
 
-**Metoda HTTP:** PUT
+**HTTP Method:** PUT
 
-**Struktura URL:** `/api/v1/user-goal`
+**URL Structure:** `/api/v1/user-goal`
 
-**Parametry:**
-- Wymagane: brak
-- Opcjonalne: brak
+**Parameters:**
+
+- Required: none
+- Optional: none
 
 **Headers:**
-- `Authorization: Bearer <token>` (wymagane)
-- `Content-Type: application/json` (wymagane)
+
+- `Authorization: Bearer <token>` (required)
+- `Content-Type: application/json` (required)
 
 **Request Body:**
+
 ```json
 {
   "goal_type": "distance_by_date",
@@ -59,41 +66,44 @@ Endpoint User Goal zarządza pojedynczym celem treningowym użytkownika. W wersj
 }
 ```
 
-**Pola request body:**
-- `goal_type` (string, wymagane): Typ celu. W MVP tylko "distance_by_date".
-- `target_distance_m` (number, wymagane): Docelowy dystans w metrach. Min: 1, Max: 1000000 (1000 km).
-- `due_date` (string, wymagane): Data wykonania w formacie YYYY-MM-DD. Musi być dzisiaj lub w przyszłości.
-- `notes` (string, opcjonalne): Notatki użytkownika. Max 500 znaków.
+**Request body fields:**
+
+- `goal_type` (string, required): Goal type. Only "distance_by_date" in MVP.
+- `target_distance_m` (number, required): Target distance in meters. Min: 1, Max: 1000000 (1000 km).
+- `due_date` (string, required): Target date in YYYY-MM-DD format. Today or in the future.
+- `notes` (string, optional): User notes. Max 500 characters.
 
 ---
 
 ### 2.3 DELETE `/api/v1/user-goal`
 
-**Metoda HTTP:** DELETE
+**HTTP Method:** DELETE
 
-**Struktura URL:** `/api/v1/user-goal`
+**URL Structure:** `/api/v1/user-goal`
 
-**Parametry:**
-- Wymagane: brak
-- Opcjonalne: brak
+**Parameters:**
+
+- Required: none
+- Optional: none
 
 **Headers:**
-- `Authorization: Bearer <token>` (wymagane)
+
+- `Authorization: Bearer <token>` (required)
 
 **Request Body:** N/A
 
 ---
 
-## 3. Wykorzystywane typy
+## 3. Types Used
 
-### 3.1 DTO Types (już zdefiniowane w `src/types.ts`)
+### 3.1 DTO Types (Already Defined in `src/types.ts`)
 
 ```typescript
-// GET response - może zwrócić goal lub null
-type UserGoalDto = Pick<UserGoalRow, "goal_type" | "target_distance_m" | "due_date" | "notes">
+// GET response - may return goal or null
+type UserGoalDto = Pick<UserGoalRow, "goal_type" | "target_distance_m" | "due_date" | "notes">;
 
 // PUT request/response
-type UserGoalUpsertCommand = UserGoalDto
+type UserGoalUpsertCommand = UserGoalDto;
 
 // API Response wrapper
 interface ApiResponse<T> {
@@ -101,36 +111,39 @@ interface ApiResponse<T> {
 }
 ```
 
-### 3.2 Validation Types (do stworzenia w `src/lib/validation/userGoals.ts`)
+### 3.2 Validation Types (Create in `src/lib/validation/userGoals.ts`)
 
 ```typescript
 import { z } from "zod";
 
-export const userGoalUpsertSchema = z.object({
-  goal_type: z.enum(["distance_by_date"]),
-  target_distance_m: z.number().int().min(1).max(1000000),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  notes: z.string().max(500).optional()
-}).refine(
-  (data) => {
-    const dueDate = new Date(data.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return dueDate >= today;
-  },
-  { message: "due_date must be today or in the future" }
-);
+export const userGoalUpsertSchema = z
+  .object({
+    goal_type: z.enum(["distance_by_date"]),
+    target_distance_m: z.number().int().min(1).max(1000000),
+    due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    notes: z.string().max(500).optional(),
+  })
+  .refine(
+    (data) => {
+      const dueDate = new Date(data.due_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return dueDate >= today;
+    },
+    { message: "due_date must be today or in the future" }
+  );
 
 export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ```
 
 ---
 
-## 4. Szczegóły odpowiedzi
+## 4. Response Details
 
 ### 4.1 GET `/api/v1/user-goal`
 
 **Success Response (200 OK):**
+
 ```json
 {
   "data": {
@@ -142,7 +155,8 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 }
 ```
 
-**Success Response - brak celu (200 OK):**
+**Success Response - no goal (200 OK):**
+
 ```json
 {
   "data": null
@@ -150,6 +164,7 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ```
 
 **Error Responses:**
+
 - **401 Unauthorized:**
   ```json
   {
@@ -174,6 +189,7 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ### 4.2 PUT `/api/v1/user-goal`
 
 **Success Response (200 OK):**
+
 ```json
 {
   "data": {
@@ -186,7 +202,8 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ```
 
 **Error Responses:**
-- **401 Unauthorized:** (jak w GET)
+
+- **401 Unauthorized:** (same as GET)
 - **422 Unprocessable Entity:**
   ```json
   {
@@ -203,18 +220,20 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
     }
   }
   ```
-- **500 Internal Server Error:** (jak w GET)
+- **500 Internal Server Error:** (same as GET)
 
 ---
 
 ### 4.3 DELETE `/api/v1/user-goal`
 
 **Success Response (204 No Content):**
+
 - Empty response body
 - Status: 204
 
 **Error Responses:**
-- **401 Unauthorized:** (jak w GET)
+
+- **401 Unauthorized:** (same as GET)
 - **404 Not Found:**
   ```json
   {
@@ -224,11 +243,11 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
     }
   }
   ```
-- **500 Internal Server Error:** (jak w GET)
+- **500 Internal Server Error:** (same as GET)
 
 ---
 
-## 5. Przepływ danych
+## 5. Data Flow
 
 ### 5.1 GET `/api/v1/user-goal`
 
@@ -245,6 +264,7 @@ export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ```
 
 **SQL Query (via Supabase):**
+
 ```typescript
 const { data, error } = await supabase
   .from("user_goals")
@@ -271,6 +291,7 @@ const { data, error } = await supabase
 ```
 
 **SQL Query (via Supabase):**
+
 ```typescript
 const { data, error } = await supabase
   .from("user_goals")
@@ -279,7 +300,7 @@ const { data, error } = await supabase
     goal_type: command.goal_type,
     target_distance_m: command.target_distance_m,
     due_date: command.due_date,
-    notes: command.notes || null
+    notes: command.notes || null,
   })
   .select("goal_type, target_distance_m, due_date, notes")
   .single();
@@ -301,44 +322,41 @@ const { data, error } = await supabase
 ```
 
 **SQL Queries (via Supabase):**
+
 ```typescript
 // Check existence
-const { count } = await supabase
-  .from("user_goals")
-  .select("*", { count: "exact", head: true })
-  .eq("user_id", userId);
+const { count } = await supabase.from("user_goals").select("*", { count: "exact", head: true }).eq("user_id", userId);
 
 if (count === 0) throw new Error("GOAL_NOT_FOUND");
 
 // Delete
-const { error } = await supabase
-  .from("user_goals")
-  .delete()
-  .eq("user_id", userId);
+const { error } = await supabase.from("user_goals").delete().eq("user_id", userId);
 ```
 
 ---
 
-## 6. Względy bezpieczeństwa
+## 6. Security Considerations
 
-### 6.1 Autentykacja
-- **Wymaganie:** Wszystkie endpointy wymagają zalogowanego użytkownika
-- **Implementacja:** Guard clause na początku każdej funkcji
+### 6.1 Authentication
+
+- **Requirement:** All endpoints require a logged-in user
+- **Implementation:** Guard clause at the beginning of each function
   ```typescript
   const user = context.locals.user;
   if (!user) {
-    return new Response(
-      JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-      { status: 401, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+      status: 401,
+      headers: { "content-type": "application/json" },
+    });
   }
   ```
-- **Token:** JWT token z Supabase Auth w header `Authorization: Bearer <token>`
+- **Token:** Supabase Auth JWT in `Authorization: Bearer <token>`
 
-### 6.2 Autoryzacja
-- **Ownership:** Użytkownik może operować tylko na swoim celu
-- **Implementacja:** Wszystkie query filtrują po `user_id` z `context.locals.user.id`
-- **RLS (Row Level Security):** Supabase RLS policy wymusza autoryzację na poziomie bazy danych
+### 6.2 Authorization
+
+- **Ownership:** Users may operate only on their own goal
+- **Implementation:** All queries filter by `user_id` from `context.locals.user.id`
+- **RLS (Row Level Security):** Supabase RLS enforces database-level authorization
   ```sql
   CREATE POLICY "Users can only access their own goals"
   ON user_goals
@@ -346,63 +364,67 @@ const { error } = await supabase
   USING (auth.uid() = user_id);
   ```
 
-### 6.3 Walidacja danych wejściowych
-- **Zod schemas:** Runtime validation wszystkich danych wejściowych
-- **Zabezpieczenia:**
-  - SQL Injection: Supabase używa parameterized queries
-  - XSS: `notes` field ma limit 500 znaków, sanityzacja po stronie klienta
-  - Type safety: TypeScript + Zod zapewniają poprawność typów
-  - Business rules: `due_date` musi być w przyszłości
+### 6.3 Input Validation
+
+- **Zod schemas:** Runtime validation of all inputs
+- **Protections:**
+  - SQL Injection: Supabase uses parameterized queries
+  - XSS: `notes` limited to 500 characters, client-side sanitization
+  - Type safety: TypeScript + Zod ensure correct types
+  - Business rules: `due_date` must be in the future
   - Range validation: `target_distance_m` 1-1000000m
 
-### 6.4 Rate Limiting (opcjonalnie)
-- Można dodać middleware rate limiting dla PUT/DELETE (np. max 10 req/min)
-- W MVP: polegamy na RLS i auth
+### 6.4 Rate Limiting (Optional)
+
+- May add PUT/DELETE rate limiting middleware (e.g., max 10 req/min)
+- MVP: rely on RLS and auth
 
 ### 6.5 CORS
-- API endpoints domyślnie dostępne tylko dla same-origin requests
-- Jeśli frontend na innej domenie: skonfigurować CORS w middleware
+
+- API endpoints default to same-origin requests only
+- If frontend uses another domain: configure middleware CORS
 
 ---
 
-## 7. Obsługa błędów
+## 7. Error Handling
 
 ### 7.1 GET `/api/v1/user-goal`
 
-| Scenariusz | HTTP Status | Error Code | Handling |
-|------------|-------------|------------|----------|
-| Brak autoryzacji | 401 | `unauthorized` | Guard clause na początku |
-| Goal istnieje | 200 | N/A | Zwróć UserGoalDto |
-| Goal nie istnieje | 200 | N/A | Zwróć `{ data: null }` |
-| Błąd DB | 500 | `internal_error` | Log error, zwróć generic message |
+| Scenario        | HTTP Status | Error Code       | Handling                          |
+| --------------- | ----------- | ---------------- | --------------------------------- |
+| Unauthenticated | 401         | `unauthorized`   | Initial guard clause              |
+| Goal exists     | 200         | N/A              | Return UserGoalDto                |
+| Goal missing    | 200         | N/A              | Return `{ data: null }`           |
+| DB error        | 500         | `internal_error` | Log error, return generic message |
 
-**Implementacja:**
+**Implementation:**
+
 ```typescript
 export async function GET(context: APIContext) {
   try {
     // Auth guard
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Fetch goal
     const goal = await getUserGoal(context.locals.supabase, user.id);
 
     // Happy path
-    return new Response(
-      JSON.stringify({ data: goal }),
-      { status: 200, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ data: goal }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
   } catch (err: any) {
     console.error("GET /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
@@ -411,26 +433,27 @@ export async function GET(context: APIContext) {
 
 ### 7.2 PUT `/api/v1/user-goal`
 
-| Scenariusz | HTTP Status | Error Code | Handling |
-|------------|-------------|------------|----------|
-| Brak autoryzacji | 401 | `unauthorized` | Guard clause |
-| Walidacja failed | 422 | `validation_error` | Catch ZodError, zwróć details |
-| Due date w przeszłości | 422 | `validation_error` | Zod refine rule |
-| Invalid goal_type | 422 | `validation_error` | Zod enum validation |
-| Conflict (race condition) | 500 | `internal_error` | Upsert handles automatically |
-| Błąd DB | 500 | `internal_error` | Log error, generic message |
+| Scenario                  | HTTP Status | Error Code         | Handling                       |
+| ------------------------- | ----------- | ------------------ | ------------------------------ |
+| Unauthenticated           | 401         | `unauthorized`     | Guard clause                   |
+| Validation failed         | 422         | `validation_error` | Catch ZodError, return details |
+| Due date in past          | 422         | `validation_error` | Zod refine rule                |
+| Invalid goal_type         | 422         | `validation_error` | Zod enum validation            |
+| Conflict (race condition) | 500         | `internal_error`   | Upsert handles automatically   |
+| DB error                  | 500         | `internal_error`   | Log error, generic message     |
 
-**Implementacja:**
+**Implementation:**
+
 ```typescript
 export async function PUT(context: APIContext) {
   try {
     // Auth guard
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Validate body
@@ -441,10 +464,10 @@ export async function PUT(context: APIContext) {
     const goal = await upsertUserGoal(context.locals.supabase, user.id, input);
 
     // Happy path
-    return new Response(
-      JSON.stringify({ data: goal }),
-      { status: 200, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ data: goal }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
   } catch (err: any) {
     // Validation errors
     if (err.name === "ZodError") {
@@ -454,8 +477,8 @@ export async function PUT(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid goal data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -463,10 +486,10 @@ export async function PUT(context: APIContext) {
 
     // Server errors
     console.error("PUT /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
@@ -475,24 +498,25 @@ export async function PUT(context: APIContext) {
 
 ### 7.3 DELETE `/api/v1/user-goal`
 
-| Scenariusz | HTTP Status | Error Code | Handling |
-|------------|-------------|------------|----------|
-| Brak autoryzacji | 401 | `unauthorized` | Guard clause |
-| Goal nie istnieje | 404 | `not_found` | Service throws "GOAL_NOT_FOUND" |
-| Goal usunięty | 204 | N/A | Empty response |
-| Błąd DB | 500 | `internal_error` | Log error, generic message |
+| Scenario        | HTTP Status | Error Code       | Handling                        |
+| --------------- | ----------- | ---------------- | ------------------------------- |
+| Unauthenticated | 401         | `unauthorized`   | Guard clause                    |
+| Goal missing    | 404         | `not_found`      | Service throws "GOAL_NOT_FOUND" |
+| Goal deleted    | 204         | N/A              | Empty response                  |
+| DB error        | 500         | `internal_error` | Log error, generic message      |
 
-**Implementacja:**
+**Implementation:**
+
 ```typescript
 export async function DELETE(context: APIContext) {
   try {
     // Auth guard
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Delete goal
@@ -503,35 +527,37 @@ export async function DELETE(context: APIContext) {
   } catch (err: any) {
     // Not found error
     if (err.message === "GOAL_NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Server errors
     console.error("DELETE /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
 
 ---
 
-## 8. Rozważania dotyczące wydajności
+## 8. Performance Considerations
 
 ### 8.1 Database Queries
 
-**Optymalizacje:**
-- **Index:** `user_id` jest primary key lub ma unique constraint - natywny index
-- **Single query:** GET/DELETE używają pojedynczego query (no N+1)
-- **Upsert efficiency:** PUT używa `ON CONFLICT` zamiast SELECT + INSERT/UPDATE
-- **Projection:** SELECT tylko potrzebne kolumny (nie `SELECT *`)
+**Optimizations:**
 
-**Przewidywane czasy:**
+- **Index:** `user_id` is primary key or has a unique constraint - native index
+- **Single query:** GET/DELETE use one query (no N+1)
+- **Upsert efficiency:** PUT uses `ON CONFLICT` instead of SELECT + INSERT/UPDATE
+- **Projection:** SELECT only needed columns (not `SELECT *`)
+
+**Expected times:**
+
 - GET: ~10-30ms (single row lookup by PK)
 - PUT: ~20-50ms (upsert + returning)
 - DELETE: ~15-40ms (check + delete)
@@ -539,102 +565,116 @@ export async function DELETE(context: APIContext) {
 ### 8.2 Payload Size
 
 **Request:**
+
 - PUT body: ~100-200 bytes (JSON)
 
 **Response:**
+
 - GET/PUT: ~150-250 bytes (JSON)
 - DELETE: 0 bytes (204 No Content)
 
-**Optymalizacje:**
-- Brak kompresji dla tak małych payloadów (overhead > benefit)
-- JSON format - readable i wystarczająco compact
+**Optimizations:**
+
+- No compression for such small payloads (overhead > benefit)
+- JSON format - readable and sufficiently compact
 
 ### 8.3 Caching
 
-**MVP: Brak cache layer**
-- Dane zmieniają się rzadko (goal setup raz na kilka miesięcy)
-- User base mały
-- Supabase connection pool wystarczający
+**MVP: No cache layer**
 
-**Przyszłość (opcjonalnie):**
-- Redis cache dla GET endpoint (TTL: 5 min)
-- Cache invalidation przy PUT/DELETE
-- ETag header dla conditional requests
+- Data changes rarely (goal setup every few months)
+- Small user base
+- Supabase connection pool is sufficient
+
+**Future (optional):**
+
+- Redis cache for GET endpoint (TTL: 5 min)
+- Cache invalidation on PUT/DELETE
+- ETag header for conditional requests
 
 ### 8.4 Concurrent Requests
 
 **Race conditions:**
-- **PUT:** Upsert (`ON CONFLICT`) jest atomic - bezpieczne
-- **DELETE:** Check-then-delete może mieć race condition (nieistotne w MVP)
 
-**Mitigacja:**
+- **PUT:** Upsert (`ON CONFLICT`) is atomic - safe
+- **DELETE:** Check-then-delete may race (insignificant in MVP)
+
+**Mitigation:**
+
 - Upsert handle conflicts automatically
-- RLS policies zapewniają isolation per user
+- RLS policies ensure per-user isolation
 - Transaction isolation level: READ COMMITTED (default Postgres)
 
 ### 8.5 Monitoring
 
-**Metryki do śledzenia:**
+**Metrics to track:**
+
 - Request latency (p50, p95, p99)
 - Error rate per endpoint
 - DB query duration
 - Auth failures (potential attack detection)
 
-**Narzędzia:**
+**Tools:**
+
 - Supabase Dashboard: query performance
 - Application logs: error tracking
-- Opcjonalnie: Sentry dla error monitoring
+- Optional: Sentry for error monitoring
 
 ---
 
-## 9. Etapy wdrożenia
+## 9. Implementation Stages
 
-### Krok 1: Utworzenie validation schema
-**Plik:** `src/lib/validation/userGoals.ts`
+### Step 1: Create Validation Schema
+
+**File:** `src/lib/validation/userGoals.ts`
 
 ```typescript
 import { z } from "zod";
 
-export const userGoalUpsertSchema = z.object({
-  goal_type: z.enum(["distance_by_date"]),
-  target_distance_m: z.number().int().min(1).max(1000000),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  notes: z.string().max(500).optional()
-}).refine(
-  (data) => {
-    const dueDate = new Date(data.due_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return dueDate >= today;
-  },
-  { message: "due_date must be today or in the future" }
-);
+export const userGoalUpsertSchema = z
+  .object({
+    goal_type: z.enum(["distance_by_date"]),
+    target_distance_m: z.number().int().min(1).max(1000000),
+    due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    notes: z.string().max(500).optional(),
+  })
+  .refine(
+    (data) => {
+      const dueDate = new Date(data.due_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return dueDate >= today;
+    },
+    { message: "due_date must be today or in the future" }
+  );
 
 export type UserGoalUpsertInput = z.infer<typeof userGoalUpsertSchema>;
 ```
 
 **Test:**
+
 ```typescript
 // Valid
 userGoalUpsertSchema.parse({
   goal_type: "distance_by_date",
   target_distance_m: 100000,
   due_date: "2025-12-31",
-  notes: "Berlin Half"
+  notes: "Berlin Half",
 }); // ✅
 
-// Invalid - due_date w przeszłości
+// Invalid - due_date in the past
 userGoalUpsertSchema.parse({
   goal_type: "distance_by_date",
   target_distance_m: 100000,
-  due_date: "2020-01-01"
+  due_date: "2020-01-01",
 }); // ❌ ZodError
 ```
 
 ---
 
-### Krok 2: Utworzenie service layer
-**Plik:** `src/lib/services/userGoalsService.ts`
+### Step 2: Create Service Layer
+
+**File:** `src/lib/services/userGoalsService.ts`
 
 ```typescript
 import type { SupabaseClient } from "../../db/supabase.client";
@@ -644,10 +684,7 @@ import type { UserGoalUpsertInput } from "../validation/userGoals";
 /**
  * Get current user goal or null if not set
  */
-export async function getUserGoal(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<UserGoalDto | null> {
+export async function getUserGoal(supabase: SupabaseClient, userId: string): Promise<UserGoalDto | null> {
   const { data, error } = await supabase
     .from("user_goals")
     .select("goal_type, target_distance_m, due_date, notes")
@@ -674,7 +711,7 @@ export async function upsertUserGoal(
       goal_type: command.goal_type,
       target_distance_m: command.target_distance_m,
       due_date: command.due_date,
-      notes: command.notes || null
+      notes: command.notes || null,
     })
     .select("goal_type, target_distance_m, due_date, notes")
     .single();
@@ -688,31 +725,23 @@ export async function upsertUserGoal(
  * Delete user goal
  * Throws "GOAL_NOT_FOUND" if goal doesn't exist
  */
-export async function deleteUserGoal(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<void> {
+export async function deleteUserGoal(supabase: SupabaseClient, userId: string): Promise<void> {
   // Check if goal exists
-  const { count } = await supabase
-    .from("user_goals")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId);
+  const { count } = await supabase.from("user_goals").select("*", { count: "exact", head: true }).eq("user_id", userId);
 
   if (count === 0) {
     throw new Error("GOAL_NOT_FOUND");
   }
 
   // Delete goal
-  const { error } = await supabase
-    .from("user_goals")
-    .delete()
-    .eq("user_id", userId);
+  const { error } = await supabase.from("user_goals").delete().eq("user_id", userId);
 
   if (error) throw error;
 }
 ```
 
 **Test (manual via curl or Playwright):**
+
 - Verify getUserGoal returns null for new user
 - Verify upsertUserGoal creates goal
 - Verify getUserGoal returns created goal
@@ -721,8 +750,9 @@ export async function deleteUserGoal(
 
 ---
 
-### Krok 3: Utworzenie API endpoint
-**Plik:** `src/pages/api/v1/user-goal.ts`
+### Step 3: Create API Endpoint
+
+**File:** `src/pages/api/v1/user-goal.ts`
 
 ```typescript
 /**
@@ -746,10 +776,10 @@ export async function GET(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Fetch goal
@@ -759,14 +789,14 @@ export async function GET(context: APIContext) {
     const response: ApiResponse<UserGoalDto | null> = { data: goal };
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     console.error("GET /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -779,10 +809,10 @@ export async function PUT(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Validate body
@@ -796,7 +826,7 @@ export async function PUT(context: APIContext) {
     const response: ApiResponse<UserGoalDto> = { data: goal };
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     // Validation errors
@@ -807,8 +837,8 @@ export async function PUT(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid goal data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
@@ -816,10 +846,10 @@ export async function PUT(context: APIContext) {
 
     // Server errors
     console.error("PUT /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -832,10 +862,10 @@ export async function DELETE(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Delete goal
@@ -846,48 +876,50 @@ export async function DELETE(context: APIContext) {
   } catch (err: any) {
     // Not found error
     if (err.message === "GOAL_NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "No goal found to delete" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // Server errors
     console.error("DELETE /api/v1/user-goal failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
 
 **Test (manual):**
+
 - Start dev server: `npm run dev`
-- Test każdego endpointa przez curl lub Postman
+- Test each endpoint with curl or Postman
 
 ---
 
-### Krok 4: Utworzenie test suite (curl scripts)
-**Plik:** `.curls/user-goal.sh`
+### Step 4: Create Test Suite (curl Scripts)
+
+**File:** `.curls/user-goal.sh`
 
 ```bash
 #!/bin/bash
 
-# Test Suite dla User Goal endpoints
+# Test Suite for User Goal endpoints
 # - GET /api/v1/user-goal
 # - PUT /api/v1/user-goal
 # - DELETE /api/v1/user-goal
 
 BASE_URL="http://localhost:3000"
 
-# Automatyczne pobieranie tokena
+# Automatic token retrieval
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "🔐 Pobieranie tokena autoryzacyjnego..."
+echo "🔐 Fetching authorization token..."
 AUTH_TOKEN=$("${SCRIPT_DIR}/auth-test-user.sh")
 
 if [[ -z "$AUTH_TOKEN" ]]; then
-  echo "❌ Nie udało się uzyskać tokena autoryzacyjnego."
+  echo "❌ Could not obtain authorization token."
   exit 1
 fi
 
@@ -899,9 +931,9 @@ echo "Test Suite: User Goal"
 echo "=================================="
 echo ""
 
-# Test 1: GET bez auth → 401
-echo "🔒 Test 1: GET /user-goal bez auth"
-echo "Oczekiwany status: 401"
+# Test 1: GET without auth → 401
+echo "🔒 Test 1: GET /user-goal without auth"
+echo "Expected status: 401"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X GET \
@@ -913,9 +945,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 2: GET z auth (brak celu) → 200 null
-echo "📋 Test 2: GET /user-goal (brak celu)"
-echo "Oczekiwany status: 200, data: null"
+# Test 2: GET with auth (no goal) → 200 null
+echo "📋 Test 2: GET /user-goal (no goal)"
+echo "Expected status: 200, data: null"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X GET \
@@ -928,9 +960,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 3: PUT - utworzenie celu → 200
+# Test 3: PUT - create goal → 200
 echo "✅ Test 3: PUT /user-goal (create)"
-echo "Oczekiwany status: 200"
+echo "Expected status: 200"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X PUT \
@@ -949,9 +981,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 4: GET z auth (cel istnieje) → 200 goal
-echo "📋 Test 4: GET /user-goal (cel istnieje)"
-echo "Oczekiwany status: 200, data: goal object"
+# Test 4: GET with auth (goal exists) → 200 goal
+echo "📋 Test 4: GET /user-goal (goal exists)"
+echo "Expected status: 200, data: goal object"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X GET \
@@ -964,9 +996,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 5: PUT - aktualizacja celu → 200
+# Test 5: PUT - update goal → 200
 echo "✅ Test 5: PUT /user-goal (update)"
-echo "Oczekiwany status: 200"
+echo "Expected status: 200"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X PUT \
@@ -987,7 +1019,7 @@ echo -e "\n"
 
 # Test 6: PUT - validation error (invalid due_date) → 422
 echo "❌ Test 6: PUT /user-goal (invalid due_date format)"
-echo "Oczekiwany status: 422"
+echo "Expected status: 422"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X PUT \
@@ -1005,9 +1037,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 7: PUT - validation error (due_date w przeszłości) → 422
+# Test 7: PUT - validation error (due_date in the past) → 422
 echo "❌ Test 7: PUT /user-goal (due_date in past)"
-echo "Oczekiwany status: 422"
+echo "Expected status: 422"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X PUT \
@@ -1025,9 +1057,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 8: DELETE - usunięcie celu → 204
+# Test 8: DELETE - delete goal → 204
 echo "🗑️  Test 8: DELETE /user-goal"
-echo "Oczekiwany status: 204"
+echo "Expected status: 204"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X DELETE \
@@ -1039,9 +1071,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 9: GET z auth (po usunięciu) → 200 null
-echo "📋 Test 9: GET /user-goal (po usunięciu)"
-echo "Oczekiwany status: 200, data: null"
+# Test 9: GET with auth (after deletion) → 200 null
+echo "📋 Test 9: GET /user-goal (after deletion)"
+echo "Expected status: 200, data: null"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X GET \
@@ -1054,9 +1086,9 @@ echo "$BODY"
 echo "Status: $STATUS"
 echo -e "\n"
 
-# Test 10: DELETE - usunięcie nieistniejącego celu → 404
+# Test 10: DELETE - delete nonexistent goal → 404
 echo "❌ Test 10: DELETE /user-goal (not found)"
-echo "Oczekiwany status: 404"
+echo "Expected status: 404"
 echo "---"
 HTTP_CODE=$(curl -s -w "\n%{http_code}" \
   -X DELETE \
@@ -1069,11 +1101,12 @@ echo "Status: $STATUS"
 echo -e "\n"
 
 echo "=================================="
-echo "✅ Test Suite zakończony"
+echo "✅ Test suite completed"
 echo "=================================="
 ```
 
-**Uruchomienie:**
+**Running:**
+
 ```bash
 chmod +x .curls/user-goal.sh
 ./.curls/user-goal.sh
@@ -1081,50 +1114,58 @@ chmod +x .curls/user-goal.sh
 
 ---
 
-### Krok 5: Weryfikacja i testy
-1. **Uruchom dev server:**
+### Step 5: Verification and Tests
+
+1. **Start dev server:**
+
    ```bash
    npm run dev
    ```
 
-2. **Uruchom test suite:**
+2. **Run test suite:**
+
    ```bash
    ./.curls/user-goal.sh
    ```
 
-3. **Sprawdź wyniki:**
-   - Wszystkie testy powinny zwrócić oczekiwane status codes
-   - GET bez celu → 200 + `{"data": null}`
+3. **Check results:**
+   - All tests should return expected status codes
+   - GET without goal → 200 + `{"data": null}`
    - PUT create → 200 + goal object
-   - GET z celem → 200 + goal object
+   - GET with goal → 200 + goal object
    - PUT update → 200 + updated goal
    - DELETE → 204
-   - GET po DELETE → 200 + `{"data": null}`
+   - GET after DELETE → 200 + `{"data": null}`
    - DELETE not found → 404
 
-4. **Sprawdź logi:**
-   - Validation errors powinny być w `console.warn`
-   - Server errors powinny być w `console.error`
-   - Brak sensitive data w logach
+4. **Check logs:**
+   - Validation errors should use `console.warn`
+   - Server errors should use `console.error`
+   - No sensitive data in logs
 
 ---
 
-### Krok 6: Dokumentacja
-**Aktualizuj:**
-- `.ai/api-plan.md` - dodaj szczegóły implementacji jeśli potrzebne
-- README.md - dodaj przykłady użycia API
+### Step 6: Documentation
 
-**Przykład w README:**
-```markdown
+**Update:**
+
+- `.ai/api-plan.md` - add implementation details if needed
+- README.md - add API usage examples
+
+**README example:**
+
+````markdown
 ### User Goal API
 
 **Get current goal:**
+
 ```bash
 GET /api/v1/user-goal
 Authorization: Bearer <token>
 ```
 
 **Set or update goal:**
+
 ```bash
 PUT /api/v1/user-goal
 Authorization: Bearer <token>
@@ -1139,44 +1180,49 @@ Content-Type: application/json
 ```
 
 **Delete goal:**
+
 ```bash
 DELETE /api/v1/user-goal
 Authorization: Bearer <token>
 ```
-```
+````
 
 ---
 
-### Krok 7: Code Review Checklist
-- [ ] Auth guard we wszystkich endpointach
-- [ ] Validation schema kompletny i poprawny
-- [ ] Service layer oddzielony od API routes
-- [ ] Error handling spójny z resztą projektu
-- [ ] Status codes zgodne z konwencją
-- [ ] Types poprawnie wykorzystane
-- [ ] Test suite pokrywa wszystkie scenariusze
-- [ ] Brak sensitive data w logach
-- [ ] RLS policies w Supabase skonfigurowane
-- [ ] Dokumentacja zaktualizowana
+### Step 7: Code Review Checklist
+
+- [ ] Auth guard in all endpoints
+- [ ] Complete and correct validation schema
+- [ ] Service layer separate from API routes
+- [ ] Error handling consistent with project
+- [ ] Status codes match conventions
+- [ ] Correct type usage
+- [ ] Test suite covers all scenarios
+- [ ] No sensitive data in logs
+- [ ] Supabase RLS policies configured
+- [ ] Documentation updated
 
 ---
 
-## 10. Podsumowanie
+## 10. Summary
 
-**Kluczowe punkty implementacji:**
-1. **Prosty design:** Jeden cel na użytkownika, upsert zamiast create/update
-2. **Bezpieczeństwo:** Auth + RLS + validation
-3. **Spójność:** Wzorce z innych endpointów (workouts, training-types)
-4. **Testowalność:** Service layer + curl test suite
-5. **Wydajność:** Single query operations, brak N+1
+**Key implementation points:**
 
-**Szacowany czas implementacji:** 2-3 godziny
+1. **Simple design:** One goal per user, upsert instead of create/update
+2. **Security:** Auth + RLS + validation
+3. **Consistency:** Patterns from other endpoints (workouts, training-types)
+4. **Testability:** Service layer + curl test suite
+5. **Performance:** Single-query operations, no N+1
+
+**Estimated implementation time:** 2-3 hours
+
 - Validation + Service: 45 min
 - API Endpoint: 30 min
 - Test suite: 30 min
 - Testing + debugging: 45 min
 
-**Potencjalne rozszerzenia (poza MVP):**
+**Potential extensions (beyond MVP):**
+
 - Multiple goals per user
 - Goal progress tracking (% completion)
 - Goal history

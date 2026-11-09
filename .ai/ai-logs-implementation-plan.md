@@ -1,33 +1,37 @@
 # API Endpoint Implementation Plan: AI Logs (Internal)
 
-## 1. Przegląd punktu końcowego
+## 1. Endpoint Overview
 
-Endpoint AI Logs służy do ingesting i przeglądania logów interakcji z AI (OpenRouter). Jest to **internal-only endpoint** dostępny wyłącznie dla service-role key, niedostępny dla zwykłych użytkowników.
+The AI Logs endpoint ingests and lists AI interaction logs (OpenRouter). It is an **internal-only endpoint**, accessible only with a service-role key and unavailable to regular users.
 
-### Cel biznesowy:
-- **Diagnostyka**: Śledzenie błędów i problemów z AI
-- **Cost tracking**: Monitorowanie kosztów wywołań AI (tokens, USD)
-- **Audyt**: Historia wywołań AI per użytkownik/sugestia
+### Business Goal:
 
-### Endpointy:
-- `POST /api/v1/internal/ai/logs` - Ingest pojedynczego logu AI
-- `GET /api/v1/internal/ai/logs` - Listowanie logów z filtrami i paginacją
+- **Diagnostics**: Track AI errors and problems
+- **Cost tracking**: Monitor AI call costs (tokens, USD)
+- **Audit**: AI call history per user/suggestion
+
+### Endpoints:
+
+- `POST /api/v1/internal/ai/logs` - Ingest a single AI log
+- `GET /api/v1/internal/ai/logs` - List logs with filters and pagination
 
 ---
 
-## 2. Szczegóły żądania
+## 2. Request Details
 
 ### POST `/api/v1/internal/ai/logs`
 
-**Metoda HTTP**: POST
-**Struktura URL**: `/api/v1/internal/ai/logs`
-**Autoryzacja**: Service-role key przez header `Authorization: Bearer <service_role_key>`
+**HTTP Method**: POST
+**URL Structure**: `/api/v1/internal/ai/logs`
+**Authorization**: Service-role key through `Authorization: Bearer <service_role_key>`
 
 **Request Headers**:
-- `Authorization: Bearer <service_role_key>` (wymagane)
-- `Content-Type: application/json` (wymagane)
+
+- `Authorization: Bearer <service_role_key>` (required)
+- `Content-Type: application/json` (required)
 
 **Request Body**:
+
 ```json
 {
   "event": "suggestion.generate",
@@ -45,48 +49,50 @@ Endpoint AI Logs służy do ingesting i przeglądania logów interakcji z AI (Op
 }
 ```
 
-**Parametry**:
-- **Wymagane**:
-  - `event` (string): Typ zdarzenia (np. "suggestion.generate")
-  - `level` (string): Poziom loga ("info", "warn", "error")
+**Parameters**:
 
-- **Opcjonalne**:
-  - `model` (string): Nazwa modelu AI
-  - `provider` (string): Provider AI (np. "openrouter")
-  - `latency_ms` (integer ≥ 0): Czas odpowiedzi w ms
-  - `input_tokens` (integer ≥ 0): Liczba tokenów wejściowych
-  - `output_tokens` (integer ≥ 0): Liczba tokenów wyjściowych
-  - `cost_usd` (number ≥ 0): Koszt wywołania w USD
-  - `payload` (object): Dodatkowy kontekst JSON (max 10KB)
-  - `user_id` (uuid): ID użytkownika powiązanego z logiem
+- **Required**:
+  - `event` (string): Event type (e.g., "suggestion.generate")
+  - `level` (string): Log level ("info", "warn", "error")
+
+- **Optional**:
+  - `model` (string): AI model name
+  - `provider` (string): AI provider (e.g., "openrouter")
+  - `latency_ms` (integer ≥ 0): Response time in ms
+  - `input_tokens` (integer ≥ 0): Input token count
+  - `output_tokens` (integer ≥ 0): Output token count
+  - `cost_usd` (number ≥ 0): Call cost in USD
+  - `payload` (object): Additional JSON context (max 10KB)
+  - `user_id` (uuid): ID of the user associated with the log
 
 ---
 
 ### GET `/api/v1/internal/ai/logs`
 
-**Metoda HTTP**: GET
-**Struktura URL**: `/api/v1/internal/ai/logs?page=1&per_page=20&event=suggestion.generate`
-**Autoryzacja**: Service-role key przez header `Authorization: Bearer <service_role_key>`
+**HTTP Method**: GET
+**URL Structure**: `/api/v1/internal/ai/logs?page=1&per_page=20&event=suggestion.generate`
+**Authorization**: Service-role key through `Authorization: Bearer <service_role_key>`
 
 **Query Parameters**:
-- **Opcjonalne**:
-  - `event` (string): Filtr po typie zdarzenia
-  - `level` (string): Filtr po poziomie loga
-  - `created_after` (ISO timestamp): Logi utworzone po tej dacie
-  - `created_before` (ISO timestamp): Logi utworzone przed tą datą
-  - `page` (integer, default: 1, min: 1): Numer strony
-  - `per_page` (integer, default: 20, min: 1, max: 100): Liczba elementów na stronę
+
+- **Optional**:
+  - `event` (string): Filter by event type
+  - `level` (string): Filter by log level
+  - `created_after` (ISO timestamp): Logs created after this date
+  - `created_before` (ISO timestamp): Logs created before this date
+  - `page` (integer, default: 1, min: 1): Page number
+  - `per_page` (integer, default: 20, min: 1, max: 100): Items per page
 
 ---
 
-## 3. Wykorzystywane typy
+## 3. Types Used
 
 ### DTOs (Data Transfer Objects)
 
-Z pliku `src/types.ts`:
+From `src/types.ts`:
 
 ```typescript
-// Response type dla GET
+// Response type for GET
 export type AiLogDto = Pick<
   AiLogRow,
   | "id"
@@ -103,18 +109,18 @@ export type AiLogDto = Pick<
   | "user_id"
 >;
 
-// Command type dla POST
+// Command type for POST
 export type AiLogIngestCommand = Omit<AiLogInsert, "id" | "created_at">;
 ```
 
-### Validation Schemas (do stworzenia)
+### Validation Schemas (to Create)
 
-Plik: `src/lib/validation/aiLogs.ts`
+File: `src/lib/validation/aiLogs.ts`
 
 ```typescript
 import { z } from "zod";
 
-// Schema dla POST body
+// Schema for POST body
 export const aiLogIngestSchema = z.object({
   event: z.string().min(1),
   level: z.string().min(1),
@@ -128,7 +134,7 @@ export const aiLogIngestSchema = z.object({
   user_id: z.string().uuid().optional(),
 });
 
-// Schema dla GET query params
+// Schema for GET query params
 export const aiLogListQuerySchema = z.object({
   event: z.string().optional(),
   level: z.string().optional(),
@@ -144,11 +150,12 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
 
 ---
 
-## 4. Szczegóły odpowiedzi
+## 4. Response Details
 
 ### POST `/api/v1/internal/ai/logs`
 
-**Sukces - 202 Accepted**:
+**Success - 202 Accepted**:
+
 ```json
 {
   "data": {
@@ -157,8 +164,10 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
 }
 ```
 
-**Błędy**:
+**Errors**:
+
 - **400 Bad Request** - Malformed JSON body
+
   ```json
   {
     "error": {
@@ -169,6 +178,7 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
   ```
 
 - **401 Unauthorized** - Missing Authorization header
+
   ```json
   {
     "error": {
@@ -179,6 +189,7 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
   ```
 
 - **403 Forbidden** - Invalid service-role key
+
   ```json
   {
     "error": {
@@ -189,6 +200,7 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
   ```
 
 - **422 Unprocessable Entity** - Validation error
+
   ```json
   {
     "error": {
@@ -215,7 +227,8 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
 
 ### GET `/api/v1/internal/ai/logs`
 
-**Sukces - 200 OK**:
+**Success - 200 OK**:
+
 ```json
 {
   "data": [
@@ -240,7 +253,8 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
 }
 ```
 
-**Błędy**:
+**Errors**:
+
 - **400 Bad Request** - Malformed query params
 - **401 Unauthorized** - Missing Authorization header
 - **403 Forbidden** - Invalid service-role key
@@ -249,20 +263,21 @@ export type AiLogListQuery = z.infer<typeof aiLogListQuerySchema>;
 
 ---
 
-## 5. Przepływ danych
+## 5. Data Flow
 
 ### POST `/api/v1/internal/ai/logs`
 
 ```
 1. Request → Astro API Route Handler
-2. Walidacja Authorization header (service-role key)
-3. Parse i walidacja JSON body (Zod schema)
-4. Wywołanie aiLogsService.ingestAiLog()
-5. Service → Supabase insert do tabeli ai_logs
+2. Validate Authorization header (service-role key)
+3. Parse and validate JSON body (Zod schema)
+4. Call aiLogsService.ingestAiLog()
+5. Service → Supabase insert into ai_logs
 6. Response 202 Accepted
 ```
 
-**Diagram przepływu**:
+**Flow Diagram**:
+
 ```
 Client (OpenRouter wrapper)
   ↓
@@ -285,14 +300,15 @@ Supabase insert → ai_logs table
 
 ```
 1. Request → Astro API Route Handler
-2. Walidacja Authorization header (service-role key)
-3. Parse i walidacja query params (Zod schema)
-4. Wywołanie aiLogsService.listAiLogs(filters, pagination)
-5. Service → Supabase query z filtrami i paginacją
-6. Response 200 OK z danymi + pagination metadata
+2. Validate Authorization header (service-role key)
+3. Parse and validate query params (Zod schema)
+4. Call aiLogsService.listAiLogs(filters, pagination)
+5. Service → Supabase query with filters and pagination
+6. Response 200 OK with data + pagination metadata
 ```
 
-**Diagram przepływu**:
+**Flow Diagram**:
+
 ```
 Admin/Service client
   ↓
@@ -311,39 +327,39 @@ Supabase query → ai_logs table
 
 ---
 
-## 6. Względy bezpieczeństwa
+## 6. Security Considerations
 
-### Krytyczne zagrożenia i mitigacje:
+### Critical Threats and Mitigations:
 
-1. **Authorization Bypass** (KRYTYCZNE)
-   - **Zagrożenie**: Endpoint dostępny dla user tokens → leak logów
-   - **Mitigacja**: Sprawdzenie `Authorization: Bearer <service_role_key>` przez porównanie z `import.meta.env.SUPABASE_SERVICE_ROLE_KEY`
-   - **Guard clause**: Zwrócić 401/403 przed jakąkolwiek operacją
+1. **Authorization Bypass** (CRITICAL)
+   - **Threat**: User tokens can access endpoint → log leakage
+   - **Mitigation**: Check `Authorization: Bearer <service_role_key>` against `import.meta.env.SUPABASE_SERVICE_ROLE_KEY`
+   - **Guard clause**: Return 401/403 before any operation
 
-2. **Privacy Leak** (WYSOKIE)
-   - **Zagrożenie**: Payload może zawierać PII użytkownika
-   - **Mitigacja**:
-     - Dokumentacja: NIE logować PII w payload
-     - Retention: 30 dni (job zewnętrzny)
-     - RLS disabled na ai_logs (tylko service-role)
+2. **Privacy Leak** (HIGH)
+   - **Threat**: Payload may contain user PII
+   - **Mitigation**:
+     - Documentation: DO NOT log PII in payload
+     - Retention: 30 days (external job)
+     - RLS disabled on ai_logs (service-role only)
 
-3. **DoS Attack** (ŚREDNIE)
-   - **Zagrożenie**: Flood dużych payloadów → overflow DB
-   - **Mitigacja**:
-     - Walidacja payload size (max 10KB)
-     - Rate limiting: 100 req/min (opcjonalnie)
+3. **DoS Attack** (MEDIUM)
+   - **Threat**: Large payload flood → DB overflow
+   - **Mitigation**:
+     - Payload size validation (max 10KB)
+     - Rate limiting: 100 req/min (optional)
 
-4. **Network Exposure** (WYSOKIE)
-   - **Zagrożenie**: Endpoint wywołany z przeglądarki
-   - **Mitigacja**:
-     - Service-role key **NIE** może być w zmiennych środowiskowych client-side
-     - Endpoint używany tylko server-side (w AI service)
+4. **Network Exposure** (HIGH)
+   - **Threat**: Endpoint called from browser
+   - **Mitigation**:
+     - Service-role key MUST NOT appear in client-side environment variables
+     - Endpoint used only server-side (in AI service)
 
-5. **SQL Injection** (NISKIE)
-   - **Zagrożenie**: Malicious filters w GET
-   - **Mitigacja**: Supabase client sanitizes queries automatycznie
+5. **SQL Injection** (LOW)
+   - **Threat**: Malicious GET filters
+   - **Mitigation**: Supabase client automatically sanitizes queries
 
-### Implementacja auth check:
+### Auth Check Implementation:
 
 ```typescript
 // Guard clause pattern - check service-role key
@@ -365,32 +381,37 @@ function requireServiceRole(context: APIContext): void {
 
 ---
 
-## 7. Obsługa błędów
+## 7. Error Handling
 
-### Poziomy błędów:
+### Error Categories:
 
 **400 Bad Request**:
+
 - Malformed JSON body
 - Malformed query params
-- Przykład: Niepoprawny JSON syntax
+- Example: Invalid JSON syntax
 
 **401 Unauthorized**:
+
 - Missing Authorization header
-- Przykład: Brak header'a Authorization
+- Example: Missing Authorization header
 
 **403 Forbidden**:
+
 - Invalid service-role key
-- Przykład: User token zamiast service-role key
+- Example: User token instead of service-role key
 
 **422 Unprocessable Entity**:
+
 - Validation error (Zod)
 - Invalid field values (negative numbers, invalid UUID)
-- Przykład: `latency_ms: -10`, `cost_usd: "abc"`
+- Example: `latency_ms: -10`, `cost_usd: "abc"`
 
 **500 Internal Server Error**:
+
 - Database insert/query failed
 - Unexpected server error
-- Przykład: Supabase connection timeout
+- Example: Supabase connection timeout
 
 ### Error Handling Strategy:
 
@@ -407,7 +428,6 @@ try {
 
   // 4. Happy path
   return jsonResponse(202, { data: { status: "accepted" } });
-
 } catch (err) {
   // Handle ApiError (from auth, validation)
   if (isApiError(err)) {
@@ -416,7 +436,7 @@ try {
 
   // Handle Zod validation error
   if (err.name === "ZodError") {
-    const details = { invalid_params: err.errors.map(e => e.path.join(".")) };
+    const details = { invalid_params: err.errors.map((e) => e.path.join(".")) };
     return errorResponse(createApiError(422, "validation_error", "Invalid request body", { details }));
   }
 
@@ -428,113 +448,113 @@ try {
 
 ### Logging Strategy:
 
-- **NIE** logować do ai_logs (circular dependency)
-- Używać `console.error` dla internal errors
-- Dołączyć context (endpoint, timestamp) ale NIE payload (może zawierać PII)
+- DO NOT log to ai_logs (circular dependency)
+- Use `console.error` for internal errors
+- Include context (endpoint, timestamp), but NOT payload (may contain PII)
 
 ---
 
-## 8. Rozważania dotyczące wydajności
+## 8. Performance Considerations
 
-### Potencjalne wąskie gardła:
+### Potential Bottlenecks:
 
 1. **Database Write Throughput** (POST)
-   - **Problem**: Wysokie RPS → overflow Supabase free tier (500MB DB)
-   - **Mitigacja**:
-     - Batch inserts (opcjonalnie w przyszłości)
+   - **Problem**: High RPS → Supabase free tier overflow (500MB DB)
+   - **Mitigation**:
+     - Batch inserts (optional in future)
      - Rate limiting: 100 req/min
-     - Retention: 30 dni (auto-delete starych logów)
+     - Retention: 30 days (auto-delete old logs)
 
 2. **Database Query Performance** (GET)
-   - **Problem**: Full table scan na dużych tabelach
-   - **Mitigacja**:
-     - Index na kolumnach: `(event, created_at)`, `(level, created_at)`
+   - **Problem**: Full table scans on large tables
+   - **Mitigation**:
+     - Indexes on `(event, created_at)`, `(level, created_at)`
      - Limit per_page max 100
-     - Default sort: `created_at DESC` (używa index)
+     - Default sort: `created_at DESC` (uses index)
 
 3. **Payload Size** (POST)
-   - **Problem**: Duże payloady (>100KB) → slow inserts
-   - **Mitigacja**:
-     - Walidacja payload size (max 10KB)
-     - Reject z 422 jeśli za duże
+   - **Problem**: Large payloads (>100KB) → slow inserts
+   - **Mitigation**:
+     - Payload size validation (max 10KB)
+     - Reject with 422 if too large
 
-### Optymalizacje:
+### Optimizations:
 
-**Index'y na tabeli `ai_logs`**:
+**Indexes on `ai_logs`**:
+
 ```sql
--- Index dla filtrowania po event + date range
+-- Index for event filtering + date range
 CREATE INDEX idx_ai_logs_event_created ON ai_logs(event, created_at DESC);
 
--- Index dla filtrowania po level + date range
+-- Index for level filtering + date range
 CREATE INDEX idx_ai_logs_level_created ON ai_logs(level, created_at DESC);
 
--- Index dla user_id (jeśli będziemy filtrować po użytkowniku)
+-- Index for user_id (if filtering by user)
 CREATE INDEX idx_ai_logs_user_id ON ai_logs(user_id) WHERE user_id IS NOT NULL;
 ```
 
 **Cache Strategy**:
-- **NIE** cache'ować GET (dane diagnostyczne, zawsze fresh)
-- **NIE** cache'ować POST (asynchroniczny ingest)
+
+- DO NOT cache GET (diagnostic data, always fresh)
+- DO NOT cache POST (asynchronous ingest)
 
 **Rate Limiting**:
-- 100 req/min per service-role key (opcjonalnie w przyszłości)
+
+- 100 req/min per service-role key (optional in future)
 
 ---
 
-## 9. Kroki implementacji
+## 9. Implementation Steps
 
-### Krok 1: Utworzenie validation schemas
-**Plik**: `src/lib/validation/aiLogs.ts`
+### Step 1: Create Validation Schemas
 
-- [ ] Utworzyć Zod schema `aiLogIngestSchema` (POST body)
-- [ ] Utworzyć Zod schema `aiLogListQuerySchema` (GET query params)
-- [ ] Eksportować typy TypeScript z schemas
-- [ ] Dodać testy jednostkowe dla schemas (opcjonalnie)
+**File**: `src/lib/validation/aiLogs.ts`
 
-**Estimate**: 20 minut
+- [ ] Create Zod schema `aiLogIngestSchema` (POST body)
+- [ ] Create Zod schema `aiLogListQuerySchema` (GET query params)
+- [ ] Export TypeScript types from schemas
+- [ ] Add schema unit tests (optional)
+
+**Estimate**: 20 minutes
 
 ---
 
-### Krok 2: Utworzenie AI Logs Service
-**Plik**: `src/lib/services/aiLogsService.ts`
+### Step 2: Create AI Logs Service
 
-- [ ] Funkcja `ingestAiLog(supabase, command): Promise<void>`
-  - Insert do tabeli `ai_logs`
+**File**: `src/lib/services/aiLogsService.ts`
+
+- [ ] Function `ingestAiLog(supabase, command): Promise<void>`
+  - Insert into `ai_logs`
   - Handle DB errors (throw)
 
-- [ ] Funkcja `listAiLogs(supabase, filters, pagination): Promise<{ logs: AiLogDto[], total: number }>`
-  - Query z filtrami (event, level, date range)
+- [ ] Function `listAiLogs(supabase, filters, pagination): Promise<{ logs: AiLogDto[], total: number }>`
+  - Query with filters (event, level, date range)
   - Order by `created_at DESC`
-  - Paginacja (offset, limit)
-  - Count total dla pagination metadata
+  - Pagination (offset, limit)
+  - Count total for pagination metadata
 
-**Estimate**: 45 minut
+**Estimate**: 45 minutes
 
-**Przykładowa implementacja**:
+**Example Implementation**:
 
 ```typescript
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
 import type { AiLogDto, AiLogIngestCommand } from "../../types";
 
-export async function ingestAiLog(
-  supabase: SupabaseClient<Database>,
-  command: AiLogIngestCommand
-): Promise<void> {
-  const { error } = await supabase
-    .from("ai_logs")
-    .insert({
-      event: command.event,
-      level: command.level,
-      model: command.model ?? null,
-      provider: command.provider ?? null,
-      latency_ms: command.latency_ms ?? null,
-      input_tokens: command.input_tokens ?? null,
-      output_tokens: command.output_tokens ?? null,
-      cost_usd: command.cost_usd ?? null,
-      payload: command.payload ?? null,
-      user_id: command.user_id ?? null,
-    });
+export async function ingestAiLog(supabase: SupabaseClient<Database>, command: AiLogIngestCommand): Promise<void> {
+  const { error } = await supabase.from("ai_logs").insert({
+    event: command.event,
+    level: command.level,
+    model: command.model ?? null,
+    provider: command.provider ?? null,
+    latency_ms: command.latency_ms ?? null,
+    input_tokens: command.input_tokens ?? null,
+    output_tokens: command.output_tokens ?? null,
+    cost_usd: command.cost_usd ?? null,
+    payload: command.payload ?? null,
+    user_id: command.user_id ?? null,
+  });
 
   if (error) throw error;
 }
@@ -550,10 +570,7 @@ export async function listAiLogs(
   pagination: { page: number; per_page: number }
 ): Promise<{ logs: AiLogDto[]; total: number }> {
   // Build query
-  let query = supabase
-    .from("ai_logs")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false });
+  let query = supabase.from("ai_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
 
   // Apply filters
   if (filters.event) {
@@ -586,17 +603,18 @@ export async function listAiLogs(
 
 ---
 
-### Krok 3: Utworzenie utility function dla service-role auth
-**Plik**: `src/lib/http/auth.ts` (dodać do istniejącego pliku)
+### Step 3: Create Service-Role Auth Utility
 
-- [ ] Funkcja `requireServiceRole(context): void`
-  - Sprawdzenie `Authorization` header
-  - Porównanie z `import.meta.env.SUPABASE_SERVICE_ROLE_KEY`
-  - Throw ApiError(401/403) jeśli invalid
+**File**: `src/lib/http/auth.ts` (add to existing file)
 
-**Estimate**: 15 minut
+- [ ] Function `requireServiceRole(context): void`
+  - Check `Authorization` header
+  - Compare with `import.meta.env.SUPABASE_SERVICE_ROLE_KEY`
+  - Throw ApiError(401/403) if invalid
 
-**Przykładowa implementacja**:
+**Estimate**: 15 minuteses
+
+**Example Implementation**:
 
 ```typescript
 export function requireServiceRole(context: APIContext): void {
@@ -622,20 +640,21 @@ export function requireServiceRole(context: APIContext): void {
 
 ---
 
-### Krok 4: Implementacja POST endpoint
-**Plik**: `src/pages/api/v1/internal/ai/logs.ts`
+### Step 4: Implement POST Endpoint
+
+**File**: `src/pages/api/v1/internal/ai/logs.ts`
 
 - [ ] Export `export const prerender = false`
 - [ ] Handler `POST(context: APIContext)`
   - Auth check: `requireServiceRole(context)`
-  - Parse i validate body: `aiLogIngestSchema.parse(await context.request.json())`
+  - Parse and validate body: `aiLogIngestSchema.parse(await context.request.json())`
   - Call service: `await ingestAiLog(supabase, body)`
   - Return 202 Accepted
   - Error handling (ApiError, ZodError, catch-all)
 
-**Estimate**: 30 minut
+**Estimate**: 30 minutes
 
-**Przykładowa implementacja**:
+**Example Implementation**:
 
 ```typescript
 export const prerender = false;
@@ -662,7 +681,6 @@ export async function POST(context: APIContext) {
 
     // 4. Return 202 Accepted
     return jsonResponse(202, { data: { status: "accepted" } });
-
   } catch (err: any) {
     // Handle ApiError (from auth check)
     if (isApiError(err)) {
@@ -681,9 +699,7 @@ export async function POST(context: APIContext) {
 
     // Handle JSON parse error
     if (err instanceof SyntaxError) {
-      return errorResponse(
-        createApiError(400, "validation_error", "Invalid JSON body")
-      );
+      return errorResponse(createApiError(400, "validation_error", "Invalid JSON body"));
     }
 
     // Handle unexpected errors
@@ -691,28 +707,27 @@ export async function POST(context: APIContext) {
       error: err.message,
       name: err.name,
     });
-    return errorResponse(
-      createApiError(500, "internal_error", "Failed to ingest log")
-    );
+    return errorResponse(createApiError(500, "internal_error", "Failed to ingest log"));
   }
 }
 ```
 
 ---
 
-### Krok 5: Implementacja GET endpoint
-**Plik**: `src/pages/api/v1/internal/ai/logs.ts` (w tym samym pliku co POST)
+### Step 5: Implement GET Endpoint
+
+**File**: `src/pages/api/v1/internal/ai/logs.ts` (same file as POST)
 
 - [ ] Handler `GET(context: APIContext)`
   - Auth check: `requireServiceRole(context)`
-  - Parse i validate query params: `aiLogListQuerySchema.parse(params)`
+  - Parse and validate query params: `aiLogListQuerySchema.parse(params)`
   - Call service: `const { logs, total } = await listAiLogs(supabase, filters, pagination)`
-  - Return 200 OK z ApiListResponse
+  - Return 200 OK with ApiListResponse
   - Error handling
 
-**Estimate**: 30 minut
+**Estimate**: 30 minutes
 
-**Przykładowa implementacja**:
+**Example Implementation**:
 
 ```typescript
 import type { ApiListResponse, AiLogDto } from "../../../../types";
@@ -754,7 +769,6 @@ export async function GET(context: APIContext) {
     };
 
     return jsonResponse(200, response);
-
   } catch (err: any) {
     // Handle ApiError (from auth check)
     if (isApiError(err)) {
@@ -776,44 +790,46 @@ export async function GET(context: APIContext) {
       error: err.message,
       name: err.name,
     });
-    return errorResponse(
-      createApiError(500, "internal_error", "Failed to fetch logs")
-    );
+    return errorResponse(createApiError(500, "internal_error", "Failed to fetch logs"));
   }
 }
 ```
 
 ---
 
-### Krok 6: Utworzenie index'ów w bazie danych
-**Migracja Supabase** (jeśli jeszcze nie istnieją)
+### Step 6: Create Database Indexes
 
-- [ ] Utworzyć migrację SQL:
+**Supabase migration** (if indexes do not exist)
+
+- [ ] Create SQL migration:
+
   ```sql
-  -- Index dla filtrowania po event + date range
+  -- Index for event filtering + date range
   CREATE INDEX IF NOT EXISTS idx_ai_logs_event_created
   ON ai_logs(event, created_at DESC);
 
-  -- Index dla filtrowania po level + date range
+  -- Index for level filtering + date range
   CREATE INDEX IF NOT EXISTS idx_ai_logs_level_created
   ON ai_logs(level, created_at DESC);
 
-  -- Index dla user_id (optional)
+  -- Index for user_id (optional)
   CREATE INDEX IF NOT EXISTS idx_ai_logs_user_id
   ON ai_logs(user_id)
   WHERE user_id IS NOT NULL;
   ```
 
-- [ ] Uruchomić migrację przez Supabase CLI lub Dashboard
+- [ ] Run migration through Supabase CLI or Dashboard
 
-**Estimate**: 10 minut
+**Estimate**: 10 minutes
 
 ---
 
-### Krok 7: Testy manualne
-**Używając curl lub Postman**
+### Step 7: Manual Tests
+
+**Using curl or Postman**
 
 - [ ] Test POST - success case (202)
+
   ```bash
   curl -X POST http://localhost:4321/api/v1/internal/ai/logs \
     -H "Authorization: Bearer <service_role_key>" \
@@ -836,6 +852,7 @@ export async function GET(context: APIContext) {
 - [ ] Test POST - 422 (validation error)
 
 - [ ] Test GET - success case (200)
+
   ```bash
   curl -X GET "http://localhost:4321/api/v1/internal/ai/logs?page=1&per_page=20" \
     -H "Authorization: Bearer <service_role_key>"
@@ -844,26 +861,27 @@ export async function GET(context: APIContext) {
 - [ ] Test GET - with filters
 - [ ] Test GET - 401/403 errors
 
-**Estimate**: 30 minut
+**Estimate**: 30 minutes
 
 ---
 
-### Krok 8: Integracja z AI Engine
-**Plik**: `src/lib/services/aiEngine.ts` (jeśli istnieje)
+### Step 8: Integrate AI Engine
 
-- [ ] Dodać wywołanie `POST /api/v1/internal/ai/logs` po każdym wywołaniu OpenRouter
-- [ ] Logować:
+**File**: `src/lib/services/aiEngine.ts` (if it exists)
+
+- [ ] Call `POST /api/v1/internal/ai/logs` after each OpenRouter call
+- [ ] Log:
   - `event`: "suggestion.generate"
-  - `level`: "info" (lub "error" jeśli failed)
+  - `level`: "info" (or "error" on failure)
   - `latency_ms`, `input_tokens`, `output_tokens`, `cost_usd`
   - `payload`: `{ user_id, suggestion_id }`
 
-**Estimate**: 30 minut
+**Estimate**: 30 minutes
 
-**Przykład integracji**:
+**Integration example**:
 
 ```typescript
-// W aiEngine.ts - po wywołaniu OpenRouter
+// In aiEngine.ts - after calling OpenRouter
 try {
   const startTime = Date.now();
   const aiResponse = await callOpenRouter(prompt);
@@ -873,7 +891,7 @@ try {
   await fetch(`${import.meta.env.PUBLIC_API_URL}/api/v1/internal/ai/logs`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${import.meta.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      Authorization: `Bearer ${import.meta.env.SUPABASE_SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -890,13 +908,12 @@ try {
   });
 
   return aiResponse;
-
 } catch (err) {
   // Log error
   await fetch(`${import.meta.env.PUBLIC_API_URL}/api/v1/internal/ai/logs`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${import.meta.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      Authorization: `Bearer ${import.meta.env.SUPABASE_SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -914,55 +931,56 @@ try {
 
 ---
 
-### Krok 9: Dokumentacja
-**Plik**: `.ai/api-plan.md` (już istnieje, update jeśli potrzeba)
+### Step 9: Documentation
 
-- [ ] Sprawdzić czy dokumentacja API jest aktualna
-- [ ] Dodać przykłady curl dla AI Logs endpointów
-- [ ] Dodać sekcję "Security notes" dla service-role auth
+**File**: `.ai/api-plan.md` (already exists; update if needed)
 
-**Estimate**: 15 minut
+- [ ] Check API documentation is current
+- [ ] Add curl examples for AI Logs endpoints
+- [ ] Add "Security notes" for service-role auth
 
----
-
-## 10. Podsumowanie czasowe
-
-| Krok | Zadanie | Estimate |
-|------|---------|----------|
-| 1 | Validation schemas | 20 min |
-| 2 | AI Logs Service | 45 min |
-| 3 | Service-role auth utility | 15 min |
-| 4 | POST endpoint | 30 min |
-| 5 | GET endpoint | 30 min |
-| 6 | Database indexes | 10 min |
-| 7 | Testy manualne | 30 min |
-| 8 | Integracja z AI Engine | 30 min |
-| 9 | Dokumentacja | 15 min |
-| **TOTAL** | | **~3.5 godziny** |
+**Estimate**: 15 minuteses
 
 ---
 
-## 11. Checklist przed merging do main
+## 10. Time Summary
 
-- [ ] Wszystkie validation schemas działają poprawnie
-- [ ] Service layer zwraca poprawne typy (AiLogDto)
-- [ ] POST endpoint zwraca 202 Accepted
-- [ ] GET endpoint zwraca pagination metadata
-- [ ] Auth check blokuje user tokens (tylko service-role)
-- [ ] Testy manualne przeszły (curl)
-- [ ] Index'y w bazie danych utworzone
-- [ ] AI Engine integracja działa (logi są zapisywane)
-- [ ] Dokumentacja zaktualizowana
-- [ ] Brak logowania PII w payload
-- [ ] Console.error używany zamiast ai_logs (uniknięcie circular dependency)
+| Step      | Task                      | Estimate       |
+| --------- | ------------------------- | -------------- |
+| 1         | Validation schemas        | 20 min         |
+| 2         | AI Logs Service           | 45 min         |
+| 3         | Service-role auth utility | 15 min         |
+| 4         | POST endpoint             | 30 min         |
+| 5         | GET endpoint              | 30 min         |
+| 6         | Database indexes          | 10 min         |
+| 7         | Manual tests              | 30 min         |
+| 8         | AI Engine integration     | 30 min         |
+| 9         | Documentation             | 15 min         |
+| **TOTAL** |                           | **~3.5 hours** |
 
 ---
 
-## 12. Przyszłe usprawnienia (post-MVP)
+## 11. Checklist Before Merging into Main
+
+- [ ] All validation schemas work correctly
+- [ ] Service layer returns correct types (AiLogDto)
+- [ ] POST endpoint returns 202 Accepted
+- [ ] GET endpoint returns pagination metadata
+- [ ] Auth check blocks user tokens (service-role only)
+- [ ] Manual tests pass (curl)
+- [ ] Database indexes created
+- [ ] AI Engine integration works (logs saved)
+- [ ] Documentation updated
+- [ ] No PII logged in payload
+- [ ] Console.error used instead of ai_logs (avoids circular dependency)
+
+---
+
+## 12. Future Improvements (Post-MVP)
 
 - [ ] Rate limiting (100 req/min per service-role key)
-- [ ] Batch inserts dla POST (jeśli high RPS)
-- [ ] Retention job (auto-delete po 30 dniach)
-- [ ] Monitoring dashboard (Grafana?) dla kosztów AI
-- [ ] Alerting dla high latency lub high cost
-- [ ] Export do CSV/JSON dla admin
+- [ ] Batch inserts for POST (if high RPS)
+- [ ] Retention job (auto-delete after 30 days)
+- [ ] Monitoring dashboard (Grafana?) for AI costs
+- [ ] Alerting for high latency or high cost
+- [ ] CSV/JSON export for admin

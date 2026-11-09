@@ -1,54 +1,54 @@
 # Authentication Journey - Mermaid Diagrams
 
-## 1. Główny Przepływ Użytkownika (User Journey)
+## 1. Main User Journey
 
 ```mermaid
 journey
-    title Podróż Użytkownika - System Autentykacji
-    section Nowy Użytkownik
-      Wejście na stronę: 3: Użytkownik
-      Przekierowanie na /login: 5: System
-      Kliknięcie "Zarejestruj się": 5: Użytkownik
-      Wypełnienie formularza rejestracji: 4: Użytkownik
-      Weryfikacja danych (client): 5: System
-      Submit formularza: 5: Użytkownik
-      Tworzenie konta w Supabase: 5: System
-      Wysłanie emaila weryfikacyjnego: 5: System
-      Komunikat o weryfikacji: 4: Użytkownik
-      Kliknięcie linku w emailu: 5: Użytkownik
-      Weryfikacja email: 5: System
-      Automatyczne logowanie: 5: System
-      Przekierowanie na /onboarding: 5: System
-      Dodanie 3 treningów: 3: Użytkownik
-      Przekierowanie na kalendarz: 5: System
-      Korzystanie z aplikacji: 5: Użytkownik
-    section Powracający Użytkownik
-      Wejście na stronę: 5: Użytkownik
-      Przekierowanie na /login: 5: System
-      Wypełnienie formularza logowania: 5: Użytkownik
-      Walidacja danych: 5: System
-      Submit formularza: 5: Użytkownik
-      Weryfikacja w Supabase: 5: System
-      Sprawdzenie statusu onboardingu: 5: System
-      Przekierowanie na kalendarz: 5: System
-      Korzystanie z aplikacji: 5: Użytkownik
-    section Odzyskiwanie Hasła
-      Kliknięcie "Zapomniałem hasła": 3: Użytkownik
-      Podanie adresu email: 4: Użytkownik
-      Wysłanie linku resetującego: 5: System
-      Kliknięcie linku w emailu: 5: Użytkownik
-      Wprowadzenie nowego hasła: 4: Użytkownik
-      Aktualizacja hasła: 5: System
-      Automatyczne logowanie: 5: System
-      Sprawdzenie statusu onboardingu: 5: System
-      Przekierowanie na odpowiednią stronę: 5: System
+    title User Journey - Authentication System
+    section New User
+      Visit page: 3: User
+      Redirect to /login: 5: System
+      Click "Sign up": 5: User
+      Complete registration form: 4: User
+      Data validation (client): 5: System
+      Submit form: 5: User
+      Create account in Supabase: 5: System
+      Send verification email: 5: System
+      Verification notice: 4: User
+      Click email link: 5: User
+      Email verification: 5: System
+      Automatic login: 5: System
+      Redirect to /onboarding: 5: System
+      Add 3 workouts: 3: User
+      Redirect to calendar: 5: System
+      Use application: 5: User
+    section Returning User
+      Visit page: 5: User
+      Redirect to /login: 5: System
+      Complete login form: 5: User
+      Data validation: 5: System
+      Submit form: 5: User
+      Verification in Supabase: 5: System
+      Check onboarding status: 5: System
+      Redirect to calendar: 5: System
+      Use application: 5: User
+    section Password Recovery
+      Click "Forgot password": 3: User
+      Enter email address: 4: User
+      Send reset link: 5: System
+      Click email link: 5: User
+      Enter new password: 4: User
+      Update password: 5: System
+      Automatic login: 5: System
+      Check onboarding status: 5: System
+      Redirect to appropriate page: 5: System
 ```
 
-## 2. Przepływ Rejestracji (Registration Flow)
+## 2. Registration Flow
 
 ```mermaid
 sequenceDiagram
-    actor U as Użytkownik
+    actor U as User
     participant LP as /login
     participant RP as /register
     participant RF as RegisterForm.tsx
@@ -58,116 +58,116 @@ sequenceDiagram
     participant Email as Email Service
     participant OB as /onboarding
 
-    U->>LP: Wejście na stronę główną
-    LP->>U: Wyświetlenie strony logowania
-    U->>LP: Kliknięcie "Zarejestruj się"
-    LP->>RP: Przekierowanie na /register
-    RP->>RF: Renderowanie formularza
-    RF->>U: Wyświetlenie formularza rejestracji
+    U->>LP: Visit home page
+    LP->>U: Display login page
+    U->>LP: Click "Sign up"
+    LP->>RP: Redirect to /register
+    RP->>RF: Render form
+    RF->>U: Display registration form
 
-    U->>RF: Wypełnienie danych (email, hasło, potwierdzenie)
-    RF->>RF: Walidacja client-side (Zod schema)
-    RF->>RF: Sprawdzenie zgodności haseł
+    U->>RF: Enter data (email, password, confirmation)
+    RF->>RF: Client-side validation (Zod schema)
+    RF->>RF: Check password match
 
-    U->>RF: Kliknięcie "Zarejestruj się"
-    RF->>RF: Wyświetlenie loading state
+    U->>RF: Click "Sign up"
+    RF->>RF: Show loading state
     RF->>API: POST {email, password, metadata}
-    API->>API: Walidacja danych (Zod schema)
+    API->>API: Data validation (Zod schema)
     API->>SB: signUp(email, password, options)
 
-    alt Email już istnieje
+    alt Email already exists
         SB-->>API: Error: email_already_exists
         API-->>RF: 422 Unprocessable Entity
-        RF->>RF: Ukrycie loading state
-        RF->>U: Komunikat: "Email jest już zarejestrowany"
-    else Sukces rejestracji
+        RF->>RF: Hide loading state
+        RF->>U: Message: "Email is already registered"
+    else Registration successful
         SB->>DB: INSERT INTO auth.users
         DB->>DB: Trigger: handle_new_user()
         DB->>DB: INSERT INTO user_profiles
-        SB->>Email: Wysłanie emaila weryfikacyjnego
+        SB->>Email: Send verification email
         SB-->>API: Success {user, session}
         API-->>RF: 201 Created
-        RF->>RF: Ukrycie loading state
-        RF->>RF: Zmiana step: 'form' → 'verification'
-        RF->>U: Komunikat: "Sprawdź email aby zweryfikować konto"
+        RF->>RF: Hide loading state
+        RF->>RF: Change step: 'form' → 'verification'
+        RF->>U: Message: "Check your email to verify your account"
 
-        Note over U,Email: Użytkownik otwiera email i klika link
+        Note over U,Email: User opens email and clicks link
 
-        U->>Email: Kliknięcie linku weryfikacyjnego
-        Email->>SB: Weryfikacja tokenu
-        SB->>SB: Aktualizacja email_confirmed_at
-        SB->>LP: Przekierowanie + session cookies
-        LP->>LP: Middleware: wykrycie zalogowanego użytkownika
-        LP->>OB: Przekierowanie na /onboarding
-        OB->>U: Wyświetlenie procesu onboardingu
+        U->>Email: Click verification link
+        Email->>SB: Verify token
+        SB->>SB: Update email_confirmed_at
+        SB->>LP: Redirect + session cookies
+        LP->>LP: Middleware: detect logged-in user
+        LP->>OB: Redirect to /onboarding
+        OB->>U: Display onboarding process
     end
 ```
 
-## 3. Przepływ Logowania (Login Flow)
+## 3. Login Flow
 
 ```mermaid
 sequenceDiagram
-    actor U as Użytkownik
+    actor U as User
     participant LP as /login
     participant LF as LoginForm.tsx
     participant API as POST /api/v1/auth/login
     participant SB as Supabase Auth
     participant MW as Middleware
-    participant CAL as / (Kalendarz)
+    participant CAL as / (Calendar)
     participant OB as /onboarding
 
-    U->>LP: Wejście na stronę (niezalogowany)
-    LP->>LF: Renderowanie formularza
-    LF->>U: Wyświetlenie formularza logowania
+    U->>LP: Visit page (logged out)
+    LP->>LF: Render form
+    LF->>U: Display login form
 
-    U->>LF: Wypełnienie email i hasła
-    LF->>LF: Walidacja client-side (Zod)
+    U->>LF: Enter email and password
+    LF->>LF: Client-side validation (Zod)
 
-    U->>LF: Kliknięcie "Zaloguj się"
-    LF->>LF: Wyświetlenie loading state
+    U->>LF: Click "Log in"
+    LF->>LF: Show loading state
     LF->>API: POST {email, password}
-    API->>API: Walidacja danych (Zod schema)
-    API->>API: Rate limiting check (5 prób / 15 min)
+    API->>API: Data validation (Zod schema)
+    API->>API: Rate limiting check (5 attempts / 15 min)
 
     alt Rate limit exceeded
         API-->>LF: 429 Too Many Requests
-        LF->>U: Komunikat: "Zbyt wiele prób. Spróbuj za X minut"
+        LF->>U: Message: "Too many attempts. Try again in X minutes"
     else Rate limit OK
         API->>SB: signInWithPassword(email, password)
 
-        alt Nieprawidłowe dane logowania
+        alt Invalid login credentials
             SB-->>API: Error: Invalid login credentials
             API-->>LF: 401 Unauthorized
-            LF->>LF: Ukrycie loading state
-            LF->>U: Komunikat: "Nieprawidłowy email lub hasło"
-            LF->>LF: Focus na polu email
-        else Sukces logowania
+            LF->>LF: Hide loading state
+            LF->>U: Message: "Invalid email or password"
+            LF->>LF: Focus email field
+        else Login successful
             SB-->>API: Success {user, session}
-            API->>API: Ustawienie session cookies
+            API->>API: Set session cookies
             API-->>LF: 200 OK {user, session}
             LF->>CAL: window.location.href = '/'
 
-            CAL->>MW: Request do / (z cookies)
-            MW->>MW: Pobranie sesji z cookies
-            MW->>SB: Weryfikacja sesji
-            MW->>MW: Sprawdzenie liczby treningów
+            CAL->>MW: Request to / (with cookies)
+            MW->>MW: Read session from cookies
+            MW->>SB: Verify session
+            MW->>MW: Check workout count
 
-            alt Użytkownik ma < 3 treningi
-                MW->>OB: Przekierowanie na /onboarding
-                OB->>U: Wyświetlenie procesu onboardingu
-            else Użytkownik ma >= 3 treningi
-                MW->>CAL: Kontynuacja do /
-                CAL->>U: Wyświetlenie kalendarza
+            alt User has < 3 workouts
+                MW->>OB: Redirect to /onboarding
+                OB->>U: Display onboarding process
+            else User has >= 3 workouts
+                MW->>CAL: Continue to /
+                CAL->>U: Display calendar
             end
         end
     end
 ```
 
-## 4. Przepływ Odzyskiwania Hasła (Password Recovery Flow)
+## 4. Password Recovery Flow
 
 ```mermaid
 sequenceDiagram
-    actor U as Użytkownik
+    actor U as User
     participant LP as /login
     participant FP as /forgot-password
     participant FPF as ForgotPasswordForm.tsx
@@ -178,243 +178,243 @@ sequenceDiagram
     participant RPF as ResetPasswordForm.tsx
     participant API2 as POST /api/v1/auth/reset-password
     participant MW as Middleware
-    participant CAL as / (Kalendarz)
+    participant CAL as / (Calendar)
 
-    U->>LP: Wejście na /login
-    U->>LP: Kliknięcie "Zapomniałem hasła"
-    LP->>FP: Przekierowanie na /forgot-password
-    FP->>FPF: Renderowanie formularza
-    FPF->>U: Wyświetlenie formularza (pole email)
+    U->>LP: Visit /login
+    U->>LP: Click "Forgot password"
+    LP->>FP: Redirect to /forgot-password
+    FP->>FPF: Render form
+    FPF->>U: Display form (email field)
 
-    U->>FPF: Wprowadzenie adresu email
-    FPF->>FPF: Walidacja email (Zod)
-    U->>FPF: Kliknięcie "Wyślij link"
-    FPF->>FPF: Wyświetlenie loading state
+    U->>FPF: Enter email address
+    FPF->>FPF: Email validation (Zod)
+    U->>FPF: Click "Send link"
+    FPF->>FPF: Show loading state
     FPF->>API1: POST {email}
-    API1->>API1: Walidacja (Zod)
-    API1->>API1: Rate limiting (3 próby / 1h)
+    API1->>API1: Validation (Zod)
+    API1->>API1: Rate limiting (3 attempts / 1h)
 
     alt Rate limit exceeded
         API1-->>FPF: 429 Too Many Requests
-        FPF->>U: Komunikat: "Zbyt wiele prób. Spróbuj za godzinę"
+        FPF->>U: Message: "Too many attempts. Try again in an hour"
     else Rate limit OK
         API1->>SB: resetPasswordForEmail(email, redirectTo)
-        SB->>Email: Wysłanie emaila z linkiem
-        SB-->>API1: Success (zawsze, nawet jeśli email nie istnieje)
+        SB->>Email: Send email with link
+        SB-->>API1: Success (always, even if email does not exist)
         API1-->>FPF: 200 OK
         FPF->>FPF: success = true
-        FPF->>U: Komunikat: "Jeśli email istnieje, wysłaliśmy link resetujący"
+        FPF->>U: Message: "If the email exists, we have sent a reset link"
 
-        Note over U,Email: Użytkownik otwiera email i klika link
+        Note over U,Email: User opens email and clicks link
 
-        U->>Email: Kliknięcie linku resetującego
-        Email->>RP: Przekierowanie na /reset-password?token=XXX
-        RP->>RP: Wyciągnięcie tokenu z URL
-        RP->>RPF: Renderowanie formularza z tokenem
-        RPF->>U: Wyświetlenie formularza (nowe hasło, potwierdzenie)
+        U->>Email: Click reset link
+        Email->>RP: Redirect to /reset-password?token=XXX
+        RP->>RP: Extract token from URL
+        RP->>RPF: Render form with token
+        RPF->>U: Display form (new password, confirmation)
 
-        U->>RPF: Wprowadzenie nowego hasła
-        RPF->>RPF: Walidacja client-side (Zod)
-        RPF->>RPF: Sprawdzenie zgodności haseł
-        U->>RPF: Kliknięcie "Zresetuj hasło"
-        RPF->>RPF: Wyświetlenie loading state
+        U->>RPF: Enter new password
+        RPF->>RPF: Client-side validation (Zod)
+        RPF->>RPF: Check password match
+        U->>RPF: Click "Reset password"
+        RPF->>RPF: Show loading state
         RPF->>API2: POST {token, newPassword}
-        API2->>API2: Walidacja (Zod)
+        API2->>API2: Validation (Zod)
         API2->>SB: updateUser({password: newPassword})
 
-        alt Token nieprawidłowy/wygasły
+        alt Token invalid/expired
             SB-->>API2: Error: Invalid token
             API2-->>RPF: 401 Unauthorized
-            RPF->>U: Komunikat: "Link wygasł. Zażądaj nowego"
-        else Sukces
-            SB->>SB: Aktualizacja hasła
+            RPF->>U: Message: "Link expired. Request a new one"
+        else Success
+            SB->>SB: Update password
             SB-->>API2: Success {session}
-            API2->>API2: Ustawienie session cookies
+            API2->>API2: Set session cookies
             API2-->>RPF: 200 OK
             RPF->>CAL: window.location.href = '/'
 
-            CAL->>MW: Request do / (z cookies)
-            MW->>MW: Sprawdzenie statusu onboardingu
+            CAL->>MW: Request to / (with cookies)
+            MW->>MW: Check onboarding status
 
-            alt Użytkownik nie ukończył onboardingu
-                MW->>U: Przekierowanie na /onboarding
-            else Użytkownik ukończył onboarding
-                MW->>CAL: Kontynuacja
-                CAL->>U: Wyświetlenie kalendarza
+            alt User has not completed onboarding
+                MW->>U: Redirect to /onboarding
+            else User completed onboarding
+                MW->>CAL: Continue
+                CAL->>U: Display calendar
             end
         end
     end
 ```
 
-## 5. Przepływ Onboardingu (Onboarding Flow)
+## 5. Onboarding Flow
 
 ```mermaid
 sequenceDiagram
-    actor U as Użytkownik
+    actor U as User
     participant OB as /onboarding
     participant MW as Middleware
     participant API as POST /api/v1/workouts
     participant DB as PostgreSQL
-    participant CAL as / (Kalendarz)
+    participant CAL as / (Calendar)
 
-    Note over U,OB: Użytkownik został przekierowany po rejestracji/logowaniu
+    Note over U,OB: User redirected after registration/login
 
-    U->>OB: Wejście na /onboarding
-    OB->>MW: Request (z session cookies)
-    MW->>MW: Weryfikacja autentykacji
+    U->>OB: Visit /onboarding
+    OB->>MW: Request (with session cookies)
+    MW->>MW: Verify authentication
     MW->>DB: COUNT workouts WHERE user_id = ?
 
-    alt Użytkownik ma >= 3 treningi
-        MW->>CAL: Przekierowanie na /
-    else Użytkownik ma < 3 treningi
-        MW->>OB: Kontynuacja
-        OB->>U: Wyświetlenie interfejsu onboardingu
-        OB->>U: Informacja: "Dodaj 3 ostatnie treningi"
+    alt User has >= 3 workouts
+        MW->>CAL: Redirect to /
+    else User has < 3 workouts
+        MW->>OB: Continue
+        OB->>U: Display onboarding interface
+        OB->>U: Notice: "Add your 3 recent workouts"
 
-        loop Dodawanie treningów (max 3)
-            U->>OB: Wypełnienie formularza treningu
-            OB->>OB: Walidacja (dystans, czas, data)
-            U->>OB: Kliknięcie "Dodaj trening"
+        loop Adding workouts (max 3)
+            U->>OB: Complete workout form
+            OB->>OB: Validation (distance, time, date)
+            U->>OB: Click "Add workout"
             OB->>API: POST /api/v1/workouts
             API->>API: requireUserId(context)
-            API->>API: Walidacja (Zod)
+            API->>API: Validation (Zod)
             API->>DB: INSERT INTO workouts (user_id, ...)
             DB-->>API: Success {workout}
             API-->>OB: 201 Created
-            OB->>OB: Aktualizacja licznika (treningi: X/3)
+            OB->>OB: Update counter (workouts: X/3)
 
-            alt Dodano 3 treningi
-                OB->>OB: Wyświetlenie przycisku "Zakończ"
+            alt 3 workouts added
+                OB->>OB: Display "Finish" button
             end
         end
 
-        U->>OB: Kliknięcie "Zakończ onboarding"
+        U->>OB: Click "Finish onboarding"
         OB->>CAL: window.location.href = '/'
-        CAL->>MW: Request (z cookies)
+        CAL->>MW: Request (with cookies)
         MW->>DB: COUNT workouts WHERE user_id = ?
         MW->>MW: workouts >= 3 ✓
-        MW->>CAL: Kontynuacja
-        CAL->>U: Wyświetlenie kalendarza
+        MW->>CAL: Continue
+        CAL->>U: Display calendar
     end
 ```
 
-## 6. Przepływ Wylogowania (Logout Flow)
+## 6. Logout Flow
 
 ```mermaid
 sequenceDiagram
-    actor U as Użytkownik
-    participant CAL as / (Kalendarz)
+    actor U as User
+    participant CAL as / (Calendar)
     participant UM as UserMenu.tsx
     participant SB as Supabase Client
     participant API as POST /api/v1/auth/logout
     participant Store as Auth Store
     participant LP as /login
 
-    U->>CAL: Korzystanie z aplikacji (zalogowany)
-    CAL->>UM: Renderowanie UserMenu (prawy górny róg)
-    UM->>U: Wyświetlenie menu użytkownika
+    U->>CAL: Use application (logged in)
+    CAL->>UM: Render UserMenu (top-right corner)
+    UM->>U: Display user menu
 
-    U->>UM: Kliknięcie "Wyloguj"
-    UM->>UM: Wyświetlenie loading state
+    U->>UM: Click "Log out"
+    UM->>UM: Show loading state
 
-    par Czyszczenie sesji client-side
+    par Clear client-side session
         UM->>SB: signOut()
-        SB->>SB: Czyszczenie localStorage
-        SB->>SB: Czyszczenie cookies
+        SB->>SB: Clear localStorage
+        SB->>SB: Clear cookies
         SB-->>UM: Success
-    and Czyszczenie store
+    and Clear store
         UM->>Store: authStore.clear()
         Store->>Store: userAtom = null
         Store->>Store: sessionAtom = null
     end
 
-    UM->>API: POST /api/v1/auth/logout (opcjonalne)
-    API->>API: Unieważnienie tokenu server-side
+    UM->>API: POST /api/v1/auth/logout (optional)
+    API->>API: Invalidate server-side token
     API-->>UM: 200 OK
 
     UM->>LP: window.location.href = '/login'
-    LP->>MW: Request (bez cookies)
-    MW->>MW: Brak sesji → dozwolony dostęp do /login
-    LP->>U: Wyświetlenie strony logowania
+    LP->>MW: Request (without cookies)
+    MW->>MW: No session → allow access to /login
+    LP->>U: Display login page
 ```
 
-## 7. Diagram Stanów Użytkownika (User State Diagram)
+## 7. User State Diagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Anonymous: Wejście na stronę
+    [*] --> Anonymous: Visit page
 
-    Anonymous --> Registering: Kliknięcie "Zarejestruj się"
-    Registering --> EmailVerificationPending: Wypełnienie formularza
-    EmailVerificationPending --> Authenticated: Weryfikacja emaila
-    EmailVerificationPending --> Anonymous: Anulowanie/Timeout
+    Anonymous --> Registering: Click "Sign up"
+    Registering --> EmailVerificationPending: Complete form
+    EmailVerificationPending --> Authenticated: Email verification
+    EmailVerificationPending --> Anonymous: Cancel/Timeout
 
-    Anonymous --> Authenticating: Kliknięcie "Zaloguj się"
-    Authenticating --> Authenticated: Poprawne dane
-    Authenticating --> Anonymous: Błędne dane
+    Anonymous --> Authenticating: Click "Log in"
+    Authenticating --> Authenticated: Valid credentials
+    Authenticating --> Anonymous: Invalid credentials
 
-    Anonymous --> PasswordRecovery: "Zapomniałem hasła"
-    PasswordRecovery --> EmailSent: Wysłanie emaila
-    EmailSent --> ResettingPassword: Kliknięcie linku
-    ResettingPassword --> Authenticated: Nowe hasło
-    ResettingPassword --> Anonymous: Token wygasł
+    Anonymous --> PasswordRecovery: "Forgot password"
+    PasswordRecovery --> EmailSent: Send email
+    EmailSent --> ResettingPassword: Click link
+    ResettingPassword --> Authenticated: New password
+    ResettingPassword --> Anonymous: Token expired
 
-    Authenticated --> OnboardingCheck: Po zalogowaniu
+    Authenticated --> OnboardingCheck: After login
 
     state OnboardingCheck <<choice>>
     OnboardingCheck --> Onboarding: workouts < 3
     OnboardingCheck --> Active: workouts >= 3
 
-    Onboarding --> OnboardingInProgress: Dodawanie treningów
-    OnboardingInProgress --> OnboardingInProgress: trening dodany (< 3)
-    OnboardingInProgress --> Active: 3 treningi dodane
+    Onboarding --> OnboardingInProgress: Adding workouts
+    OnboardingInProgress --> OnboardingInProgress: workout added (< 3)
+    OnboardingInProgress --> Active: 3 workouts added
 
-    Active --> UsingApp: Pełny dostęp
-    UsingApp --> UsingApp: Korzystanie z funkcji
-    UsingApp --> Anonymous: Wylogowanie
+    Active --> UsingApp: Full access
+    UsingApp --> UsingApp: Use features
+    UsingApp --> Anonymous: Logout
 
-    Active --> SessionExpired: Token wygasł
-    SessionExpired --> Anonymous: Przekierowanie na /login
+    Active --> SessionExpired: Token expired
+    SessionExpired --> Anonymous: Redirect to /login
 
     note right of Anonymous
-        - Dostęp tylko do stron publicznych
+        - Public pages only
         - /login, /register, /forgot-password
     end note
 
     note right of Active
-        - Pełny dostęp do aplikacji
-        - Kalendarz, treningi, AI
+        - Full application access
+        - Calendar, workouts, AI
     end note
 
     note right of Onboarding
-        - Ograniczony dostęp
-        - Tylko /onboarding dostępne
+        - Limited access
+        - Only /onboarding available
     end note
 ```
 
-## 8. Architektura Middleware i Ochrony Tras (Route Protection)
+## 8. Middleware and Route Protection Architecture
 
 ```mermaid
 flowchart TD
     Start([Request]) --> MW[Middleware]
-    MW --> CheckPath{Sprawdź ścieżkę}
+    MW --> CheckPath{Check path}
 
-    CheckPath -->|/api/v1/auth/*| AllowAPI[Zezwól na API auth]
-    CheckPath -->|/login, /register, etc.| CheckPublic{Czy zalogowany?}
-    CheckPath -->|Inne ścieżki| CheckAuth{Czy zalogowany?}
+    CheckPath -->|/api/v1/auth/*| AllowAPI[Allow auth API]
+    CheckPath -->|/login, /register, etc.| CheckPublic{Logged in?}
+    CheckPath -->|Other paths| CheckAuth{Logged in?}
 
-    CheckPublic -->|Tak| RedirectHome[Przekieruj na /]
-    CheckPublic -->|Nie| AllowPublic[Renderuj stronę publiczną]
+    CheckPublic -->|Yes| RedirectHome[Redirect to /]
+    CheckPublic -->|No| AllowPublic[Render public page]
 
-    CheckAuth -->|Nie| RedirectLogin[Przekieruj na /login?redirectTo=...]
-    CheckAuth -->|Tak| CheckOnboarding{Sprawdź onboarding}
+    CheckAuth -->|No| RedirectLogin[Redirect to /login?redirectTo=...]
+    CheckAuth -->|Yes| CheckOnboarding{Check onboarding}
 
-    CheckOnboarding -->|Ścieżka = /onboarding| AllowOnboarding[Renderuj /onboarding]
-    CheckOnboarding -->|Inna ścieżka| CountWorkouts[COUNT workouts]
+    CheckOnboarding -->|Path = /onboarding| AllowOnboarding[Render /onboarding]
+    CheckOnboarding -->|Other path| CountWorkouts[COUNT workouts]
 
     CountWorkouts --> WorkoutsCheck{workouts >= 3?}
-    WorkoutsCheck -->|Nie| RedirectOnboarding[Przekieruj na /onboarding]
-    WorkoutsCheck -->|Tak| SetContext[Ustaw context.locals]
+    WorkoutsCheck -->|No| RedirectOnboarding[Redirect to /onboarding]
+    WorkoutsCheck -->|Yes| SetContext[Set context.locals]
 
     SetContext --> AddUser[context.locals.user]
     AddUser --> AddSupabase[context.locals.supabase]
@@ -437,12 +437,12 @@ flowchart TD
     style Next fill:#27AE60,color:#fff
 ```
 
-## 9. Integracja z Row Level Security (RLS)
+## 9. Row Level Security (RLS) Integration
 
 ```mermaid
 flowchart LR
     subgraph Client ["Client (Browser)"]
-        User[Użytkownik]
+        User[User]
         Form[LoginForm/RegisterForm]
         SBClient[Supabase Client]
     end
@@ -468,25 +468,25 @@ flowchart LR
         end
     end
 
-    User -->|Wypełnia formularz| Form
+    User -->|Completes form| Form
     Form -->|signInWithPassword| SBClient
     SBClient -->|HTTP + JWT| Auth
-    Auth -->|Zwraca session| SBClient
-    SBClient -->|Zapisuje do localStorage| SBClient
+    Auth -->|Returns session| SBClient
+    SBClient -->|Saves to localStorage| SBClient
 
-    User -->|Request do /api/v1/workouts| MW
+    User -->|Request to /api/v1/workouts| MW
     MW -->|Authorization: Bearer TOKEN| API
-    API -->|createServerClient z JWT| SBServer
-    SBServer -->|Query z JWT| Auth
-    Auth -->|Weryfikuje JWT| Auth
+    API -->|createServerClient with JWT| SBServer
+    SBServer -->|Query with JWT| Auth
+    Auth -->|Verifies JWT| Auth
 
     Auth -.->|auth.uid = user_id| RLS1
     Auth -.->|auth.uid = user_id| RLS2
     Auth -.->|auth.uid = user_id| RLS3
 
     SBServer -->|SELECT * FROM workouts| WorkoutsTable
-    WorkoutsTable -->|RLS filtruje| RLS1
-    RLS1 -->|Tylko własne rekordy| SBServer
+    WorkoutsTable -->|RLS filters| RLS1
+    RLS1 -->|Own records only| SBServer
     SBServer -->|Response| API
     API -->|JSON| User
 
@@ -498,25 +498,25 @@ flowchart LR
     style SBServer fill:#4A90E2,color:#fff
 ```
 
-## 10. Podsumowanie - Kluczowe Elementy Systemu
+## 10. Summary - Key System Elements
 
 ```mermaid
 mindmap
-  root((System<br/>Autentykacji))
+  root((Authentication<br/>System))
     Frontend
-      Strony publiczne
+      Public pages
         /login
         /register
         /forgot-password
         /reset-password
-      Komponenty React
+      React components
         LoginForm.tsx
         RegisterForm.tsx
         ForgotPasswordForm.tsx
         ResetPasswordForm.tsx
         UserMenu.tsx
         AuthProvider.tsx
-      Walidacja client-side
+      Client-side validation
         Zod schemas
         Real-time validation
         Error messages
@@ -529,9 +529,9 @@ mindmap
         POST /api/v1/auth/reset-password
         GET /api/v1/auth/me
       Middleware
-        Weryfikacja JWT
-        Sprawdzanie onboardingu
-        Przekierowania
+        JWT verification
+        Onboarding check
+        Redirects
         context.locals
       Utilities
         requireUserId
@@ -549,11 +549,11 @@ mindmap
         Refresh tokens
         Auto refresh
       Email Service
-        Weryfikacja email
-        Reset hasła
+        Email verification
+        Password reset
     Database
       auth.users
-        Zarządzane przez Supabase
+        Managed by Supabase
         Email verification
       user_profiles
         Trigger: handle_new_user
@@ -561,7 +561,7 @@ mindmap
         RLS policies
       RLS Policies
         user_id = auth.uid
-        Ochrona wszystkich tabel
+        Protect all tables
     Security
       Rate Limiting
         Login: 5/15min
@@ -578,100 +578,102 @@ mindmap
 
 ---
 
-## Notatki Implementacyjne
+## Implementation Notes
 
-### Status Implementacji w Codebase
+### Implementation Status in the Codebase
 
-#### ✅ ZAIMPLEMENTOWANE:
+#### ✅ IMPLEMENTED:
+
 1. **Middleware** - `/src/middleware/index.ts`
-   - Weryfikacja JWT z Authorization header
+   - JWT verification from Authorization header
    - Per-request Supabase client (RLS support)
-   - Sprawdzanie statusu onboardingu
-   - Przekierowania do /onboarding
+   - Onboarding status check
+   - Redirects to /onboarding
 
 2. **Auth Utilities** - `/src/lib/http/auth.ts`
-   - `requireUserId()` - wymaga user JWT
-   - `requireServiceRole()` - wymaga service-role key
+   - `requireUserId()` - requires user JWT
+   - `requireServiceRole()` - requires service-role key
 
 3. **Supabase Client** - `/src/db/supabase.client.ts`
    - Browser-side Supabase client
-   - Konfiguracja z env variables
+   - Configuration from env variables
 
 4. **UserMenu Component** - `/src/components/UserMenu.tsx`
    - Logout functionality
    - Redirects to /login after logout
 
 5. **Database RLS**
-   - Wszystkie tabele mają RLS enabled
-   - Polityki: `user_id = auth.uid()`
-   - Foreign keys do `auth.users(id)`
+   - All tables have RLS enabled
+   - Policies: `user_id = auth.uid()`
+   - Foreign keys to `auth.users(id)`
 
 6. **Test Script** - `/.curls/auth-test-user.sh`
-   - Tworzenie/logowanie test usera
-   - Zwraca JWT token
+   - Create/log in test user
+   - Returns JWT token
 
-#### ❌ NIE ZAIMPLEMENTOWANE (z tej specyfikacji):
-1. Strony: `/login`, `/register`, `/forgot-password`, `/reset-password`
-2. Komponenty: `LoginForm`, `RegisterForm`, etc.
+#### ❌ NOT IMPLEMENTED (from this specification):
+
+1. Pages: `/login`, `/register`, `/forgot-password`, `/reset-password`
+2. Components: `LoginForm`, `RegisterForm`, etc.
 3. API endpoints: `/api/v1/auth/*`
 4. Validation schemas (Zod)
 5. AuthService class
 6. Auth Store (nanostores)
 7. Rate limiting
-8. E2E tests dla auth flows
+8. E2E tests for auth flows
 
-### Kolejność Implementacji (Zalecana)
+### Implementation Order (Recommended)
 
-1. **Faza 1: Podstawowe strony i formularze**
+1. **Phase 1: Basic pages and forms**
    - `/login.astro` + `LoginForm.tsx`
    - `/register.astro` + `RegisterForm.tsx`
-   - Walidacja Zod dla obu formularzy
+   - Zod validation for both forms
 
-2. **Faza 2: API endpoints**
+2. **Phase 2: API endpoints**
    - `POST /api/v1/auth/login`
    - `POST /api/v1/auth/register`
    - `POST /api/v1/auth/logout`
 
-3. **Faza 3: Password recovery**
+3. **Phase 3: Password recovery**
    - `/forgot-password.astro` + `ForgotPasswordForm.tsx`
    - `/reset-password.astro` + `ResetPasswordForm.tsx`
    - `POST /api/v1/auth/forgot-password`
    - `POST /api/v1/auth/reset-password`
 
-4. **Faza 4: Auth store i session management**
+4. **Phase 4: Auth store and session management**
    - `authStore.ts` (nanostores)
    - `AuthProvider.tsx`
    - Auto refresh logic
 
-5. **Faza 5: Security i polish**
+5. **Phase 5: Security and polish**
    - Rate limiting
    - Error handling improvements
    - E2E tests
    - User profiles migration
 
-### Zgodność z PRD
+### PRD Compliance
 
-Wszystkie diagramy są zgodne z wymaganiami z `.ai/prd.md`:
+All diagrams comply with `.ai/prd.md` requirements:
 
-- ✅ **Bezpieczny dostęp** (Punkt 60-73)
-  - Dedykowane strony logowania i rejestracji
-  - Wymaganie email + hasło
-  - Brak zewnętrznych serwisów logowania
-  - Odzyskiwanie hasła
-  - Wylogowanie z przekierowaniem
+- ✅ **Secure access** (Lines 60-73)
+  - Dedicated login and registration pages
+  - Email + password required
+  - No external login services
+  - Password recovery
+  - Logout with redirect
 
-- ✅ **Onboarding** (Punkt 32-36)
-  - Wymagane 3 treningi przed dostępem do głównej aplikacji
-  - Automatyczne przekierowanie po rejestracji
-  - Sprawdzanie statusu w middleware
+- ✅ **Onboarding** (Lines 32-36)
+  - 3 workouts required before accessing the main application
+  - Automatic redirect after registration
+  - Status check in middleware
 
-- ✅ **Chronione funkcjonalności** (Punkt 68)
-  - Generowanie treningów: wymaga auth
-  - Zarządzanie treningami: wymaga auth
-  - Kalendarz: wymaga auth
-  - Widok detali: wymaga auth
+- ✅ **Protected features** (Lines 68)
+  - Workout generation: requires auth
+  - Workout management: requires auth
+  - Calendar: requires auth
+  - Detail view: requires auth
 
-### Technologie i Integracje
+### Technologies and Integrations
 
 - **Framework**: Astro 5 (SSR mode)
 - **Auth Provider**: Supabase Auth

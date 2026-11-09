@@ -1,40 +1,44 @@
 # API Endpoint Implementation Plan: Workouts Management
 
-## 1. Przegląd punktu końcowego
+## 1. Endpoint Overview
 
-System zarządzania treningami (workouts) jest sercem aplikacji. Obsługuje pełny lifecycle treningu: planowanie, realizację, ocenę oraz różne stany (planned, completed, skipped, canceled). Endpoints zapewniają CRUD operations oraz domain-specific actions (complete, skip, cancel, rate). Dodatkowo oferują widoki specjalne: last3 (ostatnie 3 ukończone treningi) oraz calendar (grupowanie po datach).
+Workout management is the application's core. It covers the full workout lifecycle: planning, completion, rating, and states (planned, completed, skipped, canceled). Endpoints provide CRUD and domain-specific actions (complete, skip, cancel, rate), plus special views: last3 (last 3 completed workouts) and calendar (grouped by date).
 
-### Kluczowe cechy:
-- **Autoryzacja**: Wszystkie operacje wymagają uwierzytelnionego użytkownika
-- **Ownership**: Użytkownik może operować tylko na swoich treningach
-- **Status machine**: Kontrolowane przejścia między statusami
-- **Validation**: Złożone reguły biznesowe (np. metrics wymagane tylko dla completed)
-- **Performance**: Optymalizowane zapytania z indeksami
-- **Data integrity**: Unikalność position per (user_id, planned_date)
+### Key Features:
 
-## 2. Szczegóły żądania
+- **Authorization**: All operations require an authenticated user
+- **Ownership**: Users may operate only on their own workouts
+- **Status machine**: Controlled status transitions
+- **Validation**: Complex business rules (e.g., metrics required only for completed)
+- **Performance**: Optimized indexed queries
+- **Data integrity**: Unique position per (user_id, planned_date)
+
+## 2. Request Details
 
 ### 2.1 GET /api/v1/workouts
 
-Lista treningów z zaawansowanymi filtrami i paginacją.
+Workout list with advanced filters and pagination.
 
-**Parametry query (wszystkie opcjonalne):**
-- `status` - filtr statusu: `planned`, `completed`, `skipped`, `canceled`
-- `training_type_code` - typ treningu (multi: comma-separated, np. `easy,tempo`)
-- `origin` - źródło: `manual`, `ai`, `import`
-- `rating` - ocena: `too_easy`, `just_right`, `too_hard`
-- `planned_date_gte` - data planowana od (YYYY-MM-DD)
-- `planned_date_lte` - data planowana do (YYYY-MM-DD)
-- `completed_at_gte` - data ukończenia od (ISO 8601)
-- `completed_at_lte` - data ukończenia do (ISO 8601)
-- `sort` - sortowanie (default: `planned_date:asc,position:asc` dla planned; `completed_at:desc` dla completed)
-- `page` - numer strony (default: 1)
-- `per_page` - liczba wyników (default: 20, max: 100)
+**Query parameters (all optional):**
+
+- `status` - status filter: `planned`, `completed`, `skipped`, `canceled`
+- `training_type_code` - workout type (multi: comma-separated, e.g., `easy,tempo`)
+- `origin` - source: `manual`, `ai`, `import`
+- `rating` - rating: `too_easy`, `just_right`, `too_hard`
+- `planned_date_gte` - planned date from (YYYY-MM-DD)
+- `planned_date_lte` - planned date through (YYYY-MM-DD)
+- `completed_at_gte` - completion date from (ISO 8601)
+- `completed_at_lte` - completion date through (ISO 8601)
+- `sort` - sorting (default: `planned_date:asc,position:asc` for planned; `completed_at:desc` for completed)
+- `page` - page number (default: 1)
+- `per_page` - result count (default: 20, max: 100)
 
 **Headers:**
+
 - `Authorization` - Supabase session token (from cookies)
 
 **Response 200:**
+
 ```json
 {
   "data": [
@@ -63,9 +67,10 @@ Lista treningów z zaawansowanymi filtrami i paginacją.
 
 ### 2.2 POST /api/v1/workouts
 
-Utworzenie nowego treningu - planned (tylko plan) lub completed (z metrykami realizacji).
+Create a workout - planned (plan only) or completed (with actual metrics).
 
 **Request Body (planned workout):**
+
 ```json
 {
   "training_type_code": "easy",
@@ -82,6 +87,7 @@ Utworzenie nowego treningu - planned (tylko plan) lub completed (z metrykami rea
 ```
 
 **Request Body (completed workout):**
+
 ```json
 {
   "training_type_code": "easy",
@@ -104,6 +110,7 @@ Utworzenie nowego treningu - planned (tylko plan) lub completed (z metrykami rea
 ```
 
 **Response 201:**
+
 ```json
 {
   "data": {
@@ -134,12 +141,14 @@ Utworzenie nowego treningu - planned (tylko plan) lub completed (z metrykami rea
 
 ### 2.3 GET /api/v1/workouts/{id}
 
-Pobranie szczegółów pojedynczego treningu.
+Retrieve details of a single workout.
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Response 200:**
+
 ```json
 {
   "data": {
@@ -174,12 +183,14 @@ Pobranie szczegółów pojedynczego treningu.
 
 ### 2.4 PATCH /api/v1/workouts/{id}
 
-Aktualizacja treningu (drobne poprawki, edycja planu).
+Update a workout (minor corrections, plan edits).
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Request Body (partial update):**
+
 ```json
 {
   "planned_distance_m": 6000,
@@ -192,7 +203,8 @@ Aktualizacja treningu (drobne poprawki, edycja planu).
 }
 ```
 
-**Immutable fields (nie można zmieniać):**
+**Immutable fields (cannot be changed):**
+
 - `id`, `user_id`, `origin`, `ai_suggestion_id` (once set), `avg_pace_s_per_km` (calculated)
 
 **Response 200:** Workout detail
@@ -203,25 +215,28 @@ Aktualizacja treningu (drobne poprawki, edycja planu).
 
 ### 2.5 DELETE /api/v1/workouts/{id}
 
-Usunięcie treningu.
+Delete a workout.
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Response 204:** No Content
 
-**Errors:** 401, 403, 404, 409 (FK constraint - workout z accepted AI suggestion)
+**Errors:** 401, 403, 404, 409 (FK constraint - workout from accepted AI suggestion)
 
 ---
 
 ### 2.6 POST /api/v1/workouts/{id}/complete
 
-Oznaczenie treningu jako ukończonego (domain action).
+Mark a workout completed (domain action).
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Request Body:**
+
 ```json
 {
   "distance_m": 5200,
@@ -232,7 +247,7 @@ Oznaczenie treningu jako ukończonego (domain action).
 }
 ```
 
-**Response 200:** Workout detail (status=completed, avg_pace obliczone)
+**Response 200:** Workout detail (status=completed, avg_pace calculated)
 
 **Errors:** 401, 403, 404, 409 (invalid state transition), 422
 
@@ -240,10 +255,11 @@ Oznaczenie treningu jako ukończonego (domain action).
 
 ### 2.7 POST /api/v1/workouts/{id}/skip
 
-Oznaczenie jako pominięty.
+Mark as skipped.
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Request Body:** Empty `{}`
 
@@ -255,10 +271,11 @@ Oznaczenie jako pominięty.
 
 ### 2.8 POST /api/v1/workouts/{id}/cancel
 
-Oznaczenie jako anulowany.
+Mark as canceled.
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Request Body:** Empty `{}`
 
@@ -270,12 +287,14 @@ Oznaczenie jako anulowany.
 
 ### 2.9 POST /api/v1/workouts/{id}/rate
 
-Ocena ukończonego treningu.
+Rate a completed workout.
 
 **URL params:**
-- `id` - UUID treningu
+
+- `id` - workout UUID
 
 **Request Body:**
+
 ```json
 {
   "rating": "too_hard"
@@ -290,12 +309,14 @@ Ocena ukończonego treningu.
 
 ### 2.10 GET /api/v1/workouts/last3
 
-Ostatnie 3 ukończone treningi (dla AI context).
+Last 3 completed workouts (for AI context).
 
-**Query params (opcjonalne):**
-- `training_type_code` - filtr typu (jeśli brak: ostatnie 3 overall)
+**Query params (optional):**
+
+- `training_type_code` - type filter (if omitted: last 3 overall)
 
 **Response 200:**
+
 ```json
 {
   "data": [
@@ -317,16 +338,19 @@ Ostatnie 3 ukończone treningi (dla AI context).
 
 ### 2.11 GET /api/v1/calendar
 
-Widok kalendarza (grupowanie po datach).
+Calendar view (grouped by date).
 
-**Query params (wymagane):**
-- `start` - data od (YYYY-MM-DD)
-- `end` - data do (YYYY-MM-DD)
+**Query params (required):**
 
-**Query params (opcjonalne):**
-- `status` - filtr statusu
+- `start` - date from (YYYY-MM-DD)
+- `end` - date through (YYYY-MM-DD)
+
+**Query params (optional):**
+
+- `status` - status filter
 
 **Response 200:**
+
 ```json
 {
   "data": {
@@ -355,11 +379,12 @@ Widok kalendarza (grupowanie po datach).
 
 ---
 
-## 3. Wykorzystywane typy
+## 3. Types Used
 
-Z `src/types.ts`:
+From `src/types.ts`:
 
 ### DTOs:
+
 ```typescript
 // Lista workouts (summary)
 export type WorkoutSummaryDto = Pick<
@@ -376,22 +401,16 @@ export type WorkoutSummaryDto = Pick<
   | "avg_pace_s_per_km"
 >;
 
-// Szczegóły workout (detail)
+// Workout details
 export type WorkoutDetailDto = Omit<WorkoutRow, "steps_jsonb"> & {
   steps: WorkoutStepDto[];
 };
 
 // Last3 item
-export type WorkoutLast3ItemDto = Pick<
-  WorkoutRow,
-  "id" | "completed_at" | "training_type_code"
->;
+export type WorkoutLast3ItemDto = Pick<WorkoutRow, "id" | "completed_at" | "training_type_code">;
 
 // Calendar item
-export type CalendarWorkoutItemDto = Pick<
-  WorkoutRow,
-  "id" | "training_type_code" | "status" | "position"
->;
+export type CalendarWorkoutItemDto = Pick<WorkoutRow, "id" | "training_type_code" | "status" | "position">;
 
 export interface CalendarDayDto {
   date: string; // YYYY-MM-DD
@@ -413,6 +432,7 @@ export interface WorkoutStepDto {
 ```
 
 ### Commands:
+
 ```typescript
 export type WorkoutCreatePlannedCommand = Pick<
   WorkoutInsert,
@@ -460,6 +480,7 @@ export interface WorkoutRateCommand {
 ```
 
 ### Response envelopes:
+
 ```typescript
 export interface ApiResponse<T> {
   data: T;
@@ -475,156 +496,156 @@ export interface ApiListResponse<T> {
 
 ---
 
-## 4. Przepływ danych
+## 4. Data Flow
 
 ### 4.1 GET /api/v1/workouts (list)
 
-1. Endpoint parsuje i waliduje query params przez Zod (`listQuerySchema`)
-2. Weryfikuje user session (`context.locals.user`)
+1. Endpoint parses and validates query params with Zod (`listQuerySchema`)
+2. Verifies user session (`context.locals.user`)
 3. Service `workoutsService.listWorkouts(supabase, userId, filters)`:
-   - Buduje query Supabase z filtrami (status, type, origin, rating, date ranges)
-   - Aplikuje sortowanie (default zależy od filtra status)
-   - Wykonuje count query dla total
-   - Pobiera paginated results
-   - Transformuje do WorkoutSummaryDto[] (bez steps dla wydajności)
-4. Endpoint zwraca ApiListResponse z metadanymi paginacji
+   - Builds Supabase query with filters (status, type, origin, rating, date ranges)
+   - Applies sorting (default depends on status filter)
+   - Executes count query for total
+   - Fetches paginated results
+   - Transforms to WorkoutSummaryDto[] (without steps for performance)
+4. Endpoint returns ApiListResponse with pagination metadata
 
 ### 4.2 POST /api/v1/workouts (create)
 
-1. Endpoint waliduje body przez Zod (`createWorkoutSchema`)
-   - Conditional validation: jeśli status=completed, wymaga metryk realizacji
-   - Waliduje steps (min 1, każdy ma distance lub duration)
-2. Weryfikuje user session
+1. Endpoint validates body with Zod (`createWorkoutSchema`)
+   - Conditional validation: status=completed requires actual metrics
+   - Validates steps (min 1, each with distance or duration)
+2. Verifies user session
 3. Service `workoutsService.createWorkout(supabase, userId, command)`:
-   - Sprawdza czy training_type_code istnieje (FK validation)
-   - Sprawdza unikalność (user_id, planned_date, position)
-   - Transformuje steps → steps_jsonb
-   - Oblicza avg_pace_s_per_km jeśli completed
-   - Ustawia origin=manual, status=planned (default)
-   - INSERT do workouts table
-   - Zwraca WorkoutDetailDto
-4. Endpoint zwraca 201 Created z ApiResponse
+   - Checks training_type_code exists (FK validation)
+   - Checks (user_id, planned_date, position) uniqueness
+   - Transforms steps → steps_jsonb
+   - Calculates avg_pace_s_per_km if completed
+   - Sets origin=manual, status=planned (default)
+   - INSERT into workouts table
+   - Returns WorkoutDetailDto
+4. Endpoint returns 201 Created with ApiResponse
 
 ### 4.3 GET /api/v1/workouts/{id} (detail)
 
-1. Endpoint ekstraktuje id z URL params
-2. Weryfikuje user session
+1. Endpoint extracts id from URL params
+2. Verifies user session
 3. Service `workoutsService.getWorkoutById(supabase, userId, id)`:
    - SELECT workout WHERE id=? AND user_id=?
-   - Guard: jeśli brak → throw 404
-   - Guard: jeśli user_id nie zgadza się → throw 403
-   - Transformuje steps_jsonb → steps (WorkoutStepDto[])
-4. Endpoint zwraca 200 OK z ApiResponse
+   - Guard: if missing → throw 404
+   - Guard: if user_id mismatches → throw 403
+   - Transforms steps_jsonb → steps (WorkoutStepDto[])
+4. Endpoint returns 200 OK with ApiResponse
 
 ### 4.4 PATCH /api/v1/workouts/{id} (update)
 
-1. Endpoint waliduje body przez Zod (`updateWorkoutSchema`)
+1. Endpoint validates body with Zod (`updateWorkoutSchema`)
    - Partial validation
-   - Blokuje immutable fields (origin, ai_suggestion_id, avg_pace)
-2. Weryfikuje user session
+   - Blocks immutable fields (origin, ai_suggestion_id, avg_pace)
+2. Verifies user session
 3. Service `workoutsService.updateWorkout(supabase, userId, id, command)`:
    - SELECT current workout (ownership check)
-   - Sprawdza czy immutable fields nie są w command
-   - Transformuje steps jeśli obecne
-   - Recalculates avg_pace jeśli zmieniono distance/duration
+   - Checks immutable fields are absent from command
+   - Transforms steps if present
+   - Recalculates avg_pace if distance/duration changed
    - UPDATE workout
-   - Zwraca WorkoutDetailDto
-4. Endpoint zwraca 200 OK
+   - Returns WorkoutDetailDto
+4. Endpoint returns 200 OK
 
 ### 4.5 DELETE /api/v1/workouts/{id}
 
-1. Weryfikuje user session
+1. Verifies user session
 2. Service `workoutsService.deleteWorkout(supabase, userId, id)`:
    - SELECT workout (ownership check)
-   - Sprawdza czy nie ma FK constraint (ai_suggestion accepted_workout_id)
+   - Checks FK constraint (ai_suggestion accepted_workout_id)
    - DELETE workout WHERE id=? AND user_id=?
-   - Guard: jeśli FK error → throw 409 z remediation hint
-3. Endpoint zwraca 204 No Content
+   - Guard: FK error → throw 409 with remediation hint
+3. Endpoint returns 204 No Content
 
 ### 4.6 POST /api/v1/workouts/{id}/complete
 
-1. Endpoint waliduje body przez Zod (`completeWorkoutSchema`)
-2. Weryfikuje user session
+1. Endpoint validates body with Zod (`completeWorkoutSchema`)
+2. Verifies user session
 3. Service `workoutsService.completeWorkout(supabase, userId, id, command)`:
    - SELECT workout (ownership + state check)
-   - Guard: jeśli status=completed → throw 409
+   - Guard: if status=completed → throw 409
    - UPDATE workout SET status=completed, distance_m, duration_s, avg_hr_bpm, completed_at, rating
-   - Oblicza avg_pace_s_per_km = duration_s / (distance_m/1000)
-   - Zwraca WorkoutDetailDto
-4. Endpoint zwraca 200 OK
+   - Calculates avg_pace_s_per_km = duration_s / (distance_m/1000)
+   - Returns WorkoutDetailDto
+4. Endpoint returns 200 OK
 
 ### 4.7 POST /api/v1/workouts/{id}/skip
 
-1. Weryfikuje user session
+1. Verifies user session
 2. Service `workoutsService.skipWorkout(supabase, userId, id)`:
    - SELECT workout (ownership + state check)
-   - Guard: jeśli już skipped → throw 409
+   - Guard: if already skipped → throw 409
    - UPDATE workout SET status=skipped, distance_m=null, duration_s=null, avg_hr_bpm=null, completed_at=null, rating=null, avg_pace_s_per_km=null
-3. Endpoint zwraca 200 OK
+3. Endpoint returns 200 OK
 
 ### 4.8 POST /api/v1/workouts/{id}/cancel
 
-1. Weryfikuje user session
+1. Verifies user session
 2. Service `workoutsService.cancelWorkout(supabase, userId, id)`:
    - SELECT workout (ownership + state check)
-   - Guard: jeśli już canceled → throw 409
+   - Guard: if already canceled → throw 409
    - UPDATE workout SET status=canceled, clear metrics
-3. Endpoint zwraca 200 OK
+3. Endpoint returns 200 OK
 
 ### 4.9 POST /api/v1/workouts/{id}/rate
 
-1. Endpoint waliduje body przez Zod (`rateWorkoutSchema`)
-2. Weryfikuje user session
+1. Endpoint validates body with Zod (`rateWorkoutSchema`)
+2. Verifies user session
 3. Service `workoutsService.rateWorkout(supabase, userId, id, command)`:
    - SELECT workout (ownership check)
-   - Guard: jeśli status != completed → throw 409
+   - Guard: if status != completed → throw 409
    - UPDATE workout SET rating=?
-4. Endpoint zwraca 200 OK
+4. Endpoint returns 200 OK
 
 ### 4.10 GET /api/v1/workouts/last3
 
-1. Endpoint parsuje query params (`last3QuerySchema`)
-2. Weryfikuje user session
+1. Endpoint parses query params (`last3QuerySchema`)
+2. Verifies user session
 3. Service `workoutsService.getLastThreeWorkouts(supabase, userId, trainingTypeCode?)`:
-   - SELECT z WHERE user_id=? AND status=completed
-   - Jeśli trainingTypeCode: AND training_type_code=?
+   - SELECT with WHERE user_id=? AND status=completed
+   - If trainingTypeCode: AND training_type_code=?
    - ORDER BY completed_at DESC LIMIT 3
-   - Używa indeksu: (user_id, training_type_code, completed_at DESC) lub (user_id, completed_at DESC)
-   - Transformuje do WorkoutLast3ItemDto[]
-4. Endpoint zwraca ApiListResponse (page=1, per_page=3, total=count)
+   - Uses index: (user_id, training_type_code, completed_at DESC) or (user_id, completed_at DESC)
+   - Transforms to WorkoutLast3ItemDto[]
+4. Endpoint returns ApiListResponse (page=1, per_page=3, total=count)
 
 ### 4.11 GET /api/v1/calendar
 
-1. Endpoint waliduje query params (`calendarQuerySchema`)
-   - start i end wymagane (YYYY-MM-DD)
-   - Walidacja: end >= start
-2. Weryfikuje user session
+1. Endpoint validates query params (`calendarQuerySchema`)
+   - start and end required (YYYY-MM-DD)
+   - Validation: end >= start
+2. Verifies user session
 3. Service `workoutsService.getCalendar(supabase, userId, start, end, status?)`:
-   - SELECT z WHERE user_id=? AND planned_date BETWEEN ? AND ?
-   - Jeśli status: AND status=?
+   - SELECT with WHERE user_id=? AND planned_date BETWEEN ? AND ?
+   - If status: AND status=?
    - ORDER BY planned_date, position
-   - Używa indeksu: (user_id, planned_date)
-   - Group by planned_date (w aplikacji lub przez SQL)
-   - Transformuje do CalendarDto (range + days[])
-4. Endpoint zwraca ApiResponse
+   - Uses index: (user_id, planned_date)
+   - Group by planned_date (in application or SQL)
+   - Transforms to CalendarDto (range + days[])
+4. Endpoint returns ApiResponse
 
 ---
 
-## 5. Względy bezpieczeństwa
+## 5. Security Considerations
 
-### 5.1 Autoryzacja i Uwierzytelnianie
+### 5.1 Authorization and Authentication
 
-- **Session validation**: Każdy endpoint sprawdza `context.locals.user`
-  - Jeśli brak: 401 Unauthorized
-- **Ownership verification**: Wszystkie operacje weryfikują `user_id` w WHERE clause
-  - Próba dostępu do cudzego workout: 403 Forbidden
-- **RLS (Row Level Security)**: Supabase policies jako backup security layer
+- **Session validation**: Each endpoint checks `context.locals.user`
+  - If missing: 401 Unauthorized
+- **Ownership verification**: All operations check `user_id` in WHERE
+  - Accessing another user's workout: 403 Forbidden
+- **RLS (Row Level Security)**: Supabase policies as a backup security layer
   - Policy: `workouts` table - enable RLS, allow SELECT/INSERT/UPDATE/DELETE only WHERE user_id = auth.uid()
 
-### 5.2 Walidacja danych wejściowych
+### 5.2 Input Validation
 
-- **Zod schemas**: Wszystkie dane wejściowe walidowane przez Zod przed przekazaniem do service
-- **Type safety**: TypeScript zapewnia type checking w compile time
+- **Zod schemas**: All inputs validated with Zod before service calls
+- **Type safety**: TypeScript provides compile-time type checking
 - **Range validation**:
   - `distance_m`: 100-100,000 (100m - 100km)
   - `duration_s`: 300-21,600 (5min - 6h)
@@ -641,74 +662,74 @@ export interface ApiListResponse<T> {
 
 ### 5.3 Immutability enforcement
 
-- **Immutable fields**: Blokowanie zmian przez PATCH:
-  - `id`, `user_id` - zawsze immutable
+- **Immutable fields**: Block PATCH changes:
+  - `id`, `user_id` - always immutable
   - `origin` - immutable (set once on create)
   - `ai_suggestion_id` - immutable once set
   - `avg_pace_s_per_km` - calculated field (read-only)
-- **Validation**: Zod schema dla PATCH wykrywa próby zmiany immutable fields → 422
+- **Validation**: PATCH Zod schema detects immutable field changes → 422
 
 ### 5.4 Business logic constraints
 
-- **Status transitions**: Walidacja poprawnych przejść statusów
+- **Status transitions**: Validate allowed transitions
   - planned → completed (via /complete)
   - planned → skipped (via /skip)
   - planned → canceled (via /cancel)
-  - completed → może zostać (update rating)
-  - Niepoprawne przejścia: 409 Conflict
+  - completed → may remain (update rating)
+  - Invalid transitions: 409 Conflict
 - **Metrics requirements**:
-  - status=completed WYMAGA: distance_m, duration_s, avg_hr_bpm, completed_at
-  - status!=completed: metrics muszą być NULL
-  - Validation w Zod + DB constraints
-- **Rating constraint**: rating dozwolony TYLKO dla status=completed
-- **Position uniqueness**: (user_id, planned_date, position) unique constraint w DB
-  - Duplikat: 409 Conflict
+  - status=completed REQUIRES: distance_m, duration_s, avg_hr_bpm, completed_at
+  - status!=completed: metrics must be NULL
+  - Zod validation + DB constraints
+- **Rating constraint**: rating allowed ONLY for status=completed
+- **Position uniqueness**: (user_id, planned_date, position) DB unique constraint
+  - Duplicate: 409 Conflict
 
 ### 5.5 SQL Injection prevention
 
-- **Parametryzowane queries**: Supabase query builder używa prepared statements
-- **No raw SQL**: Unikamy raw SQL queries
-- **Input sanitization**: Zod walidacja przed użyciem w queries
+- **Parameterized queries**: Supabase query builder uses prepared statements
+- **No raw SQL**: Avoid raw SQL queries
+- **Input sanitization**: Zod validation before query use
 
 ### 5.6 Foreign Key validation
 
-- **training_type_code**: Musi istnieć w `training_types` table
-  - Validation: SELECT przed INSERT/UPDATE
-  - FK constraint w DB (RESTRICT) - backup
-- **ai_suggestion_id**: Jeśli present, musi istnieć w `ai_suggestions` + belong to user
-  - Validation: SELECT z ownership check
+- **training_type_code**: Must exist in `training_types`
+  - Validation: SELECT before INSERT/UPDATE
+  - DB FK constraint (RESTRICT) - backup
+- **ai_suggestion_id**: If present, must exist in `ai_suggestions` and belong to user
+  - Validation: SELECT with ownership check
   - FK: (ai_suggestion_id, user_id) → (ai_suggestions.id, ai_suggestions.user_id)
 
 ### 5.7 Data exposure
 
-- **User isolation**: Nigdy nie zwracamy workout innych użytkowników
-- **Sensitive data**: avg_hr_bpm jest wrażliwy - tylko owner ma dostęp
-- **Error messages**: Nie leakujemy internal details (stack traces, DB errors)
-  - Generic messages: "Workout not found" zamiast "No row with id=..."
+- **User isolation**: Never return other users' workouts
+- **Sensitive data**: avg_hr_bpm is sensitive - owner access only
+- **Error messages**: Do not leak internal details (stack traces, DB errors)
+  - Generic messages: "Workout not found" instead of "No row with id=..."
 
 ---
 
-## 6. Obsługa błędów
+## 6. Error Handling
 
 ### 6.1 HTTP Status Codes
 
-- **200 OK**: Operacja zakończona sukcesem (GET, PATCH, domain actions)
-- **201 Created**: Workout utworzony (POST /workouts)
-- **204 No Content**: Workout usunięty (DELETE)
+- **200 OK**: Successful operation (GET, PATCH, domain actions)
+- **201 Created**: Workout created (POST /workouts)
+- **204 No Content**: Workout deleted (DELETE)
 - **400 Bad Request**: Malformed request (invalid JSON, missing required fields)
-- **401 Unauthorized**: Brak sesji użytkownika (no auth token or expired)
-- **403 Forbidden**: Próba dostępu do cudzego workout
-- **404 Not Found**: Workout nie istnieje
+- **401 Unauthorized**: No user session (no auth token or expired)
+- **403 Forbidden**: Access to another user's workout
+- **404 Not Found**: Workout does not exist
 - **409 Conflict**:
-  - Duplikat position dla (user_id, planned_date)
-  - Niepoprawne przejście statusu
-  - FK constraint na DELETE (accepted AI workout)
-- **422 Unprocessable Entity**: Błędy walidacji biznesowej (Zod validation errors)
-- **500 Internal Server Error**: Nieoczekiwane błędy DB/serwera
+  - Duplicate position for (user_id, planned_date)
+  - Invalid status transition
+  - FK constraint on DELETE (accepted AI workout)
+- **422 Unprocessable Entity**: Business validation errors (Zod)
+- **500 Internal Server Error**: Unexpected DB/server errors
 
 ### 6.2 Error Response Format
 
-Spójny format dla wszystkich błędów:
+Consistent format for all errors:
 
 ```json
 {
@@ -726,6 +747,7 @@ Spójny format dla wszystkich błędów:
 ```
 
 **Error codes:**
+
 - `unauthorized` - 401
 - `forbidden` - 403
 - `not_found` - 404
@@ -738,7 +760,7 @@ Spójny format dla wszystkich błędów:
 ### 6.3 Validation Errors (Zod)
 
 ```typescript
-// Przykład obsługi Zod errors
+// Example Zod error handling
 catch (err: any) {
   if (err.name === "ZodError") {
     const details = err.errors.map((e: any) => ({
@@ -762,6 +784,7 @@ catch (err: any) {
 ### 6.4 Database Errors
 
 **Unique constraint violation (23505):**
+
 ```json
 {
   "error": {
@@ -772,6 +795,7 @@ catch (err: any) {
 ```
 
 **Foreign key violation (23503):**
+
 ```json
 {
   "error": {
@@ -781,102 +805,113 @@ catch (err: any) {
 }
 ```
 
-### 6.5 Logowanie
+### 6.5 Logging
 
-**Warn level** (błędy użytkownika):
+**Warn level** (user errors):
+
 ```typescript
 console.warn("Validation error in POST /workouts", {
   userId: user.id,
   errors: zodError.errors,
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 ```
 
-**Error level** (błędy serwera):
+**Error level** (server errors):
+
 ```typescript
 console.error("Database error in GET /workouts", {
   userId: user.id,
   error: err.message,
   code: err.code,
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 });
 ```
 
-**Nie logować**:
-- Danych osobowych (HR, distances dla konkretnego użytkownika)
+**Do not log**:
+
+- Personal data (HR, distances for a specific user)
 - Auth tokens
-- Pełnych stack traces w production
+- Full stack traces in production
 
 ---
 
-## 7. Rozważania dotyczące wydajności
+## 7. Performance Considerations
 
 ### 7.1 Database Indexes
 
-**Krityczne indeksy** (już w DB schema):
-- `(user_id, planned_date)` - dla calendar view i list filtered by date
-- `(user_id, training_type_code, completed_at DESC)` - dla last3 per type
-- `(user_id, completed_at DESC)` - dla last3 overall
-- `(user_id, status)` - dla filtrowania po statusie
+**Critical indexes** (already in DB schema):
+
+- `(user_id, planned_date)` - calendar view and date-filtered list
+- `(user_id, training_type_code, completed_at DESC)` - last3 per type
+- `(user_id, completed_at DESC)` - last3 overall
+- `(user_id, status)` - status filtering
 - Unique: `(user_id, planned_date, position)` - integrity + performance
 
 ### 7.2 Query Optimization
 
-**Lista workouts (GET /workouts):**
-- Używaj `select()` tylko dla potrzebnych kolumn (WorkoutSummaryDto, nie pełny row)
-- Bez steps_jsonb w liście (duży payload) - tylko w GET /workouts/{id}
-- Paginacja zawsze aktywna (default per_page=20, max=100)
-- Count query optymalizowany: `select("*", { count: "exact", head: true })`
+**Workout list (GET /workouts):**
+
+- Use `select()` only for needed columns (WorkoutSummaryDto, not full row)
+- No steps_jsonb in list (large payload) - only in GET /workouts/{id}
+- Pagination always active (default per_page=20, max=100)
+- Optimized count query: `select("*", { count: "exact", head: true })`
 
 **Calendar view:**
-- Date range limited (max 90 dni? - do rozważenia)
-- Index (user_id, planned_date) zapewnia fast scan
-- Group by w aplikacji (JS) zamiast DB (prostsze)
+
+- Date range limited (max 90 days? - consider)
+- Index (user_id, planned_date) ensures fast scan
+- Group by in application (JS) rather than DB (simpler)
 
 **Last3 query:**
-- LIMIT 3 zawsze - minimalny payload
+
+- Always LIMIT 3 - minimal payload
 - Index (user_id, completed_at DESC) = index-only scan
-- Bez JOIN (training_types) - tylko code (denormalized)
+- No JOIN (training_types) - code only (denormalized)
 
 ### 7.3 Payload Size
 
-**Minimalizacja payloadu:**
-- Lista: WorkoutSummaryDto (bez steps, bez user_id)
-- Detail: WorkoutDetailDto (pełne dane tylko gdy potrzebne)
-- Last3: WorkoutLast3ItemDto (tylko id, completed_at, type)
+**Payload minimization:**
+
+- List: WorkoutSummaryDto (no steps, no user_id)
+- Detail: WorkoutDetailDto (full data only when needed)
+- Last3: WorkoutLast3ItemDto (only id, completed_at, type)
 - Calendar: CalendarWorkoutItemDto (minimal fields)
 
 **steps_jsonb:**
-- Przechowywane jako JSONB w DB (indexed, compressed)
-- Transformacja tylko przy odczycie/zapisie
-- Nie zwracane w list endpoints
+
+- Stored as JSONB in DB (indexed, compressed)
+- Transformation only on read/write
+- Not returned in list endpoints
 
 ### 7.4 Caching
 
-**Potencjalne strategie** (opcjonalne, poza MVP):
-- ETag dla GET /workouts/{id} (jak training-types)
-- Cache-Control headers dla calendar (private, max-age=300)
-- No cache dla list (dane dynamiczne, user-specific)
+**Potential strategies** (optional, beyond MVP):
+
+- ETag for GET /workouts/{id} (like training-types)
+- Cache-Control headers for calendar (private, max-age=300)
+- No cache for lists (dynamic, user-specific data)
 
 ### 7.5 Supabase Connection Pooling
 
 - Supabase managed service - connection pooling built-in
-- context.locals.supabase używa tego samego client dla całego request
-- Unikaj tworzenia nowych clients per query
+- context.locals.supabase uses the same client throughout a request
+- Avoid creating new clients per query
 
 ### 7.6 N+1 Query Prevention
 
-- **Nie** robić SELECT per workout w pętli
-- Jeden SELECT z filtrami dla listy
-- JOIN z training_types **nie jest potrzebny** (tylko code, już w workouts table)
+- **Do not** SELECT per workout in a loop
+- One SELECT with filters for list
+- JOIN with training_types **not needed** (only code, already in workouts)
 
 ---
 
-## 8. Kroki implementacji
+## 8. Implementation Steps
 
-### Krok 1: Struktura plików
+### Step 1: File Structure
 
-Utworzyć strukturę:
+Create structure:
+
 ```
 src/
 ├── lib/
@@ -901,81 +936,95 @@ src/
 │           └── calendar.ts           # GET calendar
 ```
 
-### Krok 2: Walidacja Zod (src/lib/validation/workouts.ts)
+### Step 2: Zod Validation (src/lib/validation/workouts.ts)
 
-Zaimplementować schematy walidacji:
+Implement validation schemas:
 
 ```typescript
 import { z } from "zod";
 
-// Helper schema dla steps
-const stepSchema = z.object({
-  part: z.enum(["warmup", "main", "cooldown", "segment"]),
-  distance_m: z.number().int().min(100).max(100000).optional(),
-  duration_s: z.number().int().min(60).max(21600).optional(),
-  notes: z.string().max(500).optional()
-}).refine(
-  (data) => data.distance_m !== undefined || data.duration_s !== undefined,
-  { message: "At least one of distance_m or duration_s is required" }
-);
+// Helper schema for steps
+const stepSchema = z
+  .object({
+    part: z.enum(["warmup", "main", "cooldown", "segment"]),
+    distance_m: z.number().int().min(100).max(100000).optional(),
+    duration_s: z.number().int().min(60).max(21600).optional(),
+    notes: z.string().max(500).optional(),
+  })
+  .refine((data) => data.distance_m !== undefined || data.duration_s !== undefined, {
+    message: "At least one of distance_m or duration_s is required",
+  });
 
 // List query schema
 export const listQuerySchema = z.object({
   status: z.enum(["planned", "completed", "skipped", "canceled"]).optional(),
-  training_type_code: z.string().optional().transform((val) =>
-    val ? val.split(",").map(s => s.trim()) : undefined
-  ),
+  training_type_code: z
+    .string()
+    .optional()
+    .transform((val) => (val ? val.split(",").map((s) => s.trim()) : undefined)),
   origin: z.enum(["manual", "ai", "import"]).optional(),
   rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
-  planned_date_gte: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  planned_date_lte: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  planned_date_gte: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  planned_date_lte: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   completed_at_gte: z.string().datetime().optional(),
   completed_at_lte: z.string().datetime().optional(),
   sort: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  per_page: z.coerce.number().int().min(1).max(100).default(20)
+  per_page: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 // Create workout schema (planned or completed)
-export const createWorkoutSchema = z.object({
-  training_type_code: z.string().min(1).max(50),
-  planned_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  position: z.number().int().min(1),
-  planned_distance_m: z.number().int().min(100).max(100000),
-  planned_duration_s: z.number().int().min(300).max(21600),
-  steps: z.array(stepSchema).min(1),
-  // Optional fields for completed workout
-  status: z.enum(["planned", "completed"]).optional(),
-  distance_m: z.number().int().min(100).max(100000).optional(),
-  duration_s: z.number().int().min(300).max(21600).optional(),
-  avg_hr_bpm: z.number().int().min(0).max(240).optional(),
-  completed_at: z.string().datetime().optional(),
-  rating: z.enum(["too_easy", "just_right", "too_hard"]).optional()
-}).refine(
-  (data) => {
-    if (data.status === "completed") {
-      return data.distance_m !== undefined &&
-             data.duration_s !== undefined &&
-             data.avg_hr_bpm !== undefined &&
-             data.completed_at !== undefined;
-    }
-    return true;
-  },
-  { message: "Completed workouts require distance_m, duration_s, avg_hr_bpm, and completed_at" }
-);
+export const createWorkoutSchema = z
+  .object({
+    training_type_code: z.string().min(1).max(50),
+    planned_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    position: z.number().int().min(1),
+    planned_distance_m: z.number().int().min(100).max(100000),
+    planned_duration_s: z.number().int().min(300).max(21600),
+    steps: z.array(stepSchema).min(1),
+    // Optional fields for completed workout
+    status: z.enum(["planned", "completed"]).optional(),
+    distance_m: z.number().int().min(100).max(100000).optional(),
+    duration_s: z.number().int().min(300).max(21600).optional(),
+    avg_hr_bpm: z.number().int().min(0).max(240).optional(),
+    completed_at: z.string().datetime().optional(),
+    rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.status === "completed") {
+        return (
+          data.distance_m !== undefined &&
+          data.duration_s !== undefined &&
+          data.avg_hr_bpm !== undefined &&
+          data.completed_at !== undefined
+        );
+      }
+      return true;
+    },
+    { message: "Completed workouts require distance_m, duration_s, avg_hr_bpm, and completed_at" }
+  );
 
 // Update workout schema
-export const updateWorkoutSchema = z.object({
-  planned_distance_m: z.number().int().min(100).max(100000).optional(),
-  planned_duration_s: z.number().int().min(300).max(21600).optional(),
-  steps: z.array(stepSchema).min(1).optional(),
-  distance_m: z.number().int().min(100).max(100000).optional(),
-  duration_s: z.number().int().min(300).max(21600).optional(),
-  avg_hr_bpm: z.number().int().min(0).max(240).optional(),
-  completed_at: z.string().datetime().optional(),
-  rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
-  status: z.enum(["planned", "completed", "skipped", "canceled"]).optional()
-}).strict(); // Strict mode - reject unknown fields (prevents immutable field changes)
+export const updateWorkoutSchema = z
+  .object({
+    planned_distance_m: z.number().int().min(100).max(100000).optional(),
+    planned_duration_s: z.number().int().min(300).max(21600).optional(),
+    steps: z.array(stepSchema).min(1).optional(),
+    distance_m: z.number().int().min(100).max(100000).optional(),
+    duration_s: z.number().int().min(300).max(21600).optional(),
+    avg_hr_bpm: z.number().int().min(0).max(240).optional(),
+    completed_at: z.string().datetime().optional(),
+    rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
+    status: z.enum(["planned", "completed", "skipped", "canceled"]).optional(),
+  })
+  .strict(); // Strict mode - reject unknown fields (prevents immutable field changes)
 
 // Complete workout schema
 export const completeWorkoutSchema = z.object({
@@ -983,28 +1032,27 @@ export const completeWorkoutSchema = z.object({
   duration_s: z.number().int().min(300).max(21600),
   avg_hr_bpm: z.number().int().min(0).max(240),
   completed_at: z.string().datetime(),
-  rating: z.enum(["too_easy", "just_right", "too_hard"]).optional()
+  rating: z.enum(["too_easy", "just_right", "too_hard"]).optional(),
 });
 
 // Rate workout schema
 export const rateWorkoutSchema = z.object({
-  rating: z.enum(["too_easy", "just_right", "too_hard"])
+  rating: z.enum(["too_easy", "just_right", "too_hard"]),
 });
 
 // Last3 query schema
 export const last3QuerySchema = z.object({
-  training_type_code: z.string().optional()
+  training_type_code: z.string().optional(),
 });
 
 // Calendar query schema
-export const calendarQuerySchema = z.object({
-  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  status: z.enum(["planned", "completed", "skipped", "canceled"]).optional()
-}).refine(
-  (data) => new Date(data.end) >= new Date(data.start),
-  { message: "End date must be >= start date" }
-);
+export const calendarQuerySchema = z
+  .object({
+    start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    status: z.enum(["planned", "completed", "skipped", "canceled"]).optional(),
+  })
+  .refine((data) => new Date(data.end) >= new Date(data.start), { message: "End date must be >= start date" });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 export type CreateWorkoutInput = z.infer<typeof createWorkoutSchema>;
@@ -1015,9 +1063,9 @@ export type Last3Query = z.infer<typeof last3QuerySchema>;
 export type CalendarQuery = z.infer<typeof calendarQuerySchema>;
 ```
 
-### Krok 3: Service Layer (src/lib/services/workoutsService.ts)
+### Step 3: Service Layer (src/lib/services/workoutsService.ts)
 
-Zaimplementować logikę biznesową:
+Implement business logic:
 
 ```typescript
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -1027,14 +1075,14 @@ import type {
   WorkoutDetailDto,
   WorkoutLast3ItemDto,
   CalendarDto,
-  WorkoutStepDto
+  WorkoutStepDto,
 } from "../../types";
 import type {
   ListQuery,
   CreateWorkoutInput,
   UpdateWorkoutInput,
   CompleteWorkoutInput,
-  RateWorkoutInput
+  RateWorkoutInput,
 } from "../validation/workouts";
 
 // Helper: Transform steps_jsonb to WorkoutStepDto[]
@@ -1107,7 +1155,7 @@ export async function listWorkouts(
 
   return {
     data: (data ?? []) as WorkoutSummaryDto[],
-    total: count ?? 0
+    total: count ?? 0,
   };
 }
 
@@ -1132,7 +1180,7 @@ export async function getWorkoutById(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1152,9 +1200,10 @@ export async function createWorkout(
   if (!typeExists) throw new Error("INVALID_TRAINING_TYPE");
 
   // Calculate avg_pace if completed
-  const avgPace = input.status === "completed" && input.distance_m && input.duration_s
-    ? calculateAvgPace(input.distance_m, input.duration_s)
-    : null;
+  const avgPace =
+    input.status === "completed" && input.distance_m && input.duration_s
+      ? calculateAvgPace(input.distance_m, input.duration_s)
+      : null;
 
   const insertData = {
     user_id: userId,
@@ -1171,14 +1220,10 @@ export async function createWorkout(
     avg_hr_bpm: input.avg_hr_bpm ?? null,
     completed_at: input.completed_at ?? null,
     rating: input.rating ?? null,
-    avg_pace_s_per_km: avgPace
+    avg_pace_s_per_km: avgPace,
   };
 
-  const { data, error } = await supabase
-    .from("workouts")
-    .insert(insertData)
-    .select("*")
-    .single();
+  const { data, error } = await supabase.from("workouts").insert(insertData).select("*").single();
 
   if (error) {
     if (error.code === "23505") throw new Error("DUPLICATE_POSITION");
@@ -1187,7 +1232,7 @@ export async function createWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1232,7 +1277,7 @@ export async function updateWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1245,11 +1290,7 @@ export async function deleteWorkout(
   // Check ownership first
   await getWorkoutById(supabase, userId, workoutId);
 
-  const { error } = await supabase
-    .from("workouts")
-    .delete()
-    .eq("id", workoutId)
-    .eq("user_id", userId);
+  const { error } = await supabase.from("workouts").delete().eq("id", workoutId).eq("user_id", userId);
 
   if (error) {
     if (error.code === "23503") throw new Error("FK_CONSTRAINT");
@@ -1281,7 +1322,7 @@ export async function completeWorkout(
       avg_hr_bpm: input.avg_hr_bpm,
       completed_at: input.completed_at,
       rating: input.rating ?? null,
-      avg_pace_s_per_km: avgPace
+      avg_pace_s_per_km: avgPace,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -1292,7 +1333,7 @@ export async function completeWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1317,7 +1358,7 @@ export async function skipWorkout(
       avg_hr_bpm: null,
       completed_at: null,
       rating: null,
-      avg_pace_s_per_km: null
+      avg_pace_s_per_km: null,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -1328,7 +1369,7 @@ export async function skipWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1353,7 +1394,7 @@ export async function cancelWorkout(
       avg_hr_bpm: null,
       completed_at: null,
       rating: null,
-      avg_pace_s_per_km: null
+      avg_pace_s_per_km: null,
     })
     .eq("id", workoutId)
     .eq("user_id", userId)
@@ -1364,7 +1405,7 @@ export async function cancelWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1393,7 +1434,7 @@ export async function rateWorkout(
 
   return {
     ...data,
-    steps: transformSteps(data.steps_jsonb)
+    steps: transformSteps(data.steps_jsonb),
   } as WorkoutDetailDto;
 }
 
@@ -1456,23 +1497,23 @@ export async function getCalendar(
       id: workout.id,
       training_type_code: workout.training_type_code,
       status: workout.status,
-      position: workout.position
+      position: workout.position,
     });
   });
 
   const days = Array.from(grouped.entries()).map(([date, workouts]) => ({
     date,
-    workouts
+    workouts,
   }));
 
   return {
     range: { start, end },
-    days
+    days,
   };
 }
 ```
 
-### Krok 4: Endpoints - GET /api/v1/workouts i POST /api/v1/workouts
+### Step 4: Endpoints - GET /api/v1/workouts and POST /api/v1/workouts
 
 (src/pages/api/v1/workouts.ts)
 
@@ -1489,10 +1530,10 @@ export async function GET(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Validate query params
@@ -1508,12 +1549,12 @@ export async function GET(context: APIContext) {
       data,
       page: filters.page,
       per_page: filters.per_page,
-      total
+      total,
     };
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     if (err.name === "ZodError") {
@@ -1522,18 +1563,18 @@ export async function GET(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid query parameters",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
     }
 
     console.error("GET /api/v1/workouts failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -1542,10 +1583,10 @@ export async function POST(context: APIContext) {
     // 1. Auth check
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     // 2. Parse and validate body
@@ -1560,7 +1601,7 @@ export async function POST(context: APIContext) {
 
     return new Response(JSON.stringify(response), {
       status: 201,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     if (err.name === "ZodError") {
@@ -1569,18 +1610,18 @@ export async function POST(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid workout data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
     }
 
     if (err.message === "INVALID_TRAINING_TYPE") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Training type not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Training type not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     if (err.message === "DUPLICATE_POSITION") {
@@ -1588,23 +1629,23 @@ export async function POST(context: APIContext) {
         JSON.stringify({
           error: {
             code: "duplicate_position",
-            message: "Workout with this position already exists for the given date"
-          }
+            message: "Workout with this position already exists for the given date",
+          },
         }),
         { status: 409, headers: { "content-type": "application/json" } }
       );
     }
 
     console.error("POST /api/v1/workouts failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
 
-### Krok 5: Endpoints - GET/PATCH/DELETE /api/v1/workouts/[id]
+### Step 5: Endpoints - GET/PATCH/DELETE /api/v1/workouts/[id]
 
 (src/pages/api/v1/workouts/[id].ts)
 
@@ -1620,18 +1661,18 @@ export async function GET(context: APIContext) {
   try {
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const workout = await getWorkoutById(context.locals.supabase, user.id, id);
@@ -1639,21 +1680,21 @@ export async function GET(context: APIContext) {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     console.error("GET /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -1661,18 +1702,18 @@ export async function PATCH(context: APIContext) {
   try {
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const body = await context.request.json();
@@ -1683,7 +1724,7 @@ export async function PATCH(context: APIContext) {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
     if (err.name === "ZodError") {
@@ -1692,25 +1733,25 @@ export async function PATCH(context: APIContext) {
           error: {
             code: "validation_error",
             message: "Invalid workout data",
-            details: err.errors
-          }
+            details: err.errors,
+          },
         }),
         { status: 422, headers: { "content-type": "application/json" } }
       );
     }
 
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     console.error("PATCH /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 
@@ -1718,18 +1759,18 @@ export async function DELETE(context: APIContext) {
   try {
     const user = context.locals.user;
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }),
-        { status: 401, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     const { id } = context.params;
     if (!id) {
-      return new Response(
-        JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }),
-        { status: 400, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "bad_request", message: "Workout ID required" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     await deleteWorkout(context.locals.supabase, user.id, id);
@@ -1737,10 +1778,10 @@ export async function DELETE(context: APIContext) {
     return new Response(null, { status: 204 });
   } catch (err: any) {
     if (err.message === "NOT_FOUND") {
-      return new Response(
-        JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }),
-        { status: 404, headers: { "content-type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "Workout not found" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      });
     }
 
     if (err.message === "FK_CONSTRAINT") {
@@ -1748,83 +1789,90 @@ export async function DELETE(context: APIContext) {
         JSON.stringify({
           error: {
             code: "fk_constraint_violation",
-            message: "Cannot delete workout created from accepted AI suggestion. Revert acceptance first."
-          }
+            message: "Cannot delete workout created from accepted AI suggestion. Revert acceptance first.",
+          },
         }),
         { status: 409, headers: { "content-type": "application/json" } }
       );
     }
 
     console.error("DELETE /api/v1/workouts/[id] failed", { err });
-    return new Response(
-      JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }),
-      { status: 500, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: { code: "internal_error", message: "Unexpected server error" } }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
   }
 }
 ```
 
-### Krok 6: Domain Actions Endpoints
+### Step 6: Domain Actions Endpoints
 
-Zaimplementować pozostałe endpointy:
+Implement remaining endpoints:
+
 - `src/pages/api/v1/workouts/[id]/complete.ts` - POST complete
 - `src/pages/api/v1/workouts/[id]/skip.ts` - POST skip
 - `src/pages/api/v1/workouts/[id]/cancel.ts` - POST cancel
 - `src/pages/api/v1/workouts/[id]/rate.ts` - POST rate
 
-Wszystkie zgodnie z tym samym wzorcem (auth check, validation, service call, error handling).
+All follow the same pattern (auth check, validation, service call, error handling).
 
-### Krok 7: Special Endpoints
+### Step 7: Special Endpoints
 
-Zaimplementować:
+Implement:
+
 - `src/pages/api/v1/workouts/last3.ts` - GET last3
 - `src/pages/api/v1/calendar.ts` - GET calendar
 
-### Krok 8: Testowanie
+### Step 8: Testing
 
-Utworzyć pliki testowe w `.curls/`:
-- `workouts-list.sh` - testy GET /workouts z różnymi filtrami
-- `workouts-crud.sh` - testy CRUD operations
-- `workouts-actions.sh` - testy domain actions
-- `workouts-special.sh` - testy last3 i calendar
+Create test files in `.curls/`:
 
-Każdy test powinien sprawdzać:
+- `workouts-list.sh` - GET /workouts tests with different filters
+- `workouts-crud.sh` - CRUD operation tests
+- `workouts-actions.sh` - domain action tests
+- `workouts-special.sh` - last3 and calendar tests
+
+Each test should check:
+
 - Happy path (200/201/204)
 - Auth errors (401)
 - Validation errors (422)
 - Not found (404)
 - Conflicts (409)
 
-### Krok 9: Dokumentacja
+### Step 9: Documentation
 
-Dodać do planu:
-- Przykłady użycia każdego endpoint'u
-- Typowe scenariusze błędów
+Add to the plan:
+
+- Usage examples for each endpoint
+- Typical error scenarios
 - Performance tips
 
-### Krok 10: Code Review Checklist
+### Step 10: Code Review Checklist
 
-Przed commitem sprawdzić:
-- [ ] Wszystkie endpoints mają auth check
-- [ ] Wszystkie Zod schemas są kompletne
-- [ ] Service functions mają ownership verification
-- [ ] Error handling jest spójny
-- [ ] Immutable fields są chronione
-- [ ] avg_pace_s_per_km jest obliczane automatycznie
-- [ ] steps_jsonb jest transformowane poprawnie
-- [ ] Testy pokrywają wszystkie scenariusze
-- [ ] Komentarze są jasne i pomocne
-- [ ] Nie ma SQL injection vulnerabilities
-- [ ] Logowanie nie ujawnia wrażliwych danych
+Check before committing:
+
+- [ ] All endpoints have auth checks
+- [ ] All Zod schemas complete
+- [ ] Service functions verify ownership
+- [ ] Consistent error handling
+- [ ] Immutable fields protected
+- [ ] avg_pace_s_per_km calculated automatically
+- [ ] steps_jsonb transformed correctly
+- [ ] Tests cover all scenarios
+- [ ] Clear, helpful comments
+- [ ] No SQL injection vulnerabilities
+- [ ] Logging does not reveal sensitive data
 
 ---
 
-## Podsumowanie
+## Summary
 
-Ten plan implementacji zapewnia kompleksowe pokrycie wszystkich wymagań dla workouts API. Kluczowe aspekty:
-- **Bezpieczeństwo**: Autoryzacja, walidacja, RLS, immutability
-- **Wydajność**: Indeksy, paginacja, optymalizowane queries
+This plan covers all workout API requirements. Key aspects:
+
+- **Security**: Authorization, validation, RLS, immutability
+- **Performance**: Indexes, pagination, optimized queries
 - **Maintainability**: Service layer, Zod validation, error handling
-- **User experience**: Spójne API, jasne error messages, domain actions
+- **User experience**: Consistent API, clear errors, domain actions
 
-Implementation time estimate: **10-15 godzin** (większy endpoint niż training-types ze względu na złożoność).
+Implementation time estimate: **10-15 hours** (larger than training-types due to complexity).

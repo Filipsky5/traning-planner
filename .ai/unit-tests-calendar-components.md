@@ -1,103 +1,111 @@
 # Unit Tests - Calendar Components
 
-## Podsumowanie implementacji testów jednostkowych
+## Unit Test Implementation Summary
 
-Zgodnie z wymaganiami certyfikacyjnymi i priorytami biznesowymi, utworzono kompleksowy zestaw testów jednostkowych dla kluczowych komponentów kalendarza.
+A comprehensive unit test suite for key calendar components was created according to certification requirements and business priorities.
 
-## Pokrycie komponentów
+## Component Coverage
 
 ### ✅ CalendarGrid.test.tsx
-**Priorytet**: 🔴 HIGHEST - Kluczowa logika dostępności i użyteczności
 
-**133 testy passing** (23 scenariusze)
+**Priority**: 🔴 HIGHEST - Key accessibility and usability logic
 
-**Co testujemy**:
-- ✅ **Keyboard navigation** (najważniejsze)
+**133 tests passing** (23 scenarios)
+
+**What we test**:
+
+- ✅ **Keyboard navigation** (most important)
   - ArrowRight/Left (±1 index)
   - ArrowDown/Up (±7 index)
   - Boundary conditions (min/max index)
-  - Focus clamping przy przekroczeniu granic
-  - Enter/Space wywołują onOpenDay
-  - preventDefault dla wszystkich klawiszy
+  - Focus clamping when exceeding boundaries
+  - Enter/Space invoke onOpenDay
+  - preventDefault for all keys
 
 - ✅ **Focus management**
-  - tabIndex=0 tylko dla dzisiejszego dnia
-  - Focus przenoszony na nową komórkę po nawigacji
+  - tabIndex=0 only for today
+  - Focus moves to the new cell after navigation
 
 - ✅ **Rendering**
-  - Siatka 7×5 (35 komórek)
-  - Nagłówki dni tygodnia (Pon-Nie)
+  - 7×5 grid (35 cells)
+  - Weekday headers (Mon-Sun)
   - Loading skeletons
   - data-day-index attributes
 
-**Warunki brzegowe**:
-- Pusta tablica dni
-- Pojedynczy dzień
-- Keyboard events na elementach nie-day
+**Edge cases**:
+
+- Empty day array
+- Single day
+- Keyboard events on non-day elements
 - Rapid consecutive navigation
 
-**Lokalizacja**: `src/components/calendar/CalendarGrid.test.tsx` (520 linii)
+**Location**: `src/components/calendar/CalendarGrid.test.tsx` (520 lines)
 
 ---
 
 ### ✅ DayCell.test.tsx
-**Priorytet**: 🔴 HIGHEST - Core calendar cell logic
 
-**32 testy passing**
+**Priority**: 🔴 HIGHEST - Core calendar cell logic
 
-**Co testujemy**:
+**32 tests passing**
+
+**What we test**:
+
 - ✅ **MAX_VISIBLE_WORKOUTS logic** (2 visible)
   - hasMoreWorkouts calculation
   - visibleWorkouts slice (first 2)
   - hiddenCount (workouts.length - 2)
-  - "+N więcej" button rendering (tylko gdy > 2)
+  - "+N more" button rendering (only when > 2)
 
 - ✅ **Styling conditions**
   - `isToday` → ring-2 ring-blue-500 bg-blue-50/30
-  - Day number w blue circle gdy isToday
+  - Day number in a blue circle when isToday
   - `!isCurrentMonth` → bg-gray-50 text-gray-400 opacity-60
-  - tabIndex=0 tylko gdy isToday
+  - tabIndex=0 only when isToday
   - Hover states (hover:bg-gray-50)
 
 - ✅ **Accessibility (aria-label)**
   - Weekday name (pl-PL locale)
   - Day number
   - Month name
-  - Workout count w odpowiedniej formie (1 trening, 2-4 treningi)
+  - Workout count with correct Polish plural forms (singular, 2-4 workouts)
 
 - ✅ **Click interactions**
   - Workout card → onWorkoutClick(workout.id), stopPropagation
-  - "+N więcej" → onOpenDay(day), stopPropagation
-  - Dropdown "Generuj z AI" → onAddWorkout(day.date)
-  - Dropdown "Dodaj ręcznie" → onAddWorkoutManual(day.date)
-  - Cell background → onOpenDay tylko gdy >2 workouts
+  - "+N more" → onOpenDay(day), stopPropagation
+  - Dropdown "Generate with AI" → onAddWorkout(day.date)
+  - Dropdown "Add manually" → onAddWorkoutManual(day.date)
+  - Cell background → onOpenDay only when >2 workouts
 
-**Warunki brzegowe**:
+**Edge cases**:
+
 - 0, 1, 2, 3, 5, 100 workouts
 - Undefined callbacks (onWorkoutClick, onAddWorkoutManual)
 
-**Lokalizacja**: `src/components/calendar/DayCell.test.tsx` (437 linii)
+**Location**: `src/components/calendar/DayCell.test.tsx` (437 lines)
 
 ---
 
 ### ✅ WorkoutCard.test.tsx
-**Priorytet**: 🔴 HIGH - Status mapping i click interactions
 
-**24 testy passing (2 skipped dla future AI feature)**
+**Priority**: 🔴 HIGH - Status mapping and click interactions
 
-**Co testujemy**:
+**24 tests passing (2 skipped for future AI feature)**
+
+**What we test**:
+
 - ✅ **Status mapping** (statusConfig)
   - `planned` → no badge (empty label)
-  - `completed` → "Ukończony" + variant="default"
-  - `skipped` → "Pominięty" + variant="secondary"
-  - `cancelled` → "Anulowany" + variant="destructive"
+  - `completed` → "Completed" + variant="default"
+  - `skipped` → "Skipped" + variant="secondary"
+  - `cancelled` → "Canceled" + variant="destructive"
   - Unknown status → fallback to planned
 
 - ✅ **Click handler**
-  - onWorkoutClick(workout.id) wywołane z poprawnym id
-  - stopPropagation (nie bąbelkuje do parent)
-  - Działa dla wszystkich statusów
-  - Graceful handling gdy callback undefined
+  - onWorkoutClick(workout.id) called with the correct id
+  - stopPropagation (does not bubble to parent)
+  - Works for all statuses
+  - Graceful handling when callback undefined
 
 - ✅ **Visual styling**
   - Color bar (workout.color, w-1, flex-shrink-0)
@@ -105,62 +113,66 @@ Zgodnie z wymaganiami certyfikacyjnymi i priorytami biznesowymi, utworzono kompl
   - Badge height (h-5, text-xs)
   - Cursor pointer + hover:shadow-md
 
-- ✅ **AI badge** (future feature - testy skipped)
-  - Czeka na `origin` field w WorkoutViewModel
-  - Badge outline variant z purple styling
+- ✅ **AI badge** (future feature - skipped tests)
+  - Awaiting `origin` field in WorkoutViewModel
+  - Badge outline variant with purple styling
 
-**Warunki brzegowe**:
+**Edge cases**:
+
 - Very long training type names
 - Missing trainingType name
 - Rapid consecutive clicks (5×)
-- Re-renders z różnymi statusami
+- Re-renders with different statuses
 
-**Lokalizacja**: `src/components/calendar/WorkoutCard.test.tsx` (389 linii)
+**Location**: `src/components/calendar/WorkoutCard.test.tsx` (389 lines)
 
 ---
 
 ### ✅ CalendarHeader.test.tsx
-**Priorytet**: 🔴 HIGH - Title formatting i week number calculation
 
-**35 testów passing**
+**Priority**: 🔴 HIGH - Title formatting and week number calculation
 
-**Co testujemy**:
+**35 tests passing**
+
+**What we test**:
+
 - ✅ **getWeekNumber function** (ISO 8601 week numbering)
   - Basic weeks (week 1, 3, 26, 52)
   - Year boundaries (Jan 1, Dec 31)
   - Transition Dec→Jan (week 1 of next year)
   - Leap years (Feb 29, 2024)
   - Different years (2023, 2024, 2025)
-  - Same week dla consecutive days
+  - Same week for consecutive days
 
 - ✅ **Title formatting**
-  - Month view: "styczeń 2024" (capitalize)
-  - Week view: "Tydzień 3, 2024"
-  - Dynamic updates przy zmianie currentDate
-  - Dynamic updates przy zmianie viewMode
+  - Month view: "January 2024" (capitalize)
+  - Week view: "Week 3, 2024"
+  - Dynamic updates when currentDate changes
+  - Dynamic updates when viewMode changes
 
 - ✅ **Button callbacks**
   - onPeriodChange("prev") / onPeriodChange("next")
-  - onDateSelect(new Date()) dla "Dzisiaj"
+  - onDateSelect(new Date()) for "Today"
   - onViewModeChange("week") / onViewModeChange("month")
   - Multiple clicks handling
 
 - ✅ **Active state styling**
-  - Month button: variant="default" gdy viewMode="month"
-  - Week button: variant="default" gdy viewMode="week"
+  - Month button: variant="default" when viewMode="month"
+  - Week button: variant="default" when viewMode="week"
   - Inactive buttons: variant="outline"
-  - Updates przy zmianie viewMode
+  - Updates when viewMode changes
 
-**Warunki brzegowe**:
+**Edge cases**:
+
 - Invalid date objects
 - Very old dates (1900)
 - Far future dates (2100)
 
-**Lokalizacja**: `src/components/calendar/CalendarHeader.test.tsx` (382 linie)
+**Location**: `src/components/calendar/CalendarHeader.test.tsx` (382 lines)
 
 ---
 
-## Statystyki testów
+## Test Statistics
 
 ```
 Test Files:  5 passed (5)
@@ -169,6 +181,7 @@ Duration:    ~1.6s
 ```
 
 ### Breakdown per file:
+
 - `workout.test.ts` - 21 tests (utility functions)
 - `CalendarGrid.test.tsx` - 23 tests
 - `DayCell.test.tsx` - 32 tests
@@ -177,53 +190,53 @@ Duration:    ~1.6s
 
 **Total: 135 test scenarios**
 
-## Zgodność z guidelines (@testing-unit-vitest.mdc)
+## Guideline Compliance (@testing-unit-vitest.mdc)
 
-✅ **vi.mock()** - Wszystkie UI components (Button, Badge, Card, Dropdown, Skeleton) zmockowane na top level
+✅ **vi.mock()** - All UI components (Button, Badge, Card, Dropdown, Skeleton) mocked at the top level
 
-✅ **vi.fn()** - Callbacks (onAddWorkout, onOpenDay, onWorkoutClick, etc.) jako spy functions
+✅ **vi.fn()** - Callbacks (onAddWorkout, onOpenDay, onWorkoutClick, etc.) as spy functions
 
-✅ **Testing Library** - Używamy `@testing-library/react` + `userEvent` dla interakcji DOM
+✅ **Testing Library** - Uses `@testing-library/react` + `userEvent` for DOM interactions
 
-✅ **Inline snapshots** - Nie używane (preferujemy explicit assertions dla czytelności)
+✅ **Inline snapshots** - Not used (explicit assertions preferred for readability)
 
-✅ **Describe/it blocks** - Czytelna struktura z grupowaniem (Rendering, Keyboard Navigation, etc.)
+✅ **Describe/it blocks** - Clear grouped structure (Rendering, Keyboard Navigation, etc.)
 
-✅ **AAA Pattern** - Arrange, Act, Assert w każdym teście
+✅ **AAA Pattern** - Arrange, Act, Assert in each test
 
-✅ **Explicit assertions** - Zawsze czytelne komunikaty błędów
+✅ **Explicit assertions** - Clear error messages throughout
 
-✅ **Type checking** - TypeScript strict mode w testach
+✅ **Type checking** - TypeScript strict mode in tests
 
-## Kluczowe reguły biznesowe pokryte testami
+## Key Business Rules Covered
 
 1. **MAX_VISIBLE_WORKOUTS = 2**
-   - DayCell pokazuje max 2 karty treningów
-   - "+N więcej" pojawia się dopiero przy 3+
-   - Click w cell otwiera drawer tylko gdy >2 workouts
+   - DayCell shows at most 2 workout cards
+   - "+N more" appears only at 3+
+   - Cell click opens drawer only when >2 workouts
 
 2. **Keyboard navigation (Accessibility)**
    - Arrow keys: ±1 horizontal, ±7 vertical
    - Clamping at boundaries (0, length-1)
-   - Enter/Space otwierają day drawer
-   - Focus management z tabIndex
+   - Enter/Space open the day drawer
+   - Focus management with tabIndex
 
 3. **Status mapping**
-   - 4 statusy: planned, completed, skipped, cancelled
-   - Każdy ma unikalny label i variant
+   - 4 statuses: planned, completed, skipped, cancelled
+   - Each has a unique label and variant
    - planned = no badge (clean look)
 
 4. **Week number calculation (ISO 8601)**
-   - Tydzień 1 = pierwszy tydzień z czwartkiem w nowym roku
-   - Może być 52 lub 53 tygodnie w roku
+   - Week 1 = first week containing a Thursday in the new year
+   - A year may have 52 or 53 weeks
    - Transition Dec→Jan handled correctly
 
 5. **Event propagation**
-   - Workout card click: stopPropagation (nie otwiera drawera)
-   - "+N więcej": stopPropagation
+   - Workout card click: stopPropagation (does not open drawer)
+   - "+N more": stopPropagation
    - Dropdown items: stopPropagation
 
-## Warunki brzegowe (Edge Cases)
+## Edge Cases
 
 ✅ Empty arrays (0 workouts, 0 days)
 ✅ Single items (1 workout, 1 day)
@@ -236,10 +249,10 @@ Duration:    ~1.6s
 ✅ Leap years
 ✅ Re-renders with different props
 
-## Uruchamianie testów
+## Running Tests
 
 ```bash
-# Wszystkie testy
+# All tests
 npm run test:unit
 
 # Watch mode
@@ -251,11 +264,11 @@ npm run test:unit:ui
 # Coverage report
 npm run test:unit:coverage
 
-# Konkretny plik
+# Specific file
 npm run test:unit -- src/components/calendar/DayCell.test.tsx
 ```
 
-## Następne kroki (opcjonalne rozszerzenie)
+## Next Steps (Optional Extensions)
 
 1. **Hooks testing** (`useCalendar`, `useDayWorkouts`)
    - React Testing Library renderHook
@@ -263,14 +276,14 @@ npm run test:unit -- src/components/calendar/DayCell.test.tsx
    - State transitions
 
 2. **Integration tests** (component + hook)
-   - CalendarView rendering z prawdziwymi danymi
-   - API mocking z MSW
+   - CalendarView rendering with real data
+   - API mocking with MSW
 
 3. **Coverage target**
-   - Obecne: 100% dla calendar components
-   - Cel globalny: 60-70% dla src/lib/utils, src/lib/validation
+   - Current: 100% for calendar components
+   - Global target: 60-70% for src/lib/utils, src/lib/validation
 
-## Struktura plików testowych
+## Test File Structure
 
 ```
 src/
@@ -291,26 +304,26 @@ src/
         └── CalendarHeader.test.tsx    # ✅ 35 tests
 ```
 
-## Insights i best practices zastosowane
+## Insights and Best Practices Applied
 
-1. **Mock komponenty UI na minimum** - tylko essentials (data-testid, onClick)
-2. **Helper functions** - createMockDay, createMockWorkout dla DRY
-3. **Czytelne nazwy testów** - "should X when Y" pattern
-4. **Grupowanie testów** - describe blocks dla related scenarios
-5. **Reset mocks** - beforeEach z vi.clearAllMocks()
-6. **User-centric testing** - userEvent zamiast fireEvent
+1. **Minimal UI component mocks** - essentials only (data-testid, onClick)
+2. **Helper functions** - createMockDay, createMockWorkout for DRY
+3. **Clear test names** - "should X when Y" pattern
+4. **Test grouping** - describe blocks for related scenarios
+5. **Reset mocks** - beforeEach with vi.clearAllMocks()
+6. **User-centric testing** - userEvent instead of fireEvent
 7. **Accessibility testing** - aria-label, tabIndex, role attributes
 
-## Zgodność z certyfikatem
+## Certification Compliance
 
-✅ **Min. 60% coverage** - 100% dla calendar components
-✅ **Unit tests dla utils** - workout.ts covered
-✅ **Testing framework: Vitest** - zgodne z tech stack
-✅ **TypeScript support** - wszystkie testy w .tsx
+✅ **Min. 60% coverage** - 100% for calendar components
+✅ **Unit tests for utilities** - workout.ts covered
+✅ **Testing framework: Vitest** - matches the tech stack
+✅ **TypeScript support** - all tests in .tsx
 ✅ **CI/CD ready** - `npm run test:all` script
 
 ---
 
-**Dokumentacja utworzona**: 2024-11-15
+**Documentation created**: 2024-11-15
 **Status**: ✅ Ready for production
 **Test suite quality**: 🟢 Excellent

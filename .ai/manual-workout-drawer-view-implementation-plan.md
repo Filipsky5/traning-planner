@@ -1,132 +1,133 @@
-## Plan implementacji widoku: Drawer „Dodaj ręcznie”
+## “Add Manually” Drawer View Implementation Plan
 
-### 1. Przegląd
+### 1. Overview
 
-Widok **„Drawer: Dodaj ręcznie”** to wysuwany panel używany na głównym widoku kalendarza (`/`), który pozwala użytkownikowi **ręcznie dodać nowy trening** – jako czysto zaplanowany albo od razu oznaczony jako ukończony. Użytkownik wybiera typ treningu, datę oraz buduje strukturę treningu z segmentów (rozgrzewka / część główna / schłodzenie / segmenty), a **łączny dystans i czas trwania są wyliczane automatycznie na podstawie kroków**. Widok integruje się z API `POST /api/v1/workouts`, wykorzystuje słownik `training_types` oraz po udanej operacji odświeża dane kalendarza i zamyka panel.
+The **“Drawer: Add manually”** is a sliding panel on the main calendar (`/`) that lets users **manually add a workout**, either planned or already completed. Users select type and date and build the workout from segments (warm-up / main part / cool-down / segments). **Total distance and duration are calculated automatically from the steps**. The view integrates with `POST /api/v1/workouts`, uses the `training_types` dictionary, and refreshes the calendar and closes on success.
 
-### 2. Routing widoku
+### 2. View Routing
 
-- **Ścieżka routingu**: brak dedykowanej ścieżki URL – drawer jest **overlayem na widoku kalendarza** dostępnego pod `/`.
-- **Aktywacja**:
-  - Z poziomu `DayCell` (pusty dzień): kliknięcie `+` → `Dropdown` → **„Dodaj ręcznie”**.
-  - Potencjalnie z innych miejsc (np. globalny przycisk „Dodaj” w mobile bottom nav) – użyją tego samego komponentu `ManualWorkoutDrawer` z przekazaną datą.
-- **Zamykanie**:
-  - Zmiana `isOpen` na `false` (kliknięcie X, kliknięcie w tło, sukces zapisu).
-  - Po zamknięciu panel resetuje swój stan formularza.
+- **Routing path**: no dedicated URL — the drawer is an **overlay on the calendar view** at `/`.
+- **Activation**:
+  - From `DayCell` (empty day): click `+` → `Dropdown` → **“Add manually”**.
+  - Potentially elsewhere (e.g., global “Add” in mobile bottom navigation) — use the same `ManualWorkoutDrawer` with a supplied date.
+- **Closing**:
+  - Set `isOpen` to `false` (X, backdrop click, successful save).
+  - Reset form state when closed.
 
-### 3. Struktura komponentów
+### 3. Component Structure
 
-Rekomendowane umiejscowienie komponentów:
-- Kontener widoku: `src/components/calendar/ManualWorkoutDrawer.tsx`
-- Komponenty formularza: `src/components/workout/WorkoutPlanForm.tsx`, `src/components/workout/StepsEditor.tsx`, `src/components/workout/OptionalRealizationSection.tsx`
+Recommended component locations:
 
-Proponowane drzewo komponentów:
+- View container: `src/components/calendar/ManualWorkoutDrawer.tsx`
+- Form components: `src/components/workout/WorkoutPlanForm.tsx`, `src/components/workout/StepsEditor.tsx`, `src/components/workout/OptionalRealizationSection.tsx`
+
+Proposed component tree:
 
 ```text
 CalendarView.tsx
-  └── ManualWorkoutDrawer (nowy)
+  └── ManualWorkoutDrawer (new)
         └── WorkoutPlanForm
               ├── WorkoutPlanBasicsSection
               │     ├── TrainingTypeSelect
               │     ├── PlannedDatePicker
-              │     └── PositionInput (+ podgląd zagregowanych wartości: dystans/czas)
+              │     └── PositionInput (+ aggregated distance/time preview)
               ├── StepsEditor
-              │     ├── StepRow[] (dynamiczna lista)
+              │     ├── StepRow[] (dynamic list)
               │     │     ├── SegmentTypeSelect (warmup/main/cooldown/segment)
               │     │     ├── DistanceInput (km)
               │     │     ├── DurationInput (mm:ss / hh:mm:ss)
-              │     │     └── TargetHrInput + NotesInput (opcjonalne)
+              │     │     └── TargetHrInput + NotesInput (optional)
               └── OptionalRealizationSection
-                    ├── CompletedToggle („Trening już wykonany”)
+                    ├── CompletedToggle (“Workout already completed”)
                     ├── RealizedDistanceInput (km)
-                    ├── RealizedDurationInput (czas)
+                    ├── RealizedDurationInput (time)
                     ├── AvgHrInput
                     ├── CompletedAtDateTimePicker
                     └── RatingSelect (too_easy / just_right / too_hard)
 ```
 
-### 4. Szczegóły komponentów
+### 4. Component Details
 
 #### 4.1 `ManualWorkoutDrawer`
 
-- **Opis komponentu**: Kontener drawera oparty o `Sheet` z `shadcn/ui`. Odpowiada za:
-  - sterowanie widocznością panelu,
-  - przekazanie danych wejściowych (domyślna data, domyślny typ, dostępne `trainingTypes`),
-  - integrację z kalendarzem (`refetch` po sukcesie),
-  - bazową obsługę błędów (komunikaty na poziomie całego widoku).
-- **Główne elementy**:
+- **Component description**: Drawer container based on `Sheet` from `shadcn/ui`. Responsible for:
+  - controlling panel visibility,
+  - passing input data (default date, default type, available `trainingTypes`),
+  - calendar integration (`refetch` on success),
+  - basic error handling (view-level messages).
+- **Main elements**:
   - `Sheet`, `SheetContent`, `SheetHeader`, `SheetTitle`, `SheetDescription`.
-  - W środku `WorkoutPlanForm` jako jedyny child.
-- **Obsługiwane interakcje**:
-  - `onOpenChange(isOpen: boolean)` – zamykanie panelu.
-  - Callback `onSubmitSuccess` – wywoływany po udanym utworzeniu treningu (z `WorkoutDetailDto`).
-- **Obsługiwana walidacja**: brak szczegółowej walidacji – deleguje walidację do `WorkoutPlanForm`.
-- **Typy wykorzystywane**:
-  - `TrainingTypeDto` – lista typów treningów.
-  - `WorkoutDetailDto` – odpowiedź z API po utworzeniu treningu (do ewentualnego wykorzystania w UI).
-  - `ManualWorkoutFormValues` (ViewModel formularza – opisany w sekcji 5).
-- **Propsy**:
-  - `isOpen: boolean` – czy drawer jest aktualnie otwarty.
-  - `onOpenChange: (open: boolean) => void` – obsługa zamknięcia (ustawiana z `CalendarView`).
-  - `initialDate: Date` – data z wybranej komórki kalendarza.
-  - `trainingTypes: TrainingTypeDto[]` – lista aktywnych typów treningów (przekazana z `useCalendar`).
-  - `onWorkoutCreated?: (workout: WorkoutDetailDto) => void` – opcjonalny callback (np. do pokazania toast + `refetch` kalendarza).
+  - `WorkoutPlanForm` as the only child.
+- **Supported interactions**:
+  - `onOpenChange(isOpen: boolean)` – close panel.
+  - `onSubmitSuccess` callback – called after successful creation (with `WorkoutDetailDto`).
+- **Validation**: no detailed validation — delegated to `WorkoutPlanForm`.
+- **Types used**:
+  - `TrainingTypeDto` – workout type list.
+  - `WorkoutDetailDto` – creation API response (for potential UI use).
+  - `ManualWorkoutFormValues` (form ViewModel — section 5).
+- **Props**:
+  - `isOpen: boolean` – whether the drawer is open.
+  - `onOpenChange: (open: boolean) => void` – close handler (set from `CalendarView`).
+  - `initialDate: Date` – selected calendar cell date.
+  - `trainingTypes: TrainingTypeDto[]` – active workout types (from `useCalendar`).
+  - `onWorkoutCreated?: (workout: WorkoutDetailDto) => void` – optional callback (e.g., toast + calendar `refetch`).
 
 #### 4.2 `WorkoutPlanForm`
 
-- **Opis komponentu**: Główny formularz React (z `react-hook-form` + `zodResolver`), który obsługuje całą logikę:
-  - lokalny ViewModel formularza (`ManualWorkoutFormValues`),
-  - dynamiczną listę kroków (`steps`),
-  - przeliczanie łącznego dystansu/czasu na wartości dla API (`planned_distance_m`, `planned_duration_s`),
-  - warunkowe pola realizacji (sekcja „Trening już wykonany”),
-  - submit – wywołanie `POST /api/v1/workouts`.
-- **Główne elementy HTML / UI**:
-  - Grupa podstawowych pól planu (`WorkoutPlanBasicsSection`),
-  - `StepsEditor` (lista segmentów),
-  - `OptionalRealizationSection` (pola realizacji),
-  - Pasek błędów globalnych (np. `Alert` z komunikatem z API),
-  - Przyciski „Zapisz” (primary) i „Anuluj”.
-- **Obsługiwane interakcje**:
-  - Zmiana wartości pól formularza (typ, data, pozycja, kroki, sekcja realizacji).
-  - Dodawanie/usuwanie segmentu.
-  - Zatwierdzenie formularza (`onSubmit`).
-  - Anulowanie – zamknięcie panelu bez zapisu.
-- **Warunki walidacji (zgodne z API)**:
+- **Component description**: Main React form (`react-hook-form` + `zodResolver`) handling all logic:
+  - local form ViewModel (`ManualWorkoutFormValues`),
+  - dynamic steps list (`steps`),
+  - total distance/time conversion into API values (`planned_distance_m`, `planned_duration_s`),
+  - conditional completion fields (“Workout already completed”),
+  - submission — `POST /api/v1/workouts`.
+- **Main HTML / UI elements**:
+  - Basic plan fields (`WorkoutPlanBasicsSection`),
+  - `StepsEditor` (segment list),
+  - `OptionalRealizationSection` (completion fields),
+  - Global error bar (e.g., `Alert` with API message),
+  - “Save” (primary) and “Cancel” buttons.
+- **Supported interactions**:
+  - Change form fields (type, date, position, steps, completion section).
+  - Add/remove a segment.
+  - Submit form (`onSubmit`).
+  - Cancel — close without saving.
+- **Validation conditions (matching the API)**:
   - `trainingTypeCode`:
-    - wymagane, niepuste, musi pochodzić z listy `trainingTypes` (dropdown → praktycznie eliminuje błędne wartości).
+    - required, non-empty, from `trainingTypes` (dropdown effectively eliminates invalid values).
   - `plannedDate`:
-    - wymagane, przekształcane do stringa `YYYY-MM-DD` (np. przy pomocy helpera `formatDate` używanego w `useCalendar`).
+    - required, converted to `YYYY-MM-DD` (e.g., with the `formatDate` helper used in `useCalendar`).
   - `position`:
-    - liczba całkowita `>= 1`,
-    - domyślnie `max(existingPositions) + 1` dla danego dnia (wyliczane w komponencie nadrzędnym lub w helperze),
-    - nie ma możliwości sprawdzenia unikalności na froncie – ewentualny konflikt (`409 duplicate_position`) obsługuje się jako błąd API.
+    - integer `>= 1`,
+    - defaults to `max(existingPositions) + 1` for the day (calculated in parent or helper),
+    - uniqueness cannot be checked on the frontend — handle conflicts (`409 duplicate_position`) as API errors.
   - `steps`:
-    - minimum 1 krok,
-    - każdy krok: `part` w `["warmup", "main", "cooldown", "segment"]`,
-    - każdy krok musi mieć **co najmniej jedną** z wartości: dystans lub czas (w UI wymagane: dystans _lub_ czas; oba też można podać),
-    - docelowo mapowane do `WorkoutStepDto` (`distance_m?: number`, `duration_s?: number`, `notes?: string`).
-  - **Zagregowany plan**:
-    - `planned_distance_m` = suma `distance_m` ze wszystkich kroków (pomijając `undefined`),
-    - `planned_duration_s` = suma `duration_s` ze wszystkich kroków,
-    - walidacja sum:
-      - `planned_distance_m` w zakresie `[100, 100000]`,
-      - `planned_duration_s` w zakresie `[300, 21600]`,
-      - jeśli sumy wypadają poza zakres, formularz blokuje submit (komunikat np. „Łączny dystans musi być między 0.1 km a 100 km”).
-  - **Realizacja (sekcja opcjonalna)**:
-    - jeśli `isCompleted === false`:
-      - pola realizacji są ignorowane, nie wysyłamy `status` ani metryk realizacji → API traktuje trening jako `planned`.
-    - jeśli `isCompleted === true`:
-      - wymagane pola realizacji zgodnie z `completeWorkoutSchema` / `createWorkoutSchema`:
-        - `distance_m` (tegowane w UI jako km, konwersja do m, zakres `[100, 100000]`),
-        - `duration_s` (czas w sekundach, UI jako hh:mm:ss, zakres `[300, 21600]`),
-        - `avg_hr_bpm` (liczba całkowita `[0, 240]`),
-        - `completed_at` (ISO 8601, UI: `DateTime` lokalna, zamieniana na UTC),
-      - `rating` opcjonalne (enum `too_easy | just_right | too_hard`), zgodne z `WorkoutRateCommand`.
-- **Typy wykorzystywane**:
-  - `WorkoutStepDto` – docelowy format kroków.
-  - `WorkoutCreatePlannedCommand` / `WorkoutCreateCompletedCommand` – koncepcyjna baza do mapowania (ale formalnie używamy `CreateWorkoutInput` z walidacji).
-  - `ManualWorkoutFormValues` – ViewModel formularza (sekcja 5).
-- **Propsy**:
+    - at least 1 step,
+    - each step: `part` in `["warmup", "main", "cooldown", "segment"]`,
+    - each step must have **at least one** of distance or time (UI requires distance _or_ time; both allowed),
+    - mapped to `WorkoutStepDto` (`distance_m?: number`, `duration_s?: number`, `notes?: string`).
+  - **Aggregated plan**:
+    - `planned_distance_m` = sum of all step `distance_m` values (ignoring `undefined`),
+    - `planned_duration_s` = sum of all step `duration_s` values,
+    - total validation:
+      - `planned_distance_m` in `[100, 100000]`,
+      - `planned_duration_s` in `[300, 21600]`,
+      - out-of-range totals block submission (e.g., “Total distance must be between 0.1 km and 100 km”).
+  - **Completion (optional section)**:
+    - if `isCompleted === false`:
+      - ignore completion fields, omit `status` and actual metrics → API treats workout as `planned`.
+    - if `isCompleted === true`:
+      - completion fields required according to `completeWorkoutSchema` / `createWorkoutSchema`:
+        - `distance_m` (displayed as km in UI, converted to m, range `[100, 100000]`),
+        - `duration_s` (seconds, UI as hh:mm:ss, range `[300, 21600]`),
+        - `avg_hr_bpm` (integer `[0, 240]`),
+        - `completed_at` (ISO 8601, UI: local `DateTime`, converted to UTC),
+      - optional `rating` (enum `too_easy | just_right | too_hard`), matching `WorkoutRateCommand`.
+- **Types used**:
+  - `WorkoutStepDto` – target step format.
+  - `WorkoutCreatePlannedCommand` / `WorkoutCreateCompletedCommand` – conceptual mapping basis (formally using validation's `CreateWorkoutInput`).
+  - `ManualWorkoutFormValues` – form ViewModel (section 5).
+- **Props**:
   - `trainingTypes: TrainingTypeDto[]`
   - `initialDate: Date`
   - `onCancel: () => void`
@@ -134,73 +135,73 @@ CalendarView.tsx
 
 #### 4.3 `WorkoutPlanBasicsSection`
 
-- **Opis komponentu**: Sekcja formularza z polami ogólnymi planu – typ, data, pozycja + podgląd automatycznie zliczanego dystansu i czasu.
-- **Główne elementy**:
-  - `Select` (`shadcn/ui`) z listą `trainingTypes` (etykieta = `name`, `value` = `code`).
-  - `DatePicker` (np. bazujący na `react-day-picker`) – domyślnie wybrana data z `initialDate`.
-  - `Input` (numeric) dla `position` (domyślnie `1` lub `nextPosition` obliczony na podstawie day cell).
-  - `Read-only` label/tekst pokazujący `Łączny dystans` i `Łączny czas` (liczone w `WorkoutPlanForm` i przekazywane tu jako propsy).
-- **Obsługiwane interakcje**:
-  - Zmiana typu treningu.
-  - Zmiana daty (w razie potrzeby użytkownik może przeplanować trening na inny dzień).
-  - Zmiana pozycji (np. z 1 na 2, jeśli w danym dniu będzie więcej treningów).
-- **Walidacja**:
-  - Zgodnie z regułami `WorkoutPlanForm` – sekcja jest „głupym” komponentem prezentacyjnym, otrzymuje błędy z `react-hook-form` i wyświetla komunikaty.
-- **Typy**:
-  - Props: fragment `ManualWorkoutFormValues` (`trainingTypeCode`, `plannedDate`, `position`) oraz zagregowane `totalPlannedDistanceKm`, `totalPlannedDurationFormatted`.
+- **Component description**: General plan fields — type, date, position + automatically calculated distance/time preview.
+- **Main elements**:
+  - `Select` (`shadcn/ui`) with `trainingTypes` (label = `name`, `value` = `code`).
+  - `DatePicker` (e.g., based on `react-day-picker`) — default selected date from `initialDate`.
+  - Numeric `Input` for `position` (default `1` or `nextPosition` calculated from the day cell).
+  - `Read-only` label/text showing `Total distance` and `Total time` (calculated in `WorkoutPlanForm`, passed as props).
+- **Supported interactions**:
+  - Change workout type.
+  - Change date (reschedule to another day if needed).
+  - Change position (e.g., 1 to 2 if multiple workouts on the day).
+- **Validation**:
+  - According to `WorkoutPlanForm` rules — a presentation-only component receiving and displaying `react-hook-form` errors.
+- **Types**:
+  - Props: subset of `ManualWorkoutFormValues` (`trainingTypeCode`, `plannedDate`, `position`) and aggregated `totalPlannedDistanceKm`, `totalPlannedDurationFormatted`.
 
 #### 4.4 `StepsEditor`
 
-- **Opis komponentu**: Edytor dynamicznej listy kroków treningu. Każdy krok opisuje jedną część treningu (rozgrzewka / główna / schłodzenie / segment).
-- **Główne elementy**:
-  - Lista `StepRow` (użycie `useFieldArray` z `react-hook-form`), każdy w osobnej karcie/wierszu.
-  - Przycisk **„Dodaj segment”** (`Button`), dodający nowy krok z domyślnymi wartościami (np. part=`main`).
-  - (Opcjonalnie) przyciski przesuwania segmentów w górę/dół, jeśli w przyszłości będzie potrzeba reordering.
-- **Obsługiwane interakcje**:
-  - Dodawanie nowego kroku.
-  - Usuwanie kroku (z walidacją, że musi pozostać co najmniej jeden).
-  - Zmiana typu segmentu (`warmup` | `main` | `cooldown` | `segment`).
-  - Zmiana dystansu (w km) i/lub czasu (minuty/seundy).
-  - Zmiana „zaplanowanego tętna” (pole numeryczne) oraz `notes` (np. dodatkowy opis).
-- **Walidacja (per krok)**:
-  - `part` – wymagany, jeden z enumeracji.
-  - `distanceKm` – opcjonalny, ale jeśli podany, po konwersji do metrów musi spełniać zakres `[100, 100000]`.
-  - `durationTotalSeconds` – opcjonalny, ale jeśli podany, musi być w zakresie `[60, 21600]` (podstawowy krok może być krótszy niż cały trening).
-  - Walidacja „anyOf”: **co najmniej jedno z** `distance` lub `duration` musi być podane. Jeśli oba puste – błąd na wierszu.
-  - `targetHrBpm` – opcjonalne pole liczbowe `[0, 240]`. Technicznie nie istnieje w `WorkoutStepDto`, więc w mapowaniu zapisujemy je do `notes` (np. jako `HR: 140 bpm;` + ewentualny opis).
-- **Mapowanie do DTO**:
-  - Każdy `StepRow` mapuje się na:
+- **Component description**: Dynamic workout step editor. Each step describes one part (warm-up / main / cool-down / segment).
+- **Main elements**:
+  - `StepRow` list (`useFieldArray` from `react-hook-form`), each in a separate card/row.
+  - **“Add segment”** `Button`, adding a step with defaults (e.g., part=`main`).
+  - Optional up/down buttons for future reordering.
+- **Supported interactions**:
+  - Add a new step.
+  - Remove a step (validate that at least one remains).
+  - Change segment type (`warmup` | `main` | `cooldown` | `segment`).
+  - Change distance (km) and/or time (minutes/seconds).
+  - Change “planned heart rate” (numeric field) and `notes` (additional description).
+- **Validation (per step)**:
+  - `part` – required enum value.
+  - `distanceKm` – optional; if provided, must meet `[100, 100000]` after conversion to meters.
+  - `durationTotalSeconds` – optional; if provided, must be in `[60, 21600]` (a step may be shorter than a full workout).
+  - “anyOf” validation: **at least one of** `distance` or `duration` must be provided. If both empty — row error.
+  - `targetHrBpm` – optional number `[0, 240]`. Not present in `WorkoutStepDto`, so mapped into `notes` (e.g., `HR: 140 bpm;` + optional description).
+- **DTO mapping**:
+  - Each `StepRow` maps to:
     - `part`: `StepPart`
-    - `distance_m`: `distanceKm * 1000` (zaokrąglone do `int`), lub `undefined`.
-    - `duration_s`: suma sekund (z kontrolki czasu), lub `undefined`.
-    - `notes`: string z opcjonalną informacją o tętnie + dowolny dodatkowy tekst.
-- **Typy**:
-  - `ManualWorkoutStepForm` (ViewModel w sekcji 5).
+    - `distance_m`: `distanceKm * 1000` (rounded to `int`), or `undefined`.
+    - `duration_s`: total seconds (from time control), or `undefined`.
+    - `notes`: string with optional heart rate information + additional text.
+- **Types**:
+  - `ManualWorkoutStepForm` (ViewModel in section 5).
 
 #### 4.5 `OptionalRealizationSection`
 
-- **Opis komponentu**: Sekcja pozwalająca opcjonalnie od razu wprowadzić dane z wykonania treningu (dystans, czas, średnie HR, rating). Odpowiada za częściowe pokrycie user story o ręcznym dodawaniu ukończonych treningów.
-- **Główne elementy**:
-  - `Switch` / `Checkbox`: **„Ten trening jest już wykonany”** → ustawia `isCompleted`.
-  - Grupa pól widoczna tylko przy `isCompleted === true`:
-    - `Input` dystansu (km) – domyślnie prefill z `totalPlannedDistanceKm`.
-    - `TimeInput` (np. trzy pola `hh:mm:ss` lub jeden kontroler czasu) – domyślnie prefill z `totalPlannedDurationSec`.
+- **Component description**: Optionally enters completion data immediately (distance, time, avg. HR, rating). Partially covers the user story for manually adding completed workouts.
+- **Main elements**:
+  - `Switch` / `Checkbox`: **“This workout is already completed”** → sets `isCompleted`.
+  - Fields visible only when `isCompleted === true`:
+    - Distance `Input` (km) – prefilled from `totalPlannedDistanceKm` by default.
+    - `TimeInput` (e.g., three `hh:mm:ss` fields or one time control) – prefilled from `totalPlannedDurationSec` by default.
     - `Input` `avg_hr_bpm` (bpm).
-    - `DateTimePicker` dla `completed_at` (domyślnie `now`).
-    - `RatingSelect` (np. `RadioGroup` z trzema opcjami).
-- **Obsługiwane interakcje**:
-  - Włączenie/wyłączenie sekcji realizacji.
-  - Edycja pól realizacji.
-- **Walidacja**:
-  - Jak w `WorkoutPlanForm`:
-    - jeżeli `isCompleted === true`, wszystkie pola realizacji (oprócz rating) są wymagane i muszą spełniać zakresy.
-    - jeżeli `isCompleted === false`, sekcja nie generuje błędów i pola nie są wysyłane do API.
-- **Typy**:
-  - Podzbiór `ManualWorkoutFormValues`: `isCompleted`, `realizedDistanceKm`, `realizedDurationSec`, `avgHrBpm`, `completedAt`, `rating`.
+    - `DateTimePicker` for `completed_at` (default `now`).
+    - `RatingSelect` (e.g., `RadioGroup` with three options).
+- **Supported interactions**:
+  - Toggle completion section.
+  - Edit completion fields.
+- **Validation**:
+  - As in `WorkoutPlanForm`:
+    - if `isCompleted === true`, all completion fields (except rating) are required and must meet ranges.
+    - if `isCompleted === false`, no section errors and no completion fields sent to the API.
+- **Types**:
+  - Subset of `ManualWorkoutFormValues`: `isCompleted`, `realizedDistanceKm`, `realizedDurationSec`, `avgHrBpm`, `completedAt`, `rating`.
 
-### 5. Typy
+### 5. Types
 
-#### 5.1 Istniejące typy z `src/types.ts`
+#### 5.1 Existing Types from `src/types.ts`
 
 - **`WorkoutStepDto`**:
   - `part: "warmup" | "main" | "cooldown" | "segment"`
@@ -208,47 +209,47 @@ CalendarView.tsx
   - `duration_s?: number`
   - `notes?: string`
 - **`WorkoutCreatePlannedCommand` / `WorkoutCreateCompletedCommand`**:
-  - Służą jako model docelowy dla danych wysyłanych z formularza (zgodnie z `createWorkoutSchema`).
+  - Target models for form submission data (according to `createWorkoutSchema`).
 - **`WorkoutDetailDto`**:
-  - Używany jako wynik żądania `POST /api/v1/workouts` (z polami takimi jak `id`, `planned_date`, `status`, `steps`, itp.).
+  - Result of `POST /api/v1/workouts` (fields such as `id`, `planned_date`, `status`, `steps`, etc.).
 - **`TrainingTypeDto`**:
   - `code`, `name`, `is_active`, `created_at`.
 
-#### 5.2 Nowe typy ViewModel dla widoku
+#### 5.2 New ViewModel Types
 
-> Uwaga: typy ViewModel są lokalne dla frontendu i służą do wygodnej pracy z jednostkami (km, minuty, Date). Funkcje mapujące skonwertują je do typów API.
+> Note: ViewModels are frontend-local, allowing convenient work with units (km, minutes, Date). Mapping functions convert them to API types.
 
-- **`ManualWorkoutStepForm`** – typ pojedynczego kroku w formularzu:
+- **`ManualWorkoutStepForm`** – individual form step type:
 
 ```typescript
 type StepPart = "warmup" | "main" | "cooldown" | "segment";
 
 interface ManualWorkoutStepForm {
-  id: string;               // lokalny identyfikator w UI (np. uuid)
+  id: string; // local UI identifier (e.g., uuid)
   part: StepPart;
-  distanceKm?: number;      // dystans w km (np. 1.0, 5.0)
-  durationMinutes?: number; // czas w minutach (opcjonalne, do budowy duration_s)
-  durationSeconds?: number; // dodatkowe sekundy (0–59)
-  targetHrBpm?: number;     // opcjonalnie: planowane tętno 0–240
-  notes?: string;           // dodatkowy opis użytkownika
+  distanceKm?: number; // distance in km (e.g., 1.0, 5.0)
+  durationMinutes?: number; // minutes (optional, to build duration_s)
+  durationSeconds?: number; // additional seconds (0–59)
+  targetHrBpm?: number; // optional: planned heart rate 0–240
+  notes?: string; // additional user description
 }
 ```
 
-- **`ManualWorkoutFormValues`** – główny ViewModel formularza:
+- **`ManualWorkoutFormValues`** – main form ViewModel:
 
 ```typescript
 interface ManualWorkoutFormValues {
-  trainingTypeCode: string;      // z TrainingTypeDto.code
-  plannedDate: Date;             // UI używa Date, mapowanie do YYYY-MM-DD
-  position: number;              // kolejność treningu w dniu
+  trainingTypeCode: string; // from TrainingTypeDto.code
+  plannedDate: Date; // UI uses Date, mapped to YYYY-MM-DD
+  position: number; // workout order in a day
 
-  steps: ManualWorkoutStepForm[]; // dynamiczna lista kroków
+  steps: ManualWorkoutStepForm[]; // dynamic step list
 
-  // Pola pochodne tylko do prezentacji (nie wysyłane do API bezpośrednio)
-  totalPlannedDistanceKm: number;   // suma distanceKm
-  totalPlannedDurationSec: number;  // suma seconds
+  // Derived display-only fields (not sent directly to the API)
+  totalPlannedDistanceKm: number; // sum of distanceKm
+  totalPlannedDurationSec: number; // sum of seconds
 
-  // Sekcja realizacji (opcjonalna)
+  // Completion section (optional)
   isCompleted: boolean;
   realizedDistanceKm?: number;
   realizedDurationSec?: number;
@@ -258,219 +259,217 @@ interface ManualWorkoutFormValues {
 }
 ```
 
-- **Mapowanie `ManualWorkoutFormValues` → `CreateWorkoutInput` (API)**:
+- **Mapping `ManualWorkoutFormValues` → `CreateWorkoutInput` (API)**:
   - `training_type_code = trainingTypeCode`
-  - `planned_date = plannedDate` w formacie `YYYY-MM-DD` (helper).
+  - `planned_date = plannedDate` in `YYYY-MM-DD` format (helper).
   - `position = position`
   - `planned_distance_m = Math.round(totalPlannedDistanceKm * 1000)`
   - `planned_duration_s = totalPlannedDurationSec`
-  - `steps = ManualWorkoutStepForm[]` zmapowane na `WorkoutStepDto[]`
-  - jeśli `isCompleted === true`:
+  - `steps = ManualWorkoutStepForm[]` mapped to `WorkoutStepDto[]`
+  - if `isCompleted === true`:
     - `status = "completed"`
     - `distance_m = Math.round(realizedDistanceKm * 1000)`
     - `duration_s = realizedDurationSec`
     - `avg_hr_bpm = avgHrBpm`
     - `completed_at = completedAt.toISOString()`
-    - `rating` – jeśli ustawione
-  - jeśli `isCompleted === false`:
-    - nie ustawiamy `status` ani pól realizacji (API przyjmie domyślnie `status="planned"`).
+    - `rating` – if set
+  - if `isCompleted === false`:
+    - omit `status` and completion fields (API defaults to `status="planned"`).
 
-### 6. Zarządzanie stanem
+### 6. State Management
 
-- **Stan w `CalendarView`**:
-  - Nowe zmienne:
+- **State in `CalendarView`**:
+  - New variables:
     - `isManualDrawerOpen: boolean`
     - `selectedManualDate: Date | null`
-  - Nowe handlery:
-    - `openManualDrawer(date: Date)` – ustawienie `selectedManualDate` i otwarcie.
-    - `closeManualDrawer()` – reset stanu i zamknięcie.
-  - `DayCell` już przyjmuje `onAddWorkoutManual` – podpiąć `openManualDrawer`.
+  - New handlers:
+    - `openManualDrawer(date: Date)` – set `selectedManualDate` and open.
+    - `closeManualDrawer()` – reset state and close.
+  - `DayCell` already accepts `onAddWorkoutManual` — connect `openManualDrawer`.
 
-- **Stan w `ManualWorkoutDrawer`**:
-  - Nie trzyma długotrwałego stanu – korzysta z wewnętrznego stanu `react-hook-form` w `WorkoutPlanForm`.
-  - Może przechowywać:
-    - `apiError: string | null` – komunikat błędu z serwera.
-    - `isSubmitting: boolean` – blokada formularza podczas wysyłki.
+- **State in `ManualWorkoutDrawer`**:
+  - No long-lived state — uses `WorkoutPlanForm`'s internal `react-hook-form` state.
+  - May store:
+    - `apiError: string | null` – server error message.
+    - `isSubmitting: boolean` – disables form during submission.
 
-- **Stan w `WorkoutPlanForm`**:
-  - Zarządzany przez `useForm<ManualWorkoutFormValues>()`:
-    - `steps` jako `useFieldArray`.
-    - Obserwacja `steps` (`watch`) w celu przeliczania `totalPlannedDistanceKm` i `totalPlannedDurationSec`.
-    - Obserwacja `isCompleted` do walidacji sekcji realizacji.
+- **State in `WorkoutPlanForm`**:
+  - Managed by `useForm<ManualWorkoutFormValues>()`:
+    - `steps` as `useFieldArray`.
+    - Watch `steps` to recalculate `totalPlannedDistanceKm` and `totalPlannedDurationSec`.
+    - Watch `isCompleted` to validate completion section.
 
-- **Potencjalny custom hook**:
+- **Potential custom hook**:
   - `useManualWorkoutForm(initialDate: Date, initialTrainingTypeCode?: string)`:
-    - Inicjalizuje `useForm` z sensownymi defaultami:
+    - Initializes `useForm` with sensible defaults:
       - `plannedDate = initialDate`,
-      - `steps` z jednym krokiem `warmup` lub `main`,
-      - `position` = `1` lub `nextPosition`.
-    - Zapewnia funkcje `handleSubmit`, `addStep`, `removeStep`, przelicza sumy.
-    - Może być zaimplementowany w tym samym pliku co `WorkoutPlanForm` lub w `src/components/hooks`.
+      - `steps` with one `warmup` or `main` step,
+      - `position` = `1` or `nextPosition`.
+    - Provides `handleSubmit`, `addStep`, `removeStep`, calculates totals.
+    - May be in the same file as `WorkoutPlanForm` or in `src/components/hooks`.
 
-### 7. Integracja API
+### 7. API Integration
 
-- **Endpointy wykorzystywane przez widok**:
+- **Endpoints used by the view**:
   - `GET /api/v1/training-types`
-    - Nie jest wywoływany z `ManualWorkoutDrawer` – lista typów jest już pobierana w `useCalendar` i przekazywana jako `trainingTypes`.
-    - Typ odpowiedzi: `ApiListResponse<TrainingTypeDto>`.
+    - Not called from `ManualWorkoutDrawer` — types already fetched by `useCalendar` and passed as `trainingTypes`.
+    - Response type: `ApiListResponse<TrainingTypeDto>`.
   - `POST /api/v1/workouts`
-    - Wywoływany z `WorkoutPlanForm` przy submit.
-    - **Body (planned)** – mapowane z `ManualWorkoutFormValues`:
+    - Called from `WorkoutPlanForm` on submission.
+    - **Body (planned)** – mapped from `ManualWorkoutFormValues`:
       - `training_type_code`
       - `planned_date`
       - `position`
       - `planned_distance_m`
       - `planned_duration_s`
       - `steps`
-    - **Body (completed)** – dodatkowo:
+    - **Body (completed)** – additionally:
       - `status: "completed"`
       - `distance_m`
       - `duration_s`
       - `avg_hr_bpm`
       - `completed_at`
       - `rating?`
-    - **Typ żądania**: `CreateWorkoutInput` (Zod z `src/lib/validation/workouts.ts` – w JS wystarczy upewnić się, że pola spełniają zakresy).
-    - **Typ odpowiedzi (sukces)**: `ApiResponse<WorkoutDetailDto>`.
-    - **Kody błędów**:
-      - `401 unauthorized` – globalny redirect do `/login` (obsługiwany przez middleware).
-      - `404 not_found` (`INVALID_TRAINING_TYPE`) – teoretycznie nie powinien wystąpić przy dropdownie.
-      - `409 duplicate_position` – konflikt pozycji w danym dniu.
-      - `422 validation_error` – błędy walidacji danych.
-      - `500 internal_error` – nieoczekiwany błąd serwera.
+    - **Request type**: `CreateWorkoutInput` (Zod from `src/lib/validation/workouts.ts` — in JS, ensure fields meet ranges).
+    - **Response type (success)**: `ApiResponse<WorkoutDetailDto>`.
+    - **Error codes**:
+      - `401 unauthorized` – global redirect to `/login` (handled by middleware).
+      - `404 not_found` (`INVALID_TRAINING_TYPE`) – should not occur with a dropdown.
+      - `409 duplicate_position` – position conflict on the same day.
+      - `422 validation_error` – data validation errors.
+      - `500 internal_error` – unexpected server error.
 
-- **Warstwa klienta**:
-  - Można dodać helper w `src/lib/api/workoutsClient.ts`, np. `createWorkout(request: CreateWorkoutInput): Promise<WorkoutDetailDto>`, na wzór istniejących klientów (`getWorkoutById`, `completeWorkout`).
-  - `WorkoutPlanForm` używa tego helpera zamiast gołego `fetch`, zachowując spójny handling błędów (`ApiError`).
+- **Client layer**:
+  - Add a helper in `src/lib/api/workoutsClient.ts`, e.g., `createWorkout(request: CreateWorkoutInput): Promise<WorkoutDetailDto>`, following existing clients (`getWorkoutById`, `completeWorkout`).
+  - `WorkoutPlanForm` uses this helper instead of raw `fetch`, maintaining consistent error handling (`ApiError`).
 
-- **Odświeżanie kalendarza po sukcesie**:
-  - Po udanym `POST /workouts`, `ManualWorkoutDrawer` wywołuje:
-    - `onWorkoutCreated(workout)` → w `CalendarView`:
-      - pokazanie toast „Trening dodany”,
-      - wywołanie `refetch()` z `useCalendar()` w celu ponownego pobrania `/api/v1/calendar`.
+- **Refresh calendar on success**:
+  - After successful `POST /workouts`, `ManualWorkoutDrawer` calls:
+    - `onWorkoutCreated(workout)` → in `CalendarView`:
+      - show “Workout added” toast,
+      - call `refetch()` from `useCalendar()` to fetch `/api/v1/calendar` again.
 
-### 8. Interakcje użytkownika
+### 8. User Interactions
 
-- **Kliknięcie `+` → „Dodaj ręcznie” w pustej komórce dnia**:
-  - `DayCell` wywołuje `onAddWorkoutManual(day.date)`.
+- **Click `+` → “Add manually” in an empty day cell**:
+  - `DayCell` calls `onAddWorkoutManual(day.date)`.
   - `CalendarView`:
-    - ustawia `selectedManualDate = date`,
+    - sets `selectedManualDate = date`,
     - `isManualDrawerOpen = true`.
-  - Drawer otwiera się z formularzem, `plannedDate` domyślnie ustawione na wybraną datę.
+  - Drawer opens with `plannedDate` defaulting to the selected date.
 
-- **Wypełnianie formularza**:
-  - Użytkownik:
-    - wybiera typ treningu,
-    - ewentualnie zmienia datę/pozycję,
-    - dodaje segmenty (kroki) z odpowiednimi częściami, czasem, dystansem i planowanym tętnem,
-    - opcjonalnie zaznacza „Trening już wykonany” i wpisuje metryki realizacji.
+- **Complete form**:
+  - User:
+    - selects workout type,
+    - optionally changes date/position,
+    - adds steps with the appropriate parts, time, distance, and planned heart rate,
+    - optionally selects “Workout already completed” and enters actual metrics.
   - UI:
-    - automatycznie aktualizuje łączny dystans i czas w sekcji planu,
-    - natychmiast pokazuje błędy walidacji przy niepoprawnych wartościach (np. brak dystansu/czasu w kroku, przekroczone zakresy).
+    - automatically updates total planned distance/time,
+    - immediately shows validation errors for invalid values (e.g., missing step distance/time, out-of-range values).
 
-- **Zatwierdzenie formularza („Zapisz”)**:
-  - `WorkoutPlanForm` wykonuje walidację lokalną.
-  - Przy braku błędów:
-    - konstruuje `CreateWorkoutInput`,
-    - wysyła `POST /api/v1/workouts`,
-    - pokazuje stan `isSubmitting` (disabled przyciski, spinner w przycisku).
-  - Po udanym zapisie:
-    - wywoływany jest `onSubmitSuccess(workout)`,
-    - `ManualWorkoutDrawer` zamyka panel (`onOpenChange(false)`),
-    - `CalendarView` refetchuje dane kalendarza.
+- **Submit form (“Save”)**:
+  - `WorkoutPlanForm` runs local validation.
+  - If no errors:
+    - builds `CreateWorkoutInput`,
+    - sends `POST /api/v1/workouts`,
+    - shows `isSubmitting` (disabled buttons, button spinner).
+  - On successful save:
+    - calls `onSubmitSuccess(workout)`,
+    - `ManualWorkoutDrawer` closes (`onOpenChange(false)`),
+    - `CalendarView` refetches calendar data.
 
-- **Anulowanie**:
-  - Kliknięcie „Anuluj” zamyka drawer (`onOpenChange(false)`), bez wywoływania API.
-  - Stan formularza resetuje się przy kolejnym otwarciu.
+- **Cancel**:
+  - Clicking “Cancel” closes (`onOpenChange(false)`) without an API call.
+  - Form state resets on the next opening.
 
-### 9. Warunki i walidacja
+### 9. Conditions and Validation
 
-- **Walidacja formularza na froncie**:
-  - Oparta o `zod` (lokalny schema) lub reguły `react-hook-form` odzwierciedlające `createWorkoutSchema`:
-    - wszystkie pola planu (`trainingTypeCode`, `plannedDate`, `position`, `steps`) wymagane,
-    - walidacja zakresów dla dystansu/czasu/HR,
-    - walidacja `steps` (anyOf distance lub duration, min 1 element),
-    - walidacja warunkowa sekcji realizacji (tylko gdy `isCompleted === true`).
-- **Zależności między polami**:
-  - zmiana kroków automatycznie zmienia `totalPlannedDistanceKm` oraz `totalPlannedDurationSec`; jeśli sumy wychodzą poza zakres, pojawia się błąd globalny (np. nad przyciskiem „Zapisz”).
-  - `position` pozostaje edytowalne, ale UI może ostrzec (tooltip) o potencjalnym konflikcie przy powtórzeniu pozycji.
-- **Walidacja zgodna z API**:
-  - przed wysłaniem do API konwersja do jednostek (m, s) oraz formatów (`YYYY-MM-DD`, ISO 8601).
-  - brak pól, których API nie rozumie (np. `targetHrBpm` – „spłaszczone” do `notes`).
+- **Frontend form validation**:
+  - Based on a local `zod` schema or `react-hook-form` rules mirroring `createWorkoutSchema`:
+    - all plan fields (`trainingTypeCode`, `plannedDate`, `position`, `steps`) required,
+    - range validation for distance/time/HR,
+    - `steps` validation (anyOf distance or duration, at least 1 item),
+    - conditional completion validation (only if `isCompleted === true`).
+- **Field dependencies**:
+  - step changes automatically update `totalPlannedDistanceKm` and `totalPlannedDurationSec`; out-of-range totals show a global error (e.g., above “Save”).
+  - `position` remains editable, but UI may warn via tooltip about a potential duplicate position.
+- **API-consistent validation**:
+  - convert units (m, s) and formats (`YYYY-MM-DD`, ISO 8601) before submission.
+  - omit fields the API does not understand (e.g., `targetHrBpm` flattened into `notes`).
 
-### 10. Obsługa błędów
+### 10. Error Handling
 
-- **Walidacja po stronie serwera (422)**:
-  - `ApiError` zawiera `error.details` z listą błędów Zod.
+- **Server validation (422)**:
+  - `ApiError` contains `error.details` with Zod errors.
   - `WorkoutPlanForm`:
-    - mapuje błędy do odpowiadających im pól (jeśli to możliwe),
-    - wyświetla ogólny komunikat na górze formularza (np. „Nieprawidłowe dane treningu”).
+    - maps errors to corresponding fields where possible,
+    - displays a general message at the top (e.g., “Invalid workout data”).
 
-- **Konflikt pozycji (409 `duplicate_position`)**:
-  - Wyświetlić toast lub baner w formularzu: „Istnieje już trening z taką pozycją dla danej daty. Zmień pozycję lub usuń istniejący trening.”
-  - Podświetlić pole `position` jako błędne.
+- **Position conflict (409 `duplicate_position`)**:
+  - Show a toast or form banner: “A workout already has this position on the selected date. Change the position or delete the existing workout.”
+  - Highlight `position` as invalid.
 
-- **Błąd 401 / brak sesji**:
-  - Globalnie obsługiwany przez middleware – użytkownik zostanie przekierowany do `/login`.
+- **401 / no session**:
+  - Handled globally by middleware — user redirects to `/login`.
 
-- **Błędy sieci/500**:
-  - Pokazać komunikat „Wystąpił nieoczekiwany błąd serwera. Spróbuj ponownie później.”
-  - Pozostawić dane formularza, aby użytkownik mógł ponowić zapis bez utraty wpisanych pól.
+- **Network/500 errors**:
+  - Show “An unexpected server error occurred. Please try again later.”
+  - Retain form data so the user can retry without losing entries.
 
 - **Edge cases**:
-  - Brak dostępnych `trainingTypes` (np. błąd pobierania w `useCalendar`):
-    - nie otwierać drawera lub pokazać w nim komunikat „Nie udało się załadować typów treningów” z przyciskiem ponownej próby.
-  - `selectedManualDate` w przeszłości – nadal dozwolone (użytkownik może dodać retro-trening), ale UI może pokazać delikatny hint.
+  - No available `trainingTypes` (e.g., fetching error in `useCalendar`):
+    - do not open, or show “Could not load workout types” with a retry button.
+  - `selectedManualDate` in the past — allowed (historical workout entry), but UI may show a subtle hint.
 
-### 11. Kroki implementacji
+### 11. Implementation Steps
 
-1. **Przygotowanie typów**  
-   - Dodać typy `ManualWorkoutStepForm` i `ManualWorkoutFormValues` (np. do `src/types/workoutForms.ts` lub lokalnie w pliku `WorkoutPlanForm.tsx`).  
-   - Upewnić się, że importy `TrainingTypeDto`, `WorkoutDetailDto`, `WorkoutStepDto` są poprawnie dostępne z `src/types.ts`.
+1. **Prepare types**
+   - Add `ManualWorkoutStepForm` and `ManualWorkoutFormValues` (e.g., `src/types/workoutForms.ts` or locally in `WorkoutPlanForm.tsx`).
+   - Ensure `TrainingTypeDto`, `WorkoutDetailDto`, `WorkoutStepDto` imports from `src/types.ts` are available.
 
-2. **Implementacja helperów mapujących**  
-   - Stworzyć funkcje:
+2. **Implement mapping helpers**
+   - Create functions:
      - `mapStepFormToDto(step: ManualWorkoutStepForm): WorkoutStepDto`
-     - `mapFormValuesToCreateWorkoutInput(values: ManualWorkoutFormValues): CreateWorkoutInput`  
-   - Funkcje powinny odpowiedzialnie konwertować jednostki (km → m, hh:mm:ss → s) oraz wstrzykiwać `targetHrBpm` do `notes`.
+     - `mapFormValuesToCreateWorkoutInput(values: ManualWorkoutFormValues): CreateWorkoutInput`
+   - Correctly convert units (km → m, hh:mm:ss → s) and insert `targetHrBpm` into `notes`.
 
-3. **Implementacja `WorkoutPlanForm`**  
-   - Utworzyć komponent z `react-hook-form` (`useForm`, `useFieldArray`) i lokalnym schema walidacji.  
-   - Zaimplementować obliczanie sum (`totalPlannedDistanceKm`, `totalPlannedDurationSec`) na podstawie `steps`.  
-   - Obsłużyć submit: wywołać klienta API `createWorkout`, przekazać wynik do `onSubmitSuccess`.  
-   - Dodać prezentację błędów pod polami oraz ogólny baner błędu.
+3. **Implement `WorkoutPlanForm`**
+   - Create with `react-hook-form` (`useForm`, `useFieldArray`) and a local validation schema.
+   - Calculate totals (`totalPlannedDistanceKm`, `totalPlannedDurationSec`) from `steps`.
+   - Handle submission: call API client `createWorkout`, pass result to `onSubmitSuccess`.
+   - Add field errors and a general error banner.
 
-4. **Implementacja `StepsEditor` i `StepRow`**  
-   - Wykorzystać `useFieldArray` do renderowania listy kroków z przyciskami dodawania/usuwania.  
-   - Każdy krok powinien oferować wybór typu segmentu oraz pola do edycji dystansu, czasu i HR.
+4. **Implement `StepsEditor` and `StepRow`**
+   - Use `useFieldArray` to render steps with add/remove buttons.
+   - Each step offers type selection and distance/time/HR fields.
 
-5. **Implementacja `OptionalRealizationSection`**  
-   - Dodać przełącznik `isCompleted` oraz pola realizacji, z domyślnym wypełnieniem z sum planu.  
-   - Zapewnić walidację warunkową oraz mapowanie pól przy submit.
+5. **Implement `OptionalRealizationSection`**
+   - Add `isCompleted` and actual metric fields, prefilled from plan totals.
+   - Ensure conditional validation and field mapping on submit.
 
-6. **Implementacja `ManualWorkoutDrawer`**  
-   - Oprzeć się na `Sheet` z `shadcn/ui` (podobnie jak `AISuggestionDrawer` i `WorkoutDetailDrawer`).  
-   - Wewnątrz renderować `WorkoutPlanForm` z przekazaniem `trainingTypes` i `initialDate`.  
-   - Obsłużyć `onSubmitSuccess` (zamknięcie + callback do `CalendarView`).
+6. **Implement `ManualWorkoutDrawer`**
+   - Base on `Sheet` from `shadcn/ui` (like `AISuggestionDrawer` and `WorkoutDetailDrawer`).
+   - Render `WorkoutPlanForm` inside with `trainingTypes` and `initialDate`.
+   - Handle `onSubmitSuccess` (close + callback to `CalendarView`).
 
-7. **Integracja z `CalendarView`**  
-   - Dodać stan `isManualDrawerOpen` i `selectedManualDate`.  
-   - Zaimplementować `handleAddWorkoutManual(date: Date)` otwierający drawer zamiast `alert`.  
-   - Dodać `<ManualWorkoutDrawer>` obok istniejących drawerów (Day, AI, WorkoutDetail), przekazując `trainingTypes` i `refetch`.
+7. **Integrate `CalendarView`**
+   - Add `isManualDrawerOpen` and `selectedManualDate` state.
+   - Implement `handleAddWorkoutManual(date: Date)` opening the drawer instead of `alert`.
+   - Add `<ManualWorkoutDrawer>` alongside existing drawers (Day, AI, WorkoutDetail), passing `trainingTypes` and `refetch`.
 
-8. **Obsługa błędów i toastów**  
-   - Wykorzystać istniejący mechanizm toastów (jeśli jest) lub dodać prosty `ToastManager` (jeśli brak) do komunikatów sukcesu/błędów.  
-   - Obsłużyć szczególnie przypadek `409 duplicate_position` oraz ogólne błędy serwera.
+8. **Handle errors and toasts**
+   - Use the existing toast mechanism, or add a simple `ToastManager` for success/error messages if absent.
+   - Specifically handle `409 duplicate_position` and general server errors.
 
-9. **Testy manualne i UX**  
-   - Sprawdzić przepływy:
-     - dodanie prostego planowanego treningu (1 krok),
-     - dodanie treningu z wieloma krokami (sumowanie dystansu/czasu),
-     - dodanie treningu ukończonego (z HR i ratingiem),
-     - błędne wartości (za duży dystans/czas, brak dystansu/czasu w kroku),
-     - konflikt pozycji (wymuszenie przez ręczną zmianę `position`).  
-   - Upewnić się, że po sukcesie trening pojawia się w kalendarzu w poprawnym dniu i pozycji.
+9. **Manual testing and UX**
+   - Check flows:
+     - simple planned workout (1 step),
+     - multiple-step workout (distance/time totals),
+     - completed workout (HR and rating),
+     - invalid values (excessive distance/time, missing step distance/time),
+     - position conflict (force by manually changing `position`).
+   - Ensure successful creation appears on the correct calendar day and position.
 
-10. **Refaktoryzacja i reużycie (opcjonalne)**  
-    - Rozważyć użycie `WorkoutPlanForm` / `StepsEditor` również w widokach edycji treningu lub onboardingu, jeśli zostanie to zaplanowane w przyszłości, aby uniknąć duplikacji logiki formularzy.
-
-
+10. **Refactoring and reuse (optional)**
+    - Consider reusing `WorkoutPlanForm` / `StepsEditor` in future editing or onboarding views to avoid form logic duplication.

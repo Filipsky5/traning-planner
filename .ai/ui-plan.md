@@ -1,242 +1,254 @@
-## Architektura UI dla Traning Planner
+## UI Architecture for Traning Planner
 
-### 1. Przegląd struktury UI
+### 1. UI Structure Overview
 
-- **Stack i podejście renderowania**
-  - Astro 5 (SSR + wyspy React 19).
-  - TanStack Query do stanu serwerowego z SSR prefetch i de/rehydracją.
-  - Lokalne stany UI w React (drawery, formularze, selekcje).
-- **Widok główny**
-  - Kalendarz tygodniowy (domyślny), przełącznik na miesiąc (siatka pełnych tygodni).
-  - SSR dla tygodnia + prefetch sąsiedniego tygodnia.
-- **Nawigacja**
-  - Mobile: bottom nav („Kalendarz”, „Dodaj”, „Cel”).
-  - Desktop: layout 2-kolumnowy (lewy sidebar: nawigacja + pasek postępu celu; Main: widoki i panele).
-- **Interakcje modalowe**
-  - Drawer jako główny kontener interakcji: Drawer Dnia (lista treningów), Drawer AI (generowanie/akceptacja), Drawer „Dodaj ręcznie”.
-  - Bez routowania parametrów w URL dla drawerów (overlay na bieżącym widoku).
-- **Dane i cache**
-  - Klucze TanStack Query: 
-    - ["training-types"] (ETag, staleTime 1h), 
-    - ["calendar", start, end, status] (staleTime 1h), 
-    - ["workout", id], 
+- **Stack and rendering approach**
+  - Astro 5 (SSR + React 19 islands).
+  - TanStack Query for server state with SSR prefetch and de/rehydration.
+  - Local UI state in React (drawers, forms, selections).
+- **Main view**
+  - Weekly calendar (default), switch to month (grid of complete weeks).
+  - SSR for the week + prefetch of the adjacent week.
+- **Navigation**
+  - Mobile: bottom navigation (“Calendar”, “Add”, “Goal”).
+  - Desktop: 2-column layout (left sidebar: navigation + goal progress bar; Main: views and panels).
+- **Modal interactions**
+  - Drawer as the primary interaction container: Day Drawer (workout list), AI Drawer (generation/acceptance), “Add manually” Drawer.
+  - No URL parameter routing for drawers (overlay on the current view).
+- **Data and cache**
+  - TanStack Query keys:
+    - ["training-types"] (ETag, staleTime 1h),
+    - ["calendar", start, end, status] (staleTime 1h),
+    - ["workout", id],
     - ["workouts","last3", type?] (staleTime 30s),
     - ["ai","suggestions", date?, type?] (staleTime 30s).
-  - refetchOnWindowFocus: always; retry: 2 (z wyjątkiem 4xx).
-  - Optimistic updates: accept/regenerate, rate/skip/cancel + natychmiastowa invalidacja powiązanych kluczy.
+  - refetchOnWindowFocus: always; retry: 2 (except 4xx).
+  - Optimistic updates: accept/regenerate, rate/skip/cancel + immediate invalidation of related keys.
 - **A11y**
-  - Grid kalendarza: role="grid"/"row"/"gridcell", strzałki zmieniają fokus, etykiety dni.
-  - shadcn/ui (Radix) z focus trap; "Skip to content"; :focus-visible; nie polegać wyłącznie na kolorze (ikona + tekst).
-- **Bezpieczeństwo**
-  - Supabase Auth; 401 → SSR redirect do `/login?next=...`; 403 → toast (brak danych wrażliwych).
-  - Brak użycia service-role z klienta. CSRF ograniczany przez nagłówek `Content-Type: application/json` i same-site cookies w SSR.
-- **Jednostki i prezentacja**
-  - Dystans: km (konwersja ↔ m dla API).
-  - Czas: segmentowany (mm:ss / h:mm:ss).
-  - Tempo: globalny przełącznik min/km ↔ km/h (w menu użytkownika).
+  - Calendar grid: role="grid"/"row"/"gridcell", arrow keys move focus, day labels.
+  - shadcn/ui (Radix) with focus trap; "Skip to content"; :focus-visible; do not rely on color alone (icon + text).
+- **Security**
+  - Supabase Auth; 401 → SSR redirect to `/login?next=...`; 403 → toast (no sensitive data).
+  - No client-side service-role use. CSRF mitigated through the `Content-Type: application/json` header and same-site cookies in SSR.
+- **Units and presentation**
+  - Distance: km (conversion ↔ m for the API).
+  - Time: segmented (mm:ss / h:mm:ss).
+  - Pace: global min/km ↔ km/h toggle (in the user menu).
 
-### 2. Lista widoków
+### 2. View List
 
-#### Widok: Kalendarz
-- **Ścieżka**: `/`
-- **Główny cel**: Przegląd planu i szybkie akcje na treningach w kontekście dnia/tygodnia/miesiąca.
-- **Kluczowe informacje**:
-  - Siatka dni z treningami, status (planned/completed/skipped/canceled), typ treningu, pochodzenie (badge AI), „+” dla pustych dni.
-  - Przełącznik „Tydzień/Miesiąc”; na desktopie stały sidebar z postępem celu.
-- **Kluczowe komponenty widoku**:
-  - CalendarHeader (nawigacja tygodni/miesięcy, przełącznik zakresu, DatePicker).
-  - CalendarGrid (role="grid"), DayCell (role="gridcell", „+”).
-  - WorkoutCard (status, typ, badge AI, akcje skrótowe).
-  - DayDrawer (lista dnia, „+2 więcej”).
-  - AISuggestionDrawer (uruchamiany z „+” lub przycisku AI).
-- **UX, dostępność, bezpieczeństwo**:
-  - Skeletony ładowania siatki; spinnery tylko dla akcji.
-  - Klawiatura: strzałki między komórkami, Enter otwiera Drawer, Esc zamyka.
-  - 401 → redirect; 403 → toast; 410 („Wygasła”) → blokada z tooltipem; 429 → blokada + Retry-After.
-- **Powiązane API**:
+#### View: Calendar
+
+- **Path**: `/`
+- **Main goal**: Plan overview and quick workout actions in a day/week/month context.
+- **Key information**:
+  - Day grid with workouts, status (planned/completed/skipped/canceled), workout type, origin (AI badge), “+” for empty days.
+  - “Week/Month” toggle; persistent desktop sidebar with goal progress.
+- **Key view components**:
+  - CalendarHeader (week/month navigation, range toggle, DatePicker).
+  - CalendarGrid (role="grid"), DayCell (role="gridcell", “+”).
+  - WorkoutCard (status, type, AI badge, quick actions).
+  - DayDrawer (day list, “+2 more”).
+  - AISuggestionDrawer (opened from “+” or the AI button).
+- **UX, accessibility, security**:
+  - Grid loading skeletons; spinners only for actions.
+  - Keyboard: arrows between cells, Enter opens the Drawer, Esc closes it.
+  - 401 → redirect; 403 → toast; 410 (“Expired”) → disabled with tooltip; 429 → disabled + Retry-After.
+- **Related API**:
   - GET `/api/v1/calendar?start=&end=&status?`
   - GET `/api/v1/training-types` (If-None-Match, ETag, 304)
 
-#### Widok: Onboarding (3 ostatnie treningi)
-- **Ścieżka**: `/onboarding`
-- **Główny cel**: Wprowadzenie dokładnie 3 zrealizowanych treningów startowych.
-- **Kluczowe informacje**:
-  - Krok 1–3: dystans (km), czas (segmenty), śr. tętno, data/godzina; przykładowe podpowiedzi.
-  - Komunikat o celu aplikacji i możliwości dodania celu później.
-- **Kluczowe komponenty widoku**:
-  - Stepper (3 kroki), WorkoutCompletedForm (segmentowany czas, walidacje).
-  - CTA „Zakończ” → redirect do `next` lub `/`.
-- **UX, dostępność, bezpieczeństwo**:
-  - SSR gating na `/`: gdy <3, redirect do `/onboarding?next=/`.
-  - A11y: czytelne etykiety pól, kolejność Tab, walidacje z komunikatami.
-- **Powiązane API**:
-  - POST `/api/v1/workouts` (status=completed, wymagane metryki)
+#### View: Onboarding (3 recent workouts)
 
-#### Widok: Szczegóły treningu
-- **Ścieżka**: `/workouts/[id]`
-- **Główny cel**: Pełny wgląd i operacje na pojedynczym treningu.
-- **Kluczowe informacje**:
-  - Plan vs realizacja, kroki (warmup/main/cooldown), tempo, rating.
-  - Pochodzenie (AI/manual/import), powiązana sugestia AI (jeśli dotyczy).
-- **Kluczowe komponenty widoku**:
-  - WorkoutDetailPanel (w Main na desktopie; pełnoekran na mobile).
-  - Actions: Complete, Skip, Cancel, Rate; Edit (metryki/plan – ograniczone).
-- **UX, dostępność, bezpieczeństwo**:
-  - Natychmiastowe akcje Skip/Cancel (nieodwracalne w MVP) + toast.
-  - Rating dostępny wyłącznie dla completed.
-- **Powiązane API**:
+- **Path**: `/onboarding`
+- **Main goal**: Enter exactly 3 completed workouts as initial data.
+- **Key information**:
+  - Steps 1–3: distance (km), time (segments), avg. heart rate, date/time; example hints.
+  - Message about the application's purpose and the option to add a goal later.
+- **Key view components**:
+  - Stepper (3 steps), WorkoutCompletedForm (segmented time, validation).
+  - “Finish” CTA → redirect to `next` or `/`.
+- **UX, accessibility, security**:
+  - SSR gating on `/`: when <3, redirect to `/onboarding?next=/`.
+  - A11y: clear field labels, Tab order, validation messages.
+- **Related API**:
+  - POST `/api/v1/workouts` (status=completed, metrics required)
+
+#### View: Workout Details
+
+- **Path**: `/workouts/[id]`
+- **Main goal**: Full insight into and operations on a single workout.
+- **Key information**:
+  - Plan vs completion, steps (warmup/main/cooldown), pace, rating.
+  - Origin (AI/manual/import), linked AI suggestion (if applicable).
+- **Key view components**:
+  - WorkoutDetailPanel (in Main on desktop; full-screen on mobile).
+  - Actions: Complete, Skip, Cancel, Rate; Edit (metrics/plan – limited).
+- **UX, accessibility, security**:
+  - Immediate Skip/Cancel actions (irreversible in the MVP) + toast.
+  - Rating available only for completed workouts.
+- **Related API**:
   - GET `/api/v1/workouts/{id}`; POST `/complete`, `/skip`, `/cancel`, `/rate`
 
-#### Widok: Cel użytkownika
-- **Ścieżka**: `/goal`
-- **Główny cel**: Ustawienie/edytowanie pojedynczego celu użytkownika (MVP).
-- **Kluczowe informacje**:
-  - Typ celu (np. distance_by_date), target_distance_m, due_date, notatki.
-  - Pasek postępu w sidebarze bazujący na ukończonych treningach.
-- **Kluczowe komponenty widoku**:
-  - GoalForm (GET/PUT), GoalProgress (w sidebarze + rozwijany szczegół).
-- **UX, dostępność, bezpieczeństwo**:
-  - Proste walidacje (wartości dodatnie, data w przyszłości).
-- **Powiązane API**:
+#### View: User Goal
+
+- **Path**: `/goal`
+- **Main goal**: Set/edit a single user goal (MVP).
+- **Key information**:
+  - Goal type (e.g., distance_by_date), target_distance_m, due_date, notes.
+  - Sidebar progress bar based on completed workouts.
+- **Key view components**:
+  - GoalForm (GET/PUT), GoalProgress (in the sidebar + expandable details).
+- **UX, accessibility, security**:
+  - Simple validation (positive values, future date).
+- **Related API**:
   - GET/PUT/DELETE `/api/v1/user-goal`
 
-#### Drawer: Dzienny przegląd (lista dnia)
-- **Ścieżka**: overlay na `/` (brak zmiany URL)
-- **Główny cel**: Przegląd i zarządzanie treningami danego dnia.
-- **Kluczowe informacje**:
-  - Lista treningów (zwinęty/rozwinięty), „+2 więcej” → pełna lista w Drawerze.
-- **Kluczowe komponenty widoku**:
-  - DayDrawerList, WorkoutCard (kompaktowy), QuickActions (skip/cancel).
-- **Powiązane API**:
+#### Drawer: Daily Overview (Day List)
+
+- **Path**: overlay on `/` (no URL change)
+- **Main goal**: Review and manage workouts for a given day.
+- **Key information**:
+  - Workout list (collapsed/expanded), “+2 more” → full list in the Drawer.
+- **Key view components**:
+  - DayDrawerList, WorkoutCard (compact), QuickActions (skip/cancel).
+- **Related API**:
   - GET `/api/v1/workouts?planned_date_*`
 
-#### Drawer: Sugestia AI
-- **Ścieżka**: overlay na `/` (brak zmiany URL)
-- **Główny cel**: Wygenerowanie i akceptacja sugestii AI dla wybranego dnia/typu.
-- **Kluczowe informacje**:
-  - Formularz typu i daty (prefill z komórki dnia), wynikowa propozycja (kroki, łączny dystans/czas), badge „Wygasła” jeśli dotyczy.
-  - Licznik regeneracji (max 3/dzień UTC).
-- **Kluczowe komponenty widoku**:
-  - AISuggestionForm (POST generate), SuggestionPreview (meta + steps), AcceptControls (position).
-  - RegenerateControls z limitem; ExpiredBadge; ConflictDialog (409).
-- **UX, dostępność, bezpieczeństwo**:
-  - 410 → stan read-only + CTA „Wygeneruj nową”.
-  - 409 (konflikt position) → dialog z wyborem nowej pozycji lub anulowanie.
-- **Powiązane API**:
+#### Drawer: AI Suggestion
+
+- **Path**: overlay on `/` (no URL change)
+- **Main goal**: Generate and accept an AI suggestion for the selected day/type.
+- **Key information**:
+  - Type and date form (prefilled from the day cell), resulting suggestion (steps, total distance/time), “Expired” badge if applicable.
+  - Regeneration counter (max 3/day UTC).
+- **Key view components**:
+  - AISuggestionForm (POST generate), SuggestionPreview (metadata + steps), AcceptControls (position).
+  - RegenerateControls with limit; ExpiredBadge; ConflictDialog (409).
+- **UX, accessibility, security**:
+  - 410 → read-only state + “Generate new” CTA.
+  - 409 (position conflict) → dialog to select a new position or cancel.
+- **Related API**:
   - POST `/api/v1/ai/suggestions`, GET `/ai/suggestions/{id}`
   - POST `/ai/suggestions/{id}/accept`, `/reject`, `/regenerate`
 
-#### Drawer: Dodaj ręcznie
-- **Ścieżka**: overlay na `/` (brak zmiany URL)
-- **Główny cel**: Dodanie planowanego lub zrealizowanego treningu ręcznie.
-- **Kluczowe informacje**:
-  - Pola planu: typ, data, position, planned_distance_m, planned_duration_s, kroki (opcjonalnie).
-  - Pola realizacji (opcjonalnie): distance_m, duration_s, avg_hr_bpm, completed_at, rating.
-- **Kluczowe komponenty widoku**:
-  - WorkoutPlanForm, StepsEditor (min. schema), OptionalRealizationSection.
-- **Powiązane API**:
+#### Drawer: Add Manually
+
+- **Path**: overlay on `/` (no URL change)
+- **Main goal**: Manually add a planned or completed workout.
+- **Key information**:
+  - Plan fields: type, date, position, planned_distance_m, planned_duration_s, steps (optional).
+  - Completion fields (optional): distance_m, duration_s, avg_hr_bpm, completed_at, rating.
+- **Key view components**:
+  - WorkoutPlanForm, StepsEditor (minimal schema), OptionalRealizationSection.
+- **Related API**:
   - POST `/api/v1/workouts`
 
-#### Widok: Ustawienia (menu użytkownika)
-- **Ścieżka**: overlay/popover (menu), dostępne globalnie
-- **Główny cel**: Przełącznik prezentacji tempa (min/km ↔ km/h), link do „Cel”.
-- **Kluczowe informacje**:
-  - Bieżąca jednostka tempa (persist w localStorage).
-- **Kluczowe komponenty widoku**:
+#### View: Settings (User Menu)
+
+- **Path**: overlay/popover (menu), globally available
+- **Main goal**: Pace display toggle (min/km ↔ km/h), link to “Goal”.
+- **Key information**:
+  - Current pace unit (persisted in localStorage).
+- **Key view components**:
   - UserMenu, PaceUnitToggle.
 
-### 3. Mapa podróży użytkownika
+### 3. User Journey Map
 
-1) Nowy użytkownik (Onboarding)
-- Wejście na `/` → SSR gating → redirect do `/onboarding?next=/`.
-- Krok 1–3: wprowadza 3 ukończone treningi → POST `/workouts`.
-- Po zakończeniu → redirect do `next` (zwykle `/`).
+1. New user (Onboarding)
 
-2) Planowanie z AI (główny przypadek)
-- Na `/` wybiera dzień → „+” → Drawer AI.
-- Wybiera typ (prefill z popularnych / last3), data prefill → POST `/ai/suggestions`.
-- Ogląda propozycję (steps, meta, badge AI). Jeśli za trudna → POST `/regenerate` (limit 3/dzień per data).
-- Akceptuje z wyborem `position` (domyślnie najbliższe wolne) → POST `/accept`.
-  - W razie 409 → ConflictDialog z przeplanowaniem pozycji.
-- Po akceptacji: invalidacja kalendarza + sugestii; brak opcji „Dostosuj” (MVP).
+- Visits `/` → SSR gating → redirect to `/onboarding?next=/`.
+- Steps 1–3: enters 3 completed workouts → POST `/workouts`.
+- After completion → redirect to `next` (usually `/`).
 
-2) Planowanie Reczne
-- Na `/` wybiera dzień → „+” → Drop down z opcją Dodaj recznie.
-- Mozliwość wyboru typu treningu (tabela `training_types`), oraz daty i czas trwania jest zliczany automatycznie
-- Sekcja plan treningu ma guzik + który dodaje segment w segmencie trzy wybrać jakiego jest typu `warmup` | `main` | `cooldown`, czas jego trwania, oraz ilosc kilometrów do przebiegnięcia
-- Po akceptacji: invalidacja kalendarza + sugestii; brak opcji „Dostosuj” (MVP).
+2. AI planning (main use case)
 
-3) Realizacja i ocena
-- Po wykonaniu → z widoku szczegółów `/workouts/[id]` → Complete/Rate lub Skip/Cancel z kart w kalendarzu/Drawerze dnia.
-- Rate (too_easy/just_right/too_hard) → natychmiastowa aktualizacja i invalidacja last3, kalendarza.
+- On `/`, selects a day → “+” → AI Drawer.
+- Selects a type (prefilled from popular types / last3), date prefilled → POST `/ai/suggestions`.
+- Reviews the suggestion (steps, metadata, AI badge). If too hard → POST `/regenerate` (limit 3/day per date).
+- Accepts with a selected `position` (next available by default) → POST `/accept`.
+  - On 409 → ConflictDialog to change the position.
+- After acceptance: invalidate calendar + suggestions; no “Customize” option (MVP).
 
-4) Cel użytkownika
-- Z bottom nav / sidebar przechodzi do `/goal`.
-- Ustawia cel → PUT `/user-goal`; widzi postęp w sidebarze.
+2. Manual Planning
 
-5) Błędy i stany wyjątkowe
+- On `/`, selects a day → “+” → dropdown with the Add manually option.
+- Can select a workout type (`training_types` table) and date; duration is calculated automatically.
+- The workout plan section has a + button to add a segment; each segment requires selecting its type (`warmup` | `main` | `cooldown`), duration, and distance in kilometers.
+- After acceptance: invalidate calendar + suggestions; no “Customize” option (MVP).
+
+3. Completion and rating
+
+- After completing a workout → from `/workouts/[id]` details → Complete/Rate, or Skip/Cancel from cards in the calendar/Day Drawer.
+- Rate (too_easy/just_right/too_hard) → immediate update and invalidation of last3 and calendar.
+
+4. User goal
+
+- Opens `/goal` from the bottom navigation / sidebar.
+- Sets a goal → PUT `/user-goal`; sees progress in the sidebar.
+
+5. Errors and exceptional states
+
 - 401 → redirect `/login?next=...`.
-- 403 → toast „Brak uprawnień”.
-- 410 (sugestia wygasła) → blokada akcji w Drawerze AI + CTA „Wygeneruj nową”.
-- 429 → blokada akcji i honorowanie `Retry-After`.
+- 403 → “Access denied” toast.
+- 410 (suggestion expired) → disabled actions in the AI Drawer + “Generate new” CTA.
+- 429 → disabled actions and respect `Retry-After`.
 
-### 4. Układ i struktura nawigacji
+### 4. Navigation Layout and Structure
 
 - **Mobile**
-  - Header: logo, przycisk menu użytkownika (Settings/Logout).
-  - Bottom nav: 
-    - Kalendarz (`/`), 
-    - Dodaj (otwiera wybór: Ręczny/AI; jeśli <3 → `/onboarding?next=/`), 
-    - Cel (`/goal`).
-  - Drawery pełnoekranowe (AI, Dzień, Dodaj).
+  - Header: logo, user menu button (Settings/Logout).
+  - Bottom navigation:
+    - Calendar (`/`),
+    - Add (opens choice: Manual/AI; if <3 → `/onboarding?next=/`),
+    - Goal (`/goal`).
+  - Full-screen drawers (AI, Day, Add).
 - **Desktop**
-  - Layout 2 kolumny:
-    - Sidebar (lewo): nawigacja (Kalendarz, Cel), GoalProgress (rozwijany).
-    - Main (prawo): kalendarz/treści + panele szczegółów.
-  - Drawery jako panele boczne (AI, Dzień, Dodaj).
-- **Routowanie**
-  - Widoki routowane: `/`, `/onboarding`, `/workouts/[id]`, `/goal`.
-  - Interakcje: Drawery bez zmiany URL (state UI).
+  - 2-column layout:
+    - Sidebar (left): navigation (Calendar, Goal), GoalProgress (expandable).
+    - Main (right): calendar/content + detail panels.
+  - Drawers as side panels (AI, Day, Add).
+- **Routing**
+  - Routed views: `/`, `/onboarding`, `/workouts/[id]`, `/goal`.
+  - Interactions: drawers without URL changes (UI state).
 
-### 5. Kluczowe komponenty (wielokrotnego użytku)
+### 5. Key Components (Reusable)
 
-- **CalendarHeader**: nawigacja dat, przełącznik trybu, wpięty DatePicker (react-day-picker).
-- **CalendarGrid / DayCell**: role="grid"/"gridcell", obsługa klawiatury, wskaźniki stanu dnia.
-- **WorkoutCard**: status, typ, badge AI, skrótowe akcje (skip/cancel), ikony + tekst.
-- **DayDrawer**: lista treningów dnia, „+2 więcej”, dostęp do akcji i szczegółów.
-- **AISuggestionDrawer**: formularz (typ, data), podgląd steps, Accept/Regenerate (limit 3/dzień per data), ExpiredBadge, ConflictDialog.
-- **WorkoutPlanForm**: planowane pola, walidacje zakresów (zgodnie z API).
-- **WorkoutCompletedForm**: metryki realizacji, rating.
-- **StepsEditor**: prosty edytor kroków (warmup/main/cooldown/segment) zgodnie z minimalnym schematem.
-- **GoalForm / GoalProgress**: CRUD celu + wizualizacja progresu (suma dystansu ukończonych vs target).
-- **DatePicker**: ujednolicony picker (react-day-picker) we wszystkich miejscach.
-- **UserMenu / PaceUnitToggle**: globalne ustawienie tempa (persist).
-- **ToastManager**: komunikaty błędów i sukcesów (403/409/410/429 – zgodnie z polityką).
-- **QueryBoundary**: skeletony i retry stanu danych.
+- **CalendarHeader**: date navigation, mode toggle, integrated DatePicker (react-day-picker).
+- **CalendarGrid / DayCell**: role="grid"/"gridcell", keyboard support, day status indicators.
+- **WorkoutCard**: status, type, AI badge, quick actions (skip/cancel), icons + text.
+- **DayDrawer**: daily workout list, “+2 more”, access to actions and details.
+- **AISuggestionDrawer**: form (type, date), steps preview, Accept/Regenerate (limit 3/day per date), ExpiredBadge, ConflictDialog.
+- **WorkoutPlanForm**: planned fields, range validation (according to the API).
+- **WorkoutCompletedForm**: completion metrics, rating.
+- **StepsEditor**: simple step editor (warmup/main/cooldown/segment) according to the minimal schema.
+- **GoalForm / GoalProgress**: goal CRUD + progress visualization (total completed distance vs target).
+- **DatePicker**: consistent picker (react-day-picker) everywhere.
+- **UserMenu / PaceUnitToggle**: global pace setting (persisted).
+- **ToastManager**: error and success messages (403/409/410/429 – according to policy).
+- **QueryBoundary**: skeletons and data state retry.
 
-### Zgodność z planem API i wymaganiami
+### Compliance with the API Plan and Requirements
 
-- Wszystkie operacje UI mapują się 1:1 na endpointy REST przewidziane w planie API (w tym akceptacja/regeneracja AI, akcje domenowe treningów, ETag dla `training-types`).
-- Stany błędów i komunikaty odpowiadają kodom: 401/403/409/410/429; UI honoruje nagłówki (If-None-Match/ETag, Cache-Control, Retry-After).
-- Logika progresji/kalibracji realizowana po stronie backendu; UI zapewnia poprawny kontekst (ostatnie 3, typ, data) i prezentację wyników.
+- All UI operations map 1:1 to REST endpoints in the API plan (including AI acceptance/regeneration, workout domain actions, ETag for `training-types`).
+- Error states and messages match codes: 401/403/409/410/429; the UI respects headers (If-None-Match/ETag, Cache-Control, Retry-After).
+- Progression/calibration logic runs on the backend; the UI provides the correct context (last 3, type, date) and presents results.
 
-### Mapowanie historyjek z PRD → elementy UI
+### Mapping PRD Stories → UI Elements
 
-- Onboarding 3 treningów → `/onboarding` + Stepper + WorkoutCompletedForm.
-- Generowanie AI → AISuggestionDrawer (uruchamiany z DayCell „+”).
-- Akceptacja/Odrzucenie/Regeneracja → AcceptControls/RegenerateControls + limit 3/dzień per planned_date.
-- Zarządzanie treningami → Drawer Dnia, `/workouts/[id]`, akcje domenowe (complete/skip/cancel/rate).
-- Kalendarz główny → `/` z tygodniem/miesiącem, ikony/kolory typów, „+” dla pustych dni.
-- System ocen → Rating w szczegółach/completed; wpływ na kolejne sugestie (backend).
-- Cel użytkownika → `/goal` + GoalProgress w sidebarze.
+- Onboarding with 3 workouts → `/onboarding` + Stepper + WorkoutCompletedForm.
+- AI generation → AISuggestionDrawer (opened from DayCell “+”).
+- Accept/Reject/Regenerate → AcceptControls/RegenerateControls + limit 3/day per planned_date.
+- Workout management → Day Drawer, `/workouts/[id]`, domain actions (complete/skip/cancel/rate).
+- Main calendar → `/` with week/month, type icons/colors, “+” for empty days.
+- Rating system → Rating in details/completed; affects subsequent suggestions (backend).
+- User goal → `/goal` + GoalProgress in the sidebar.
 
-### Przypadki brzegowe i stany błędów
+### Edge Cases and Error States
 
-- <3 treningów → gating do `/onboarding`.
-- Sugestia wygasła (24h) → badge „Wygasła”, akcje zablokowane, CTA „Wygeneruj nową”.
-- Konflikt `position` → dialog z przestawieniem/wyborem pozycji; informacja naprawcza.
-- 429 → zablokuj CTA, pokaż czas wg `Retry-After`, automatyczny enable po czasie/odświeżeniu.
-- 304 dla `training-types` → nie podmieniaj danych; tanie odświeżenie.
-- Brak treningów w dniu → wyraźny stan pusty + „Dodaj”/„AI”.
-
-
+- <3 workouts → gating to `/onboarding`.
+- Suggestion expired (24h) → “Expired” badge, disabled actions, “Generate new” CTA.
+- `position` conflict → dialog to reorder/select a position; guidance for resolving it.
+- 429 → disable CTA, show time according to `Retry-After`, automatically enable after the wait/refresh.
+- 304 for `training-types` → do not replace data; lightweight refresh.
+- No workouts on a day → clear empty state + “Add”/“AI”.

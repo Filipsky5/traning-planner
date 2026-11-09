@@ -3,80 +3,80 @@
 
 # Cloudflare Pages Deployment Guide
 
-## Przegląd
+## Overview
 
-Ten projekt jest skonfigurowany do automatycznego wdrażania na Cloudflare Pages poprzez GitHub Actions. Wykorzystuje adapter `@astrojs/cloudflare` dla pełnego wsparcia SSR.
+This project is configured for automatic deployment to Cloudflare Pages through GitHub Actions. It uses `@astrojs/cloudflare` for full SSR support.
 
-## Wymagania
+## Requirements
 
-### 1. Konto Cloudflare
+### 1. Cloudflare Account
 
-- Utwórz konto na [Cloudflare](https://dash.cloudflare.com/sign-up)
-- Darmowy plan Pages wystarczy dla projektu MVP
+- Create an account at [Cloudflare](https://dash.cloudflare.com/sign-up)
+- The free Pages plan is sufficient for the MVP
 
-### 2. Projekt Cloudflare Pages
+### 2. Cloudflare Pages Project
 
-1. Zaloguj się do [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Przejdź do **Workers & Pages** → **Create application** → **Pages**
-3. **Ważne:** Utwórz projekt ale **NIE** łącz go z GitHub (CI/CD będzie przez GitHub Actions)
-4. Zanotuj nazwę projektu (będzie potrzebna w secrets)
+1. Log into [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Go to **Workers & Pages** → **Create application** → **Pages**
+3. **Important:** Create a project but **DO NOT** connect GitHub (CI/CD uses GitHub Actions)
+4. Note the project name (needed in secrets)
 
-### 3. API Token Cloudflare
+### 3. Cloudflare API Token
 
-1. Przejdź do **My Profile** → **API Tokens**
-2. Kliknij **Create Token**
-3. Użyj template **Edit Cloudflare Workers**
-4. Lub utwórz custom token z uprawnieniami:
+1. Go to **My Profile** → **API Tokens**
+2. Click **Create Token**
+3. Use the **Edit Cloudflare Workers** template
+4. Or create a custom token with permissions:
    - Account → Cloudflare Pages → Edit
-   - Zone → Workers Routes → Edit (opcjonalnie)
-5. Skopiuj wygenerowany token (będzie widoczny tylko raz!)
+   - Zone → Workers Routes → Edit (optional)
+5. Copy the generated token (visible only once!)
 
 ### 4. Account ID
 
-1. W Cloudflare Dashboard, przejdź do **Workers & Pages**
-2. Account ID znajduje się w prawej kolumnie pod nazwą konta
-3. Lub w URL: `dash.cloudflare.com/<ACCOUNT_ID>/...`
+1. In Cloudflare Dashboard, go to **Workers & Pages**
+2. Account ID is in the right column below the account name
+3. Or in the URL: `dash.cloudflare.com/<ACCOUNT_ID>/...`
 
-## Konfiguracja GitHub Secrets
+## GitHub Secrets Configuration
 
-W repozytorium GitHub ustaw następujące secrets:
+Set these secrets in the GitHub repository:
 **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-### Wymagane Secrets dla Deployment:
+### Required Deployment Secrets:
 
 ```
-CLOUDFLARE_API_TOKEN         # Token wygenerowany w kroku 3
-CLOUDFLARE_ACCOUNT_ID        # Account ID z kroku 4
-CLOUDFLARE_PROJECT_NAME      # Nazwa projektu utworzonego w kroku 2
+CLOUDFLARE_API_TOKEN         # Token generated in step 3
+CLOUDFLARE_ACCOUNT_ID        # Account ID from step 4
+CLOUDFLARE_PROJECT_NAME      # Project name created in step 2
 ```
 
-### Wymagane Secrets dla Aplikacji:
+### Required Application Secrets:
 
 ```
 SUPABASE_URL                 # URL projektu Supabase
 SUPABASE_KEY                 # Anon/public key Supabase
-SUPABASE_SERVICE_ROLE_KEY    # Service role key (tylko backend)
+SUPABASE_SERVICE_ROLE_KEY    # Service role key (backend only)
 OPENROUTER_API_KEY           # Klucz API OpenRouter.ai
 OPENROUTER_DEFAULT_MODEL     # np. "openai/gpt-4o-mini"
 OPENROUTER_TIMEOUT_MS        # np. "30000"
 OPENROUTER_MAX_RETRIES       # np. "3"
-PUBLIC_SITE_URL              # URL produkcyjny aplikacji
-INTERNAL_ADMIN_TOKEN         # Silny token do endpointów admin
+PUBLIC_SITE_URL              # Production application URL
+INTERNAL_ADMIN_TOKEN         # Strong token for admin endpoints
 ```
 
-### Opcjonalne Secrets:
+### Optional Secrets:
 
 ```
-E2E_USERNAME                 # Username do testów E2E (jeśli uruchamiane)
-E2E_PASSWORD                 # Hasło do testów E2E
+E2E_USERNAME                 # Username for E2E tests (if run)
+E2E_PASSWORD                 # Password for E2E tests
 ```
 
-## Zmienne Środowiskowe w Cloudflare Pages
+## Environment Variables in Cloudflare Pages
 
-**Ważne:** Niektóre zmienne muszą być również ustawione w Cloudflare Pages Dashboard:
+**Important:** Some variables must also be set in Cloudflare Pages Dashboard:
 
-1. Przejdź do **Workers & Pages** → Twój projekt → **Settings** → **Environment variables**
-2. Dodaj zmienne dla **Production** environment:
+1. Go to **Workers & Pages** → Your project → **Settings** → **Environment variables**
+2. Add variables for **Production**:
    - `SUPABASE_URL`
    - `SUPABASE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
@@ -87,19 +87,19 @@ E2E_PASSWORD                 # Hasło do testów E2E
    - `PUBLIC_SITE_URL`
    - `INTERNAL_ADMIN_TOKEN`
 
-3. Dla **Preview** environment (opcjonalnie):
-   - Możesz ustawić osobne wartości dla preview deployments
+3. For **Preview** (optional):
+   - You can set separate values for preview deployments
 
-**Dlaczego dwa miejsca?**
+**Why two locations?**
 
-- GitHub Secrets: Używane podczas build process w GitHub Actions
-- Cloudflare Variables: Używane w runtime przez Workers/Pages
+- GitHub Secrets: Used during the GitHub Actions build process
+- Cloudflare Variables: Used at runtime by Workers/Pages
 
-## Proces Wdrożenia
+## Deployment Process
 
-### Automatyczne Wdrożenie (Rekomendowane)
+### Automatic Deployment (Recommended)
 
-**Trigger:** Push do `main` branch
+**Trigger:** Push to `main` branch
 
 ```bash
 git add .
@@ -107,39 +107,39 @@ git commit -m "Deploy to production"
 git push origin main
 ```
 
-GitHub Actions automatycznie:
+GitHub Actions automatically:
 
-1. ✅ Uruchomi linting
-2. ✅ Uruchomi testy jednostkowe
-3. ✅ Zbuduje aplikację dla Cloudflare
-4. ✅ Wdroży na Cloudflare Pages
+1. ✅ Runs linting
+2. ✅ Runs unit tests
+3. ✅ Builds for Cloudflare
+4. ✅ Deploys to Cloudflare Pages
 
-### Ręczne Wdrożenie
+### Manual Deployment
 
 **Trigger:** Manual workflow dispatch
 
-1. Przejdź do **Actions** tab w GitHub
-2. Wybierz workflow **Deploy to Cloudflare Pages**
-3. Kliknij **Run workflow**
-4. Wybierz environment (`production` lub `preview`)
-5. Kliknij **Run workflow**
+1. Open the GitHub **Actions** tab
+2. Select **Deploy to Cloudflare Pages**
+3. Click **Run workflow**
+4. Select environment (`production` or `preview`)
+5. Click **Run workflow**
 
-### Lokalne Preview Cloudflare
+### Local Cloudflare Preview
 
-Możesz przetestować build lokalnie przed wdrożeniem:
+You can test the build locally before deployment:
 
 ```bash
-# 1. Zbuduj aplikację z Cloudflare adapter
+# 1. Build with the Cloudflare adapter
 npm run build:cloudflare
 
-# 2. Uruchom lokalny Cloudflare Pages dev server
+# 2. Start the local Cloudflare Pages dev server
 npm run preview:cloudflare
 ```
 
-**Uwaga:** Potrzebujesz pliku `.dev.vars` z zmiennymi środowiskowymi:
+**Note:** You need a `.dev.vars` file with environment variables:
 
 ```env
-# .dev.vars (dodaj do .gitignore!)
+# .dev.vars (add to .gitignore!)
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -151,22 +151,22 @@ PUBLIC_SITE_URL=http://localhost:8788
 INTERNAL_ADMIN_TOKEN=your-local-token
 ```
 
-## Workflow CI/CD
+## CI/CD Workflow
 
-### Jobs w deploy.yml:
+### Jobs in deploy.yml:
 
-1. **lint** - Sprawdza jakość kodu (ESLint)
-2. **unit-tests** - Uruchamia testy jednostkowe (Vitest)
-3. **build** - Buduje aplikację dla Cloudflare
-4. **deploy** - Wdraża na Cloudflare Pages (tylko main branch)
-5. **status** - Raportuje status wdrożenia
+1. **lint** - Checks code quality (ESLint)
+2. **unit-tests** - Runs unit tests (Vitest)
+3. **build** - Builds for Cloudflare
+4. **deploy** - Deploys to Cloudflare Pages (main branch only)
+5. **status** - Reports deployment status
 
 ### Concurrency Control
 
-Workflow używa `concurrency` aby:
+The workflow uses `concurrency` to:
 
-- Anulować poprzednie wdrożenia dla tego samego brancha
-- Zapobiec konfliktom przy równoczesnych deployments
+- Cancel previous deployments for the same branch
+- Prevent simultaneous deployment conflicts
 
 ```yaml
 concurrency:
@@ -176,48 +176,48 @@ concurrency:
 
 ### Artifacts
 
-Build artifacts są przechowywane 7 dni:
+Build artifacts are retained for 7 days:
 
-- `cloudflare-build-<sha>` - Zbudowana aplikacja
-- `unit-coverage-<sha>` - Raport pokrycia testami
+- `cloudflare-build-<sha>` - Built application
+- `unit-coverage-<sha>` - Test coverage report
 
-## Różnice między Node adapter a Cloudflare adapter
+## Differences Between Node and Cloudflare Adapters
 
 ### Node Adapter (astro.config.mjs)
 
-- Używany dla lokalnego developmentu (`npm run dev`)
-- Używany dla testów E2E (`npm run build:test`)
+- Used for local development (`npm run dev`)
+- Used for E2E tests (`npm run build:test`)
 - Standalone Node.js server
 
 ### Cloudflare Adapter (astro.config.cloudflare.mjs)
 
-- Używany dla produkcyjnego wdrożenia
-- Zoptymalizowany dla Cloudflare Workers
-- Edge runtime, globalny CDN
+- Used for production deployment
+- Optimized for Cloudflare Workers
+- Edge runtime, global CDN
 
 ## Deployment URL
 
-Po udanym wdrożeniu, aplikacja będzie dostępna pod:
+After successful deployment, the application is available at:
 
 ```
 https://<project-name>.pages.dev
 ```
 
-Możesz również skonfigurować custom domain w Cloudflare Pages dashboard:
+You can also configure a custom domain in Cloudflare Pages dashboard:
 **Settings** → **Custom domains**
 
-## Monitoring i Logs
+## Monitoring and Logs
 
 ### Real-time Logs
 
-1. Cloudflare Dashboard → **Workers & Pages** → Twój projekt
-2. Kliknij **View logs** lub **Deployment**
-3. Zobacz logi z ostatnich requestów
+1. Cloudflare Dashboard → **Workers & Pages** → Your project
+2. Click **View logs** or **Deployment**
+3. View recent request logs
 
 ### Analytics
 
-1. **Analytics** tab w projekcie Pages
-2. Sprawdź:
+1. **Analytics** tab in the Pages project
+2. Check:
    - Requests per second
    - Bandwidth usage
    - Error rate
@@ -226,76 +226,76 @@ Możesz również skonfigurować custom domain w Cloudflare Pages dashboard:
 ### GitHub Actions Logs
 
 1. Repository → **Actions** tab
-2. Wybierz konkretny workflow run
-3. Rozwiń jobs aby zobaczyć szczegółowe logi
+2. Select a workflow run
+3. Expand jobs to see detailed logs
 
 ## Rollback
 
-Jeśli wdrożenie nie działa poprawnie:
+If deployment does not work correctly:
 
-### Opcja 1: Cloudflare Dashboard
+### Option 1: Cloudflare Dashboard
 
-1. Przejdź do projektu → **Deployments**
-2. Znajdź poprzednie działające wdrożenie
-3. Kliknij **Rollback to this deployment**
+1. Open project → **Deployments**
+2. Find a previous working deployment
+3. Click **Rollback to this deployment**
 
-### Opcja 2: Git Revert
+### Option 2: Git Revert
 
 ```bash
 git revert HEAD
 git push origin main
 ```
 
-Automatycznie wywoła nowe wdrożenie ze starszym kodem.
+This automatically triggers deployment with the older code.
 
 ## Troubleshooting
 
 ### Build Fails
 
-**Problem:** `npm run build:cloudflare` kończy się błędem
+**Problem:** `npm run build:cloudflare` fails
 
-**Rozwiązanie:**
+**Solution:**
 
-1. Sprawdź logi w GitHub Actions
-2. Uruchom lokalnie: `npm run build:cloudflare`
-3. Sprawdź czy wszystkie dependencies są zainstalowane
-4. Sprawdź compatibility date w `wrangler.toml`
+1. Check GitHub Actions logs
+2. Run locally: `npm run build:cloudflare`
+3. Check all dependencies are installed
+4. Check compatibility date in `wrangler.toml`
 
 ### Deployment Fails
 
-**Problem:** Wdrożenie nie powiodło się po buildzie
+**Problem:** Deployment fails after building
 
-**Rozwiązanie:**
+**Solution:**
 
-1. Sprawdź czy `CLOUDFLARE_API_TOKEN` jest poprawny
-2. Sprawdź uprawnienia tokena (Edit Cloudflare Workers)
-3. Sprawdź czy `CLOUDFLARE_PROJECT_NAME` pasuje do nazwy w dashboard
-4. Sprawdź czy `CLOUDFLARE_ACCOUNT_ID` jest poprawny
+1. Check `CLOUDFLARE_API_TOKEN` is valid
+2. Check token permissions (Edit Cloudflare Workers)
+3. Check `CLOUDFLARE_PROJECT_NAME` matches the dashboard name
+4. Check `CLOUDFLARE_ACCOUNT_ID` is correct
 
 ### Runtime Errors
 
-**Problem:** Aplikacja wdraża się, ale występują błędy runtime
+**Problem:** Application deploys but has runtime errors
 
-**Rozwiązanie:**
+**Solution:**
 
-1. Sprawdź logi w Cloudflare Dashboard
-2. Sprawdź czy zmienne środowiskowe są ustawione w Cloudflare Pages
-3. Sprawdź czy wartości zmiennych są poprawne (URL, klucze API)
-4. Przetestuj lokalnie z `npm run preview:cloudflare`
+1. Check Cloudflare Dashboard logs
+2. Check environment variables are set in Cloudflare Pages
+3. Check variable values (URLs, API keys)
+4. Test locally with `npm run preview:cloudflare`
 
 ### Environment Variables Not Working
 
-**Problem:** Zmienne środowiskowe nie są dostępne
+**Problem:** Environment variables are unavailable
 
-**Rozwiązanie:**
+**Solution:**
 
-1. Zmienne muszą być w **dwóch** miejscach:
-   - GitHub Secrets (dla build time)
-   - Cloudflare Environment Variables (dla runtime)
-2. Po dodaniu nowych zmiennych, uruchom re-deployment
-3. Dla `PUBLIC_*` zmiennych używaj prefixu zgodnie z Astro docs
+1. Variables must be in **two** places:
+   - GitHub Secrets (build time)
+   - Cloudflare Environment Variables (runtime)
+2. Redeploy after adding variables
+3. Use the `PUBLIC_*` prefix according to Astro docs
 
-## Limity Cloudflare Pages (Free Plan)
+## Cloudflare Pages Limits (Free Plan)
 
 - **Builds:** 500/month
 - **Requests:** Unlimited
@@ -304,11 +304,11 @@ Automatycznie wywoła nowe wdrożenie ze starszym kodem.
 - **File size:** 25 MB/file
 - **Total size:** 20,000 files
 
-**MVP będzie dobrze w ramach free tier!**
+**The MVP fits comfortably within the free tier!**
 
 ## Best Practices
 
-1. **Zawsze testuj lokalnie** przed push do main
+1. **Always test locally** before pushing to main
 
    ```bash
    npm run lint
@@ -317,58 +317,58 @@ Automatycznie wywoła nowe wdrożenie ze starszym kodem.
    npm run preview:cloudflare
    ```
 
-2. **Używaj preview environments** dla feature branches
-   - Możesz skonfigurować automatyczne preview deployments w Cloudflare
+2. **Use preview environments** for feature branches
+   - Configure automatic preview deployments in Cloudflare
 
-3. **Monitoruj performance** w Cloudflare Analytics
-   - Sprawdzaj cache hit ratio
-   - Monitoruj error rate
+3. **Monitor performance** in Cloudflare Analytics
+   - Check cache hit ratio
+   - Monitor error rate
 
-4. **Secure secrets** - nigdy nie commituj:
+4. **Secure secrets** - never commit:
    - `.env` files
    - `.dev.vars` files
    - API keys
 
-5. **Dokumentuj zmiany** w deployment process
-   - Aktualizuj ten guide przy zmianach w workflow
+5. **Document changes** to the deployment process
+   - Update this guide when workflows change
 
-## Przejście z DigitalOcean na Cloudflare
+## Migration from DigitalOcean to Cloudflare
 
-Jeśli wcześniej deployment był na DigitalOcean:
+If previously deployed to DigitalOcean:
 
-### Co zmienić:
+### What to Change:
 
 1. ✅ Adapter: `@astrojs/node` → `@astrojs/cloudflare`
 2. ✅ Build command: `npm run build` → `npm run build:cloudflare`
 3. ✅ Deployment target: VPS/Docker → Cloudflare Pages
 
-### Co zachować:
+### What to Keep:
 
-- ✅ Wszystkie zmienne środowiskowe (tylko przenieś do Cloudflare)
-- ✅ Kod aplikacji (bez zmian)
-- ✅ Baza danych Supabase (bez zmian)
-- ✅ OpenRouter AI (bez zmian)
+- ✅ All environment variables (move to Cloudflare)
+- ✅ Application code (unchanged)
+- ✅ Supabase database (unchanged)
+- ✅ OpenRouter AI (unchanged)
 
-### Zalety Cloudflare vs DigitalOcean:
+### Cloudflare Advantages vs DigitalOcean:
 
-- ✅ **Prostszy deployment** - brak konfiguracji Docker/nginx
-- ✅ **Globalny CDN** - szybsze ładowanie na całym świecie
-- ✅ **Auto-scaling** - obsługa traffic spikes
-- ✅ **Zero-downtime deployments** - automatyczne
-- ✅ **Darmowy SSL** - automatyczny HTTPS
-- ✅ **Preview deployments** - testuj przed produkcją
+- ✅ **Simpler deployment** - no Docker/nginx configuration
+- ✅ **Global CDN** - faster loading worldwide
+- ✅ **Auto-scaling** - handles traffic spikes
+- ✅ **Zero-downtime deployments** - automatic
+- ✅ **Free SSL** - automatic HTTPS
+- ✅ **Preview deployments** - test before production
 
-## Dalsze kroki
+## Next Steps
 
-Po udanym wdrożeniu:
+After successful deployment:
 
-1. ✅ Skonfiguruj custom domain (opcjonalnie)
-2. ✅ Ustaw DNS w Cloudflare (jeśli custom domain)
-3. ✅ Włącz Web Analytics w Cloudflare
-4. ✅ Skonfiguruj alerting dla błędów
-5. ✅ Dodaj monitoring uptime (np. UptimeRobot)
+1. ✅ Configure a custom domain (optional)
+2. ✅ Set DNS in Cloudflare (if using a custom domain)
+3. ✅ Enable Cloudflare Web Analytics
+4. ✅ Configure error alerts
+5. ✅ Add uptime monitoring (e.g., UptimeRobot)
 
-## Wsparcie
+## Support
 
 - **Cloudflare Docs:** https://developers.cloudflare.com/pages/
 - **Astro Cloudflare Adapter:** https://docs.astro.build/en/guides/integrations-guide/cloudflare/
@@ -376,5 +376,5 @@ Po udanym wdrożeniu:
 
 ---
 
-**Utworzono:** 2025-11-16
-**Ostatnia aktualizacja:** 2025-11-16
+**Created:** 2025-11-16
+**Last updated:** 2025-11-16

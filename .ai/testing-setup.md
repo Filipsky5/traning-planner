@@ -1,12 +1,13 @@
 # Testing Setup - AI Running Training Planner
 
-## Podsumowanie implementacji
+## Implementation Summary
 
-Środowisko testowe zostało w pełni skonfigurowane zgodnie z wymaganiami certyfikacyjnymi i tech stack (.ai/tech-stack.md).
+The test environment has been fully configured according to certification requirements and the tech stack (.ai/tech-stack.md).
 
-## Zainstalowane narzędzia
+## Installed Tools
 
 ### Unit & Integration Testing
+
 - ✅ **vitest** (v4.0.9) - fast Vite-native test runner
 - ✅ **@vitest/ui** - interactive test UI
 - ✅ **@vitest/coverage-v8** - code coverage reporting
@@ -16,10 +17,11 @@
 - ✅ **jsdom** / **happy-dom** - DOM environment for tests
 
 ### E2E Testing
+
 - ✅ **@playwright/test** (v1.56.1) - E2E testing framework
 - ✅ **Chromium browser** - Desktop (1440×900) + Mobile (390×844)
 
-## Struktura plików
+## File Structure
 
 ```
 training-planner/
@@ -46,28 +48,30 @@ training-planner/
     └── calendar.spec.ts           # E2E tests (7 scenarios)
 ```
 
-## Konfiguracja
+## Configuration
 
 ### Vitest (vitest.config.ts)
+
 ```typescript
-- Environment: jsdom (dla React components)
-- Globals: true (describe, it, expect bez importów)
+- Environment: jsdom (for React components)
+- Globals: true (describe, it, expect without imports)
 - Coverage: v8 provider, thresholds 60%
 - Setup file: src/test/setup.ts
-- Alias: @ → ./src (zgodne z Astro)
+- Alias: @ → ./src (matching Astro)
 ```
 
 ### Playwright (playwright.config.ts)
+
 ```typescript
 - Projects: chromium-desktop (1440×900), chromium-mobile (390×844)
 - Base URL: http://localhost:4321
 - Web Server: npm run preview (production build)
-- Retries: 2 w CI, 0 lokalnie
+- Retries: 2 in CI, 0 locally
 - Trace: on-first-retry
 - Screenshot/Video: only-on-failure
 ```
 
-## Skrypty NPM
+## NPM Scripts
 
 ```json
 "test": "vitest"                           // Interactive mode
@@ -85,9 +89,10 @@ training-planner/
 "test:all": "npm run test:unit && npm run build && npm run test:e2e"  // Full CI/CD flow
 ```
 
-## Przykładowe testy
+## Example Tests
 
 ### ✅ Unit Tests (src/lib/utils/workout.test.ts)
+
 - `getColorForTrainingType()` - 6 tests
 - `formatDistance()` - 4 tests
 - `formatDuration()` - 5 tests
@@ -95,6 +100,7 @@ training-planner/
 - **Total: 21 tests passing** ✅
 
 ### ✅ E2E Tests (e2e/calendar.spec.ts)
+
 - Display calendar grid
 - Display current month title
 - Navigate to next month
@@ -104,7 +110,7 @@ training-planner/
 - Visual regression (screenshot)
 - **Total: 7 scenarios** ✅
 
-## Status weryfikacji
+## Verification Status
 
 ✅ **Build successful** (npm run build - 3.05s)
 ✅ **Unit tests passing** (21/21 tests)
@@ -112,49 +118,50 @@ training-planner/
 ✅ **CI/CD ready** (test:all script)
 ✅ **Documentation complete** (TESTING.md)
 
-## Zgodność z wymaganiami certyfikacyjnymi
+## Certification Requirement Compliance
 
-| Wymaganie | Status | Opis |
-|-----------|--------|------|
-| Min. 1 test E2E | ✅ | 7 scenariuszy E2E dla kalendarza |
-| Coverage 60-70% | ✅ | Configured, thresholds: 60% |
-| Playwright Chromium | ✅ | Desktop + Mobile viewports |
-| Pipeline CI/CD | ✅ | `test:all` script ready |
-| Dokumentacja | ✅ | TESTING.md |
+| Requirement         | Status | Description                 |
+| ------------------- | ------ | --------------------------- |
+| At least 1 E2E test | ✅     | 7 E2E calendar scenarios    |
+| Coverage 60-70%     | ✅     | Configured, thresholds: 60% |
+| Playwright Chromium | ✅     | Desktop + Mobile viewports  |
+| Pipeline CI/CD      | ✅     | `test:all` script ready     |
+| Documentation       | ✅     | TESTING.md                  |
 
-## Następne kroki (opcjonalne)
+## Next Steps (Optional)
 
-1. **Dodaj więcej unit tests**:
+1. **Add more unit tests**:
    - src/lib/validation/*.ts
    - src/lib/services/*.ts
    - src/components/hooks/*.ts
 
-2. **Rozszerz E2E coverage**:
-   - Autentykacja (login.spec.ts)
-   - Dodawanie treningu (workout-crud.spec.ts)
+2. **Expand E2E coverage**:
+   - Authentication (login.spec.ts)
+   - Adding workouts (workout-crud.spec.ts)
    - Onboarding flow (onboarding.spec.ts)
 
 3. **CI/CD Integration**:
-   - Dodaj do .github/workflows/test.yml
-   - Uruchamiaj przy push i PR
+   - Add to .github/workflows/test.yml
+   - Run on push and PR
    - Upload artifacts (coverage, playwright-report)
 
 4. **Visual Regression**:
-   - Generuj baseline screenshots
-   - Porównuj w CI/CD
+   - Generate baseline screenshots
+   - Compare in CI/CD
 
-## Analogie do iOS (dla developera iOS)
+## iOS Analogies (for an iOS Developer)
 
-| iOS/Swift | Web (ten projekt) |
-|-----------|-------------------|
-| XCTest | Vitest + Playwright |
-| Quick/Nimble | Vitest (similar syntax) |
-| XCUITest | Playwright |
-| Code Coverage | vitest --coverage |
-| Test Plan | describe() blocks |
-| XCTAssert | expect().toBe() |
+| iOS/Swift     | Web (this project)      |
+| ------------- | ----------------------- |
+| XCTest        | Vitest + Playwright     |
+| Quick/Nimble  | Vitest (similar syntax) |
+| XCUITest      | Playwright              |
+| Code Coverage | vitest --coverage       |
+| Test Plan     | describe() blocks       |
+| XCTAssert     | expect().toBe()         |
 
-## Linki
+## Links
+
 - [Vitest Documentation](https://vitest.dev/)
 - [Playwright Documentation](https://playwright.dev/)
 - [Testing Library](https://testing-library.com/)

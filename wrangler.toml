@@ -3,4 +3,8 @@ name = "training-planner"
 compatibility_date = "2026-11-08"
 compatibility_flags = ["nodejs_compat"]
 
+[observability.logs]
+enabled = false
+invocation_logs = true
+
 # Local secrets belong in .dev.vars. Configure production secrets on the Worker.

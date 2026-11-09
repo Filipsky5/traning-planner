@@ -94,7 +94,7 @@
 - **GitHub Actions**
   - Builds and tests on pull requests; deployment via workflow_dispatch
   - Running tests
-  - PR review by Claude ([configuration](code-review-automation.md))
+  - No automatic Claude/Codex review requiring private credentials ([details](code-review-automation.md))
   - Manual deployment to Cloudflare Workers
   - Manual trigger via `workflow_dispatch`
 

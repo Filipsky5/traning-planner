@@ -1,20 +1,21 @@
-# Plan implementacji widoku: Szczegóły treningu
+# Workout Detail View Implementation Plan
 
-## 1. Przegląd
+## 1. Overview
 
-Widok szczegółów treningu stanowi centralny punkt do zarządzania pojedynczą jednostką treningową. Umożliwia użytkownikowi wgląd w zaplanowane i zrealizowane metryki, strukturę treningu (kroki) oraz wykonanie kluczowych akcji, takich jak oznaczenie treningu jako ukończony, pominięty, anulowany czy jego ocena. Widok jest w pełni dynamiczny i dostosowuje dostępne akcje do aktualnego statusu treningu.
+The workout detail view is the central place for managing a single workout. It shows planned and actual metrics and workout structure (steps), and supports key actions: marking a workout completed, skipped, or canceled, and rating it. The view is fully dynamic and adapts available actions to the current workout status.
 
-## 2. Routing widoku
+## 2. View Routing
 
-Widok będzie dostępny pod dynamiczną ścieżką:
-- **Ścieżka**: `/workouts/[id]`
-- **Plik**: `src/pages/workouts/[id].astro`
+The view will use a dynamic route:
 
-Strona Astro będzie odpowiedzialna za przechwycenie `id` z URL i przekazanie go jako prop do głównego komponentu React, który będzie renderowany po stronie klienta.
+- **Path**: `/workouts/[id]`
+- **File**: `src/pages/workouts/[id].astro`
 
-## 3. Struktura komponentów
+The Astro page extracts `id` from the URL and passes it as a prop to the main client-rendered React component.
 
-Komponenty zostaną zaimplementowane w React z użyciem TypeScript, a ich stylizacja będzie oparta na Tailwind CSS i komponentach `shadcn/ui`.
+## 3. Component Structure
+
+Components will use React with TypeScript, Tailwind CSS, and `shadcn/ui`.
 
 ```
 src/pages/workouts/[id].astro
@@ -32,87 +33,96 @@ src/pages/workouts/[id].astro
         └── Dialog.tsx
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
 ### `WorkoutDetailView.tsx`
-- **Opis**: Główny kontener widoku. Odpowiada za pobranie danych treningu za pomocą `id`, zarządzanie stanem (ładowanie, błąd, dane) i renderowanie komponentów podrzędnych.
-- **Główne elementy**:
-  - Wykorzystuje hook `useWorkoutDetail` do logiki biznesowej.
-  - Renderuje `Skeleton` w stanie ładowania.
-  - Wyświetla komunikat o błędzie w przypadku problemów z API.
-  - Renderuje `WorkoutMetrics`, `WorkoutSteps` i `WorkoutActions`, przekazując do nich przetworzone dane treningu (`WorkoutViewModel`) oraz handlery akcji.
-- **Obsługiwane interakcje**: Brak bezpośrednich. Deleguje akcje do komponentów-dzieci.
-- **Typy**: `WorkoutViewModel`
-- **Propsy**: `{ workoutId: string }`
+
+- **Description**: Main view container. Fetches workout data by `id`, manages state (loading, error, data), and renders children.
+- **Main elements**:
+  - Uses `useWorkoutDetail` for business logic.
+  - Renders `Skeleton` while loading.
+  - Displays an error message for API problems.
+  - Renders `WorkoutMetrics`, `WorkoutSteps`, and `WorkoutActions`, passing processed workout data (`WorkoutViewModel`) and action handlers.
+- **Supported interactions**: None directly. Delegates actions to children.
+- **Types**: `WorkoutViewModel`
+- **Props**: `{ workoutId: string }`
 
 ### `WorkoutMetrics.tsx`
-- **Opis**: Prezentuje kluczowe metryki treningu, porównując wartości planowane z rzeczywistymi (jeśli dostępne).
-- **Główne elementy**:
-  - Komponent `Card` z `CardHeader` i `CardContent`.
-  - Sekcje "Plan" i "Realizacja".
-  - Wyświetla numerycznie: dystans (km), czas (hh:mm:ss), średnie tętno, średnie tempo (min/km), ocenę.
-- **Obsługiwane interakcje**: Brak.
-- **Typy**: `WorkoutViewModel`
-- **Propsy**: `{ workout: WorkoutViewModel }`
+
+- **Description**: Presents key workout metrics, comparing planned and actual values (if available).
+- **Main elements**:
+  - `Card` with `CardHeader` and `CardContent`.
+  - "Plan" and "Completion" sections.
+  - Numeric display: distance (km), time (hh:mm:ss), average heart rate, average pace (min/km), rating.
+- **Supported interactions**: None.
+- **Types**: `WorkoutViewModel`
+- **Props**: `{ workout: WorkoutViewModel }`
 
 ### `WorkoutSteps.tsx`
-- **Opis**: Wyświetla listę kroków treningu (rozgrzewka, część główna, schłodzenie).
-- **Główne elementy**:
-  - Komponent `Card`.
-  - Lista kroków, gdzie każdy element pokazuje `part`, `duration_s` i/lub `distance_m`.
-- **Obsługiwane interakcje**: Brak.
-- **Typy**: `WorkoutStepDto[]`
-- **Propsy**: `{ steps: WorkoutStepDto[] }`
+
+- **Description**: Displays workout steps (warm-up, main part, cool-down).
+- **Main elements**:
+  - `Card` component.
+  - Step list with each item's `part`, `duration_s`, and/or `distance_m`.
+- **Supported interactions**: None.
+- **Types**: `WorkoutStepDto[]`
+- **Props**: `{ steps: WorkoutStepDto[] }`
 
 ### `WorkoutActions.tsx`
-- **Opis**: Panel z przyciskami akcji. Przyciski są renderowane warunkowo, w zależności od statusu treningu.
-- **Główne elementy**:
-  - `Button` z `shadcn/ui` dla każdej akcji.
-  - Przycisk "Ukończ" (`Complete`) otwiera `CompleteWorkoutDialog`.
-  - Przycisk "Oceń" (`Rate`) otwiera `RateWorkoutDialog`.
-  - Przyciski "Pomiń" (`Skip`) i "Anuluj" (`Cancel`) wywołują akcje natychmiastowo.
-- **Obsługiwane interakcje**: `onComplete`, `onRate`, `onSkip`, `onCancel`.
-- **Warunki walidacji**:
-  - "Ukończ", "Pomiń", "Anuluj" widoczne tylko dla `status === 'planned'`.
-  - "Oceń" widoczne tylko dla `status === 'completed'`.
-- **Typy**: `WorkoutViewModel`
-- **Propsy**: `{ workout: WorkoutViewModel, onComplete: (data) => void, onRate: (data) => void, onSkip: () => void, onCancel: () => void }`
+
+- **Description**: Action button panel. Buttons render conditionally based on workout status.
+- **Main elements**:
+  - `Button` from `shadcn/ui` for each action.
+  - "Complete" opens `CompleteWorkoutDialog`.
+  - "Rate" opens `RateWorkoutDialog`.
+  - "Skip" and "Cancel" execute actions immediately.
+- **Supported interactions**: `onComplete`, `onRate`, `onSkip`, `onCancel`.
+- **Validation conditions**:
+  - "Complete", "Skip", "Cancel" visible only for `status === 'planned'`.
+  - "Rate" visible only for `status === 'completed'`.
+- **Types**: `WorkoutViewModel`
+- **Props**: `{ workout: WorkoutViewModel, onComplete: (data) => void, onRate: (data) => void, onSkip: () => void, onCancel: () => void }`
 
 ### `CompleteWorkoutDialog.tsx`
-- **Opis**: Okno dialogowe z formularzem do wprowadzania metryk ukończonego treningu.
-- **Główne elementy**:
-  - Komponent `Dialog` z `DialogContent`, `DialogHeader`, `DialogFooter`.
-  - Formularz (`react-hook-form`) z polami: `distance_m`, `duration_s`, `avg_hr_bpm`, `completed_at`, `rating`.
-- **Obsługiwane interakcje**: `onSubmit`.
-- **Warunki walidacji**: Wszystkie pola formularza są wymagane (`zod` schema `completeWorkoutSchema`).
-- **Typy**: `CompleteWorkoutCommand`
-- **Propsy**: `{ open: boolean, onOpenChange: (open) => void, onSubmit: (data) => void }`
+
+- **Description**: Dialog with a form for completed workout metrics.
+- **Main elements**:
+  - `Dialog` with `DialogContent`, `DialogHeader`, `DialogFooter`.
+  - Form (`react-hook-form`) with: `distance_m`, `duration_s`, `avg_hr_bpm`, `completed_at`, `rating`.
+- **Supported interactions**: `onSubmit`.
+- **Validation conditions**: All fields required (`zod` schema `completeWorkoutSchema`).
+- **Types**: `CompleteWorkoutCommand`
+- **Props**: `{ open: boolean, onOpenChange: (open) => void, onSubmit: (data) => void }`
 
 ### `RateWorkoutDialog.tsx`
-- **Opis**: Okno dialogowe do oceniania ukończonego treningu.
-- **Główne elementy**:
-  - `Dialog` z `DialogContent`.
-  - Przyciski lub `RadioGroup` do wyboru oceny: `too_easy`, `just_right`, `too_hard`.
-- **Obsługiwane interakcje**: `onRateSelect`.
-- **Warunki walidacji**: Musi zostać wybrana jedna z trzech opcji oceny.
-- **Typy**: `WorkoutRateCommand`
-- **Propsy**: `{ open: boolean, onOpenChange: (open) => void, onSubmit: (data) => void }`
 
-## 5. Typy
+- **Description**: Dialog for rating a completed workout.
+- **Main elements**:
+  - `Dialog` with `DialogContent`.
+  - Buttons or `RadioGroup` to select: `too_easy`, `just_right`, `too_hard`.
+- **Supported interactions**: `onRateSelect`.
+- **Validation conditions**: One of the three ratings must be selected.
+- **Types**: `WorkoutRateCommand`
+- **Props**: `{ open: boolean, onOpenChange: (open) => void, onSubmit: (data) => void }`
+
+## 5. Types
 
 ### DTO (Data Transfer Object)
-- **`WorkoutDetailDto`**: Bezpośrednio z `src/types.ts`. Odzwierciedla odpowiedź z `GET /api/v1/workouts/{id}`.
+
+- **`WorkoutDetailDto`**: Directly from `src/types.ts`. Mirrors the `GET /api/v1/workouts/{id}` response.
 
 ### ViewModel
-- **`WorkoutViewModel`**: Obiekt tworzony na froncie w celu ułatwienia wyświetlania danych.
+
+- **`WorkoutViewModel`**: Object created on the frontend to simplify display.
+
 ```typescript
 interface WorkoutViewModel {
   id: string;
-  status: 'planned' | 'completed' | 'skipped' | 'canceled';
-  origin: 'manual' | 'ai' | 'import';
-  rating: 'too_easy' | 'just_right' | 'too_hard' | null;
-  
-  // Pola sformatowane do wyświetlania
+  status: "planned" | "completed" | "skipped" | "canceled";
+  origin: "manual" | "ai" | "import";
+  rating: "too_easy" | "just_right" | "too_hard" | null;
+
+  // Fields formatted for display
   plannedDateFormatted: string; // "DD.MM.YYYY"
   completedAtFormatted: string | null; // "DD.MM.YYYY HH:mm"
   plannedDistanceFormatted: string; // "X.XX km"
@@ -121,8 +131,8 @@ interface WorkoutViewModel {
   durationFormatted: string | null; // "HH:mm:ss"
   avgPaceFormatted: string | null; // "X:XX min/km"
   avgHr: number | null;
-  
-  // Pola do logiki
+
+  // Fields for logic
   steps: WorkoutStepDto[];
   canBeCompleted: boolean;
   canBeRated: boolean;
@@ -131,13 +141,14 @@ interface WorkoutViewModel {
 }
 ```
 
-## 6. Zarządzanie stanem
+## 6. State Management
 
-Logika biznesowa zostanie zamknięta w customowym hooku `useWorkoutDetail`.
+Business logic will be encapsulated in the custom `useWorkoutDetail` hook.
 
 ### `useWorkoutDetail(workoutId: string)`
-- **Cel**: Hermetyzacja logiki pobierania danych, zarządzania stanem ładowania/błędu oraz wykonywania akcji na treningu.
-- **Zwraca**:
+
+- **Goal**: Encapsulate data fetching, loading/error state, and workout actions.
+- **Returns**:
   ```typescript
   {
     workout: WorkoutViewModel | null;
@@ -150,69 +161,68 @@ Logika biznesowa zostanie zamknięta w customowym hooku `useWorkoutDetail`.
     refetch: () => void;
   }
   ```
-- **Logika**:
-  - Używa `useEffect` do pobrania danych przy inicjalizacji.
-  - Przechowuje stan `workout`, `isLoading`, `error` za pomocą `useState`.
-  - Po każdej pomyślnej akcji modyfikującej (np. `completeWorkout`), wywołuje `refetch` w celu synchronizacji danych z serwerem.
+- **Logic**:
+  - Uses `useEffect` to fetch data on initialization.
+  - Stores `workout`, `isLoading`, `error` with `useState`.
+  - After each successful mutation (e.g., `completeWorkout`), calls `refetch` to synchronize with the server.
 
-## 7. Integracja API
+## 7. API Integration
 
-Integracja będzie realizowana przez `fetch` API wewnątrz hooka `useWorkoutDetail`.
+Integration uses the `fetch` API inside `useWorkoutDetail`.
 
-- **Pobieranie danych**:
+- **Fetch data**:
   - `GET /api/v1/workouts/{id}`
-  - **Odpowiedź**: `ApiResponse<WorkoutDetailDto>`
-- **Ukończenie treningu**:
+  - **Response**: `ApiResponse<WorkoutDetailDto>`
+- **Complete workout**:
   - `POST /api/v1/workouts/{id}/complete`
-  - **Żądanie**: `CompleteWorkoutCommand` (`{ distance_m, duration_s, avg_hr_bpm, completed_at, rating }`)
-  - **Odpowiedź**: `ApiResponse<WorkoutDetailDto>`
-- **Ocena treningu**:
+  - **Request**: `CompleteWorkoutCommand` (`{ distance_m, duration_s, avg_hr_bpm, completed_at, rating }`)
+  - **Response**: `ApiResponse<WorkoutDetailDto>`
+- **Rate workout**:
   - `POST /api/v1/workouts/{id}/rate`
-  - **Żądanie**: `WorkoutRateCommand` (`{ rating }`)
-  - **Odpowiedź**: `ApiResponse<WorkoutDetailDto>`
-- **Pominięcie treningu**:
+  - **Request**: `WorkoutRateCommand` (`{ rating }`)
+  - **Response**: `ApiResponse<WorkoutDetailDto>`
+- **Skip workout**:
   - `POST /api/v1/workouts/{id}/skip`
-  - **Żądanie**: Brak (puste body)
-  - **Odpowiedź**: `ApiResponse<WorkoutDetailDto>`
-- **Anulowanie treningu**:
+  - **Request**: None (empty body)
+  - **Response**: `ApiResponse<WorkoutDetailDto>`
+- **Cancel workout**:
   - `POST /api/v1/workouts/{id}/cancel`
-  - **Żądanie**: Brak (puste body)
-  - **Odpowiedź**: `ApiResponse<WorkoutDetailDto>`
+  - **Request**: None (empty body)
+  - **Response**: `ApiResponse<WorkoutDetailDto>`
 
-## 8. Interakcje użytkownika
+## 8. User Interactions
 
-- **Wejście na stronę**: Wyświetla się `Skeleton`, następuje pobranie danych. Po załadowaniu, widoczne są metryki i odpowiednie przyciski akcji.
-- **Kliknięcie "Ukończ"**: Otwiera się `CompleteWorkoutDialog`. Użytkownik wypełnia formularz i zatwierdza. Po pomyślnej odpowiedzi API, widok jest odświeżany, status zmienia się na "completed", a metryki realizacji są widoczne.
-- **Kliknięcie "Oceń"**: Otwiera się `RateWorkoutDialog`. Użytkownik wybiera ocenę. Po pomyślnej odpowiedzi API, ocena pojawia się w metrykach.
-- **Kliknięcie "Pomiń" / "Anuluj"**: Akcja jest wykonywana natychmiast. Wyświetlany jest toast z potwierdzeniem, a widok odświeża się, pokazując nowy status.
+- **Visit page**: Display `Skeleton` and fetch data. Once loaded, show metrics and appropriate action buttons.
+- **Click "Complete"**: Open `CompleteWorkoutDialog`. User completes and submits the form. On API success, refresh the view, change status to "completed", and show actual metrics.
+- **Click "Rate"**: Open `RateWorkoutDialog`. User selects a rating. On API success, show it in metrics.
+- **Click "Skip" / "Cancel"**: Execute immediately. Display a confirmation toast and refresh the view with the new status.
 
-## 9. Warunki i walidacja
+## 9. Conditions and Validation
 
-- **`WorkoutActions.tsx`**: Logika `canBeCompleted`, `canBeRated` itd. z `WorkoutViewModel` jest używana do warunkowego renderowania przycisków. Zapewnia to, że użytkownik nie może wykonać nieprawidłowej akcji.
-- **`CompleteWorkoutDialog.tsx`**: Formularz użyje `zod` i `react-hook-form` do walidacji pól zgodnie ze schemą `completeWorkoutSchema` z `src/lib/validation/workouts.ts`. Walidacja obejmuje:
-  - `distance_m`, `duration_s`, `avg_hr_bpm`, `completed_at` są wymagane.
-  - Wartości numeryczne muszą być w określonych przedziałach (np. `min`, `max`).
-- **`RateWorkoutDialog.tsx`**: Walidacja zapewnia, że wybrana ocena jest jedną z dozwolonych wartości enum.
+- **`WorkoutActions.tsx`**: Uses `WorkoutViewModel` flags such as `canBeCompleted`, `canBeRated`, etc., to render buttons conditionally, preventing invalid actions.
+- **`CompleteWorkoutDialog.tsx`**: Uses `zod` and `react-hook-form` with `completeWorkoutSchema` from `src/lib/validation/workouts.ts`. Validation includes:
+  - Required `distance_m`, `duration_s`, `avg_hr_bpm`, `completed_at`.
+  - Numeric values within specified ranges (e.g., `min`, `max`).
+- **`RateWorkoutDialog.tsx`**: Ensures the selected rating is an allowed enum value.
 
-## 10. Obsługa błędów
+## 10. Error Handling
 
-- **Błąd 404 (Not Found)**: Jeśli API zwróci 404, `WorkoutDetailView` wyświetli komunikat "Nie znaleziono treningu" z przyciskiem powrotu do kalendarza.
-- **Błąd 401 (Unauthorized)**: Globalny mechanizm powinien przechwycić ten błąd i przekierować na stronę logowania.
-- **Błąd 409 (Conflict)**: Wystąpi, gdy użytkownik spróbuje wykonać akcję na treningu w nieprawidłowym stanie (np. ukończyć już ukończony). Hook `useWorkoutDetail` przechwyci błąd, a UI poinformuje użytkownika o problemie za pomocą komponentu Toast (np. "Trening nie jest już w stanie 'planowany'").
-- **Błąd 422 (Validation)**: Błędy walidacji z formularza `CompleteWorkoutDialog` będą wyświetlane bezpośrednio pod odpowiednimi polami formularza.
-- **Inne błędy serwera (5xx)**: Wyświetlony zostanie ogólny komunikat o błędzie z przyciskiem "Spróbuj ponownie", który wywoła funkcję `refetch` z hooka `useWorkoutDetail`.
+- **404 (Not Found)**: `WorkoutDetailView` displays "Workout not found" with a return-to-calendar button.
+- **401 (Unauthorized)**: A global handler should redirect to login.
+- **409 (Conflict)**: Occurs for an action in an invalid state (e.g., completing an already completed workout). `useWorkoutDetail` catches it and the UI shows a Toast (e.g., "The workout is no longer planned").
+- **422 (Validation)**: `CompleteWorkoutDialog` validation errors appear directly below the relevant fields.
+- **Other server errors (5xx)**: Display a generic error with "Try again", calling `useWorkoutDetail`'s `refetch`.
 
-## 11. Kroki implementacji
+## 11. Implementation Steps
 
-1. **Stworzenie plików**: Utworzenie wszystkich wymaganych plików komponentów, hooka i strony Astro w odpowiednich katalogach (`src/pages/workouts/`, `src/components/views/`, `src/components/hooks/`).
-2. **Implementacja strony Astro**: Stworzenie `src/pages/workouts/[id].astro`, która pobiera `id` z URL i renderuje `WorkoutDetailView` z `client:load`.
-3. **Implementacja hooka `useWorkoutDetail`**: Zaimplementowanie logiki pobierania danych (`GET`), stanów `loading`/`error` oraz przygotowanie pustych funkcji do obsługi akcji.
-4. **Implementacja `WorkoutDetailView`**: Połączenie hooka z komponentem, wyświetlanie `Skeleton`, obsługa stanu błędu.
-5. **Implementacja `WorkoutMetrics` i `WorkoutSteps`**: Stworzenie komponentów czysto prezentacyjnych, które przyjmują dane z `WorkoutViewModel`.
-6. **Implementacja `WorkoutActions`**: Stworzenie przycisków akcji z logiką warunkowego renderowania.
-7. **Implementacja `CompleteWorkoutDialog`**: Zbudowanie formularza z walidacją `react-hook-form` i `zod`.
-8. **Implementacja `RateWorkoutDialog`**: Zbudowanie prostego dialogu do wyboru oceny.
-9. **Integracja API w hooku**: Zaimplementowanie logiki wywołań API dla akcji `complete`, `rate`, `skip`, `cancel`. Po każdej udanej operacji, wywołanie `refetch`.
-10. **Obsługa błędów i toastów**: Dodanie obsługi błędów API i wyświetlanie toastów informujących o sukcesie lub porażce akcji.
-11. **Finalne stylowanie i testy**: Dopracowanie wyglądu za pomocą Tailwind CSS i manualne przetestowanie wszystkich ścieżek użytkownika.
-
+1. **Create files**: Create component, hook, and Astro page files in appropriate directories (`src/pages/workouts/`, `src/components/views/`, `src/components/hooks/`).
+2. **Implement Astro page**: Create `src/pages/workouts/[id].astro`, extracting URL `id` and rendering `WorkoutDetailView` with `client:load`.
+3. **Implement `useWorkoutDetail`**: Add `GET` fetching, `loading`/`error` state, and empty action handlers.
+4. **Implement `WorkoutDetailView`**: Connect the hook, display `Skeleton`, and handle errors.
+5. **Implement `WorkoutMetrics` and `WorkoutSteps`**: Create presentation components receiving `WorkoutViewModel` data.
+6. **Implement `WorkoutActions`**: Create conditionally rendered action buttons.
+7. **Implement `CompleteWorkoutDialog`**: Build a form with `react-hook-form` and `zod` validation.
+8. **Implement `RateWorkoutDialog`**: Build a simple rating selection dialog.
+9. **Integrate API in hook**: Implement `complete`, `rate`, `skip`, `cancel` calls. Call `refetch` after each success.
+10. **Handle errors and toasts**: Add API error handling and success/failure toasts.
+11. **Final styling and tests**: Refine Tailwind CSS styling and manually test all user paths.

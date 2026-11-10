@@ -1,480 +1,481 @@
-## Plan testów – AI Running Training Planner (MVP)
-
-### 1. Wprowadzenie i cele testowania
-
-Celem tego planu testów jest zapewnienie, że aplikacja **AI Running Training Planner**:
-- poprawnie wspiera główne scenariusze użytkownika (onboarding, planowanie i wykonywanie treningów, korzystanie z sugestii AI),
-- jest stabilna funkcjonalnie przy typowych i brzegowych danych użytkownika,
-- bezpiecznie zarządza sesją użytkownika oraz danymi treningowymi (Supabase + RLS),
-- dostarcza spójne doświadczenie UI na kluczowych przeglądarkach i rozdzielczościach,
-- posiada minimalny, ale sensowny poziom automatyzacji testów (E2E + wybrane testy jednostkowe / integracyjne).
-
-Plan obejmuje zarówno **testy manualne eksploracyjne**, jak i **testy automatyczne** (głównie E2E w Playwright), z uwzględnieniem technicznej specyfiki: Astro 5 (SSR), React 19, Tailwind 4, Supabase oraz warstwy API pod `src/pages/api`.
-
-### 2. Zakres testów
-
-#### 2.1 Funkcjonalności w zakresie
-
-- **Autentykacja i zarządzanie kontem**
-  - Rejestracja użytkownika (`RegisterForm`, API `POST /api/v1/auth/register`).
-  - Logowanie (`LoginForm`, `POST /api/v1/auth/login`).
-  - Wylogowanie (`UserMenu` → `POST /api/v1/auth/logout`).
-  - Reset hasła: „zapomniałem hasła” (`ForgotPasswordForm`, `POST /api/v1/auth/forgot-password`) i ustawienie nowego hasła (`ResetPasswordForm`, `POST /api/v1/auth/reset-password`).
-  - Obsługa sesji (cookies, middleware `src/middleware/index.ts`) i przekierowania (np. na `/login`).
-
-- **Onboarding użytkownika**
-  - 3‑krokowy proces wprowadzania ostatnich treningów (`OnboardingView`, `WorkoutOnboardingForm`, `DurationInput`).
-  - Walidacje pól (dystans, czas, tętno, data z przeszłości).
-  - Przejście po ukończeniu kroku 3 do dalszej części aplikacji (np. kalendarz).
-
-- **Kalendarz i zarządzanie treningami**
-  - Widok kalendarza (`CalendarView`, `useCalendar`, `CalendarHeader`, `CalendarGrid`, `DayCell`).
-  - Widoki „miesiąc” / „tydzień” i nawigacja datami.
-  - Widok dzienny (`DayDrawer`, `DayDrawerContent`, `WorkoutList`, `WorkoutItem`, `QuickActions`).
-  - Szczegóły treningu (`WorkoutDetailDrawer`, `WorkoutDetailView`, `WorkoutMetrics`, `WorkoutSteps`, `WorkoutActions`).
-  - Akcje na treningu: ukończenie, ocena (`CompleteWorkoutDialog`, `RateWorkoutDialog`), pominięcie, anulowanie.
-
-- **Sugestie AI**
-  - Generowanie sugestii (`AISuggestionDrawer`, `AISuggestionForm`, API `POST /api/v1/ai/suggestions`).
-  - Podgląd sugestii (`SuggestionPreview`, `SuggestionMeta`, `SuggestionSteps`).
-  - Akceptacja, odrzucanie z regeneracją (limit 3/dzień) i obsługa konfliktu pozycji (`SuggestionControls`, `ConflictDialog`).
-  - Obsługa wygaśnięcia sugestii po 24h (`ExpiredSuggestionState`).
-
-- **Cel użytkownika (user goal)**
-  - Widok celu (`GoalView`, `GoalForm`, hook `useUserGoal`).
-  - Ustawianie celu dystansowego (dystans + data) z walidacją.
-  - Tryb „biegam dla zdrowia” (brak aktywnego celu).
-  - Edycja i usuwanie celu.
-
-- **Preferencje użytkownika**
-  - Jednostka tempa (`PaceUnitProvider`, `PaceUnitToggle`, `UserMenu`).
-  - Zapisywanie i odtwarzanie z `localStorage`.
-
-- **Warstwa API i logika domenowa**
-  - Endpoints pod `src/pages/api/v1` (auth, workouts, training-types, calendar, ai-suggestions, goals).
-  - Serwisy w `src/lib/services`, utilsy w `src/lib/utils` oraz walidacje w `src/lib/validation`.
-  - Integracja z Supabase (`src/db/supabase.client.ts`, `src/db/database.types.ts`, migracje w `supabase/migrations`).
-
-#### 2.2 Funkcjonalności poza zakresem (dla MVP)
-
-- Import plików .FIT / .GPX, integracje zewnętrzne (Garmin, Strava).
-- Zaawansowane wizualizacje wykresowe.
-- Funkcje społecznościowe.
-- Aplikacje natywne mobilne (testujemy tylko w przeglądarce mobilnej/responsywnej).
-
-### 3. Typy testów
-
-#### 3.1 Testy statyczne
-
-- **Linting i formatowanie**
-  - `npm run lint`, `npm run lint:fix`, `npm run format` jako część pipeline’u CI.
-  - Cel: brak błędów lint i poważnych ostrzeżeń przed merge do `master`.
-
-- **Analiza typów**
-  - Kompilacja TypeScript (`tsc` via Astro config / CI).
-  - Brak błędów typów, szczególnie na granicy API (`src/types.ts`, `src/types/*`, `src/lib/api/*`).
-
-#### 3.2 Testy jednostkowe
-
-Zakłada się dodanie frameworka (np. **Vitest** lub **Jest**) do testów jednostkowych.
-
-Obszary priorytetowe:
-- **Funkcje utili** (`src/lib/utils`, `src/lib/utils/workout.ts`):
-  - formatowanie dystansu/czasu/tempa,
-  - mapowanie typów treningów na kolory.
-- **Walidacje** (`src/lib/validation/*`):
-  - poprawność reguł i komunikatów błędów.
-- **Hooks domenowe**:
-  - `useCalendar` – generowanie zakresów dat, mapowanie danych API na `DayCellViewModel`.
-  - `useDayWorkouts` – filtrowanie, sortowanie, obsługa błędów sieci.
-  - `useWorkoutDetail` – transformacje DTO → `WorkoutViewModel`, flagi `canBe*`.
-- **Transformacje AI** (`src/lib/services/aiSuggestionsService.ts`, `src/types/suggestions.ts`):
-  - obliczanie łącznego czasu/dystansu, status `isExpired`, mapowanie kroków.
-- **Logika AI** (jeśli zaimplementowana jako osobne moduły):
-  - tryb kalibracji (pierwsze 3 treningi – bardziej zachowawcze sugestie),
-  - logika progresji (10% zwiększenie po 3 pozytywnych ocenach),
-  - accuracy sugestii tempa na podstawie historii użytkownika.
-
-#### 3.3 Testy integracyjne (backend i frontend)
-
-- **API integracyjne (HTTP)**
-  - Testy endpointów `src/pages/api/v1/*` uruchamianych na testowym serwerze Astro (Node adapter).
-  - Narzędzie: np. **supertest** lub czysty `fetch` w środowisku testowym.
-  - Weryfikacja RLS i poprawności filtrów (np. zakres dat, filtrowanie po użytkowniku).
-
-- **Integracje frontend–API**
-  - Testy komponentów React z użyciem **React Testing Library**:
-    - `CalendarView` + `useCalendar` – poprawne renderowanie dni na podstawie danych z API (mock fetch).
-    - `DayDrawer` + `useDayWorkouts` – poprawne stany ładowania/błędu i aktualizacja po akcjach.
-    - `AISuggestionDrawer` – poprawne przejścia stanów (formularz → sugestia → akceptacja/regeneracja).
-
-#### 3.4 Testy E2E (Playwright)
-
-Kluczowy filar automatyzacji:
-- Uruchamiane przeciwko zbudowanemu SSR (`npm run build`, `npm run preview`).
-- Scenariusze opisane w rozdziale 4 dla krytycznych przepływów:
-  - autentykacja i zarządzanie sesją (TC-AUTH-*),
-  - onboarding z przykładowymi danymi (TC-ONB-*),
-  - kalendarz i zarządzanie treningami (TC-CAL-*, TC-WRK-*),
-  - sugestie AI - podstawowe flow i zaawansowana logika (tryb kalibracji, progresja, accuracy tempa) (TC-AI-*),
-  - cele użytkownika (TC-GOAL-*),
-  - preferencje użytkownika (TC-PACE-*).
-- Testy w min. 2 przeglądarkach (Chromium, WebKit) i responsywności (desktop + mobile viewport).
-
-#### 3.5 Testy niefunkcjonalne
-
-- **Wydajność (lekki poziom)**
-  - Czas TTFB i renderowania głównych widoków (Onboarding, Kalendarz).
-  - Sprawdzenie, że SSR działa poprawnie, a ilość JS na kliencie jest rozsądna.
-- **Bezpieczeństwo**
-  - Sprawdzenie ograniczenia dostępu przez middleware (niezalogowany użytkownik).
-  - Weryfikacja braku możliwości dostępu do cudzych danych (Supabase RLS – testy API).
-  - Sprawdzenie przechowywania sesji w cookies (httpOnly, secure na prod).
-- **Dostępność**
-  - Podstawowe testy z wykorzystaniem Playwright + axe (lub manualnie).
-  - Sprawdzenie focus management (modale, drawery, dialogi).
-
-### 4. Scenariusze testowe dla kluczowych funkcjonalności
-
-Poniżej zestaw scenariuszy, które powinny być pokryte testami E2E (wysoki priorytet) oraz uzupełnione testami jednostkowymi/integracyjnymi tam, gdzie to zasadne.
-
-#### 4.1 Autentykacja
-
-- **TC-AUTH-01 – Rejestracja nowego użytkownika (happy path)**
-  - Wejście na `/register`.
-  - Wypełnienie poprawnych danych (unikalny email, silne hasło, zgoda na regulamin).
-  - Oczekiwane: brak błędów walidacji, wyświetlenie ekranu potwierdzenia weryfikacji emaila.
-
-- **TC-AUTH-02 – Walidacja formularza rejestracji**
-  - Puste pola, niepoprawny email, za krótkie hasło, brak cyfr/liter, różne hasła, brak zgody na regulamin.
-  - Oczekiwane: poprawne komunikaty błędów pod polami.
-
-- **TC-AUTH-03 – Logowanie poprawnymi danymi**
-  - Wejście na `/login`, logowanie poprawnym kontem.
-  - Oczekiwane: przekierowanie na `/` (kalendarz), widoczny `UserMenu` z emailem.
-
-- **TC-AUTH-04 – Logowanie błędnymi danymi**
-  - Nieistniejący email, złe hasło.
-  - Oczekiwane: sensowny komunikat błędu globalnego (np. „Błąd logowania”).
-
-- **TC-AUTH-05 – Zapomniane hasło**
-  - Wejście na `/forgot-password`, podanie poprawnego oraz nieistniejącego maila.
-  - Oczekiwane: zawsze komunikat sukcesu, brak przecieku czy konto istnieje.
-
-- **TC-AUTH-06 – Reset hasła**
-  - Symulacja wejścia na `/reset-password?token=...`.
-  - Ustawienie nowego hasła, potwierdzenie.
-  - Oczekiwane: komunikat o sukcesie, możliwość zalogowania nowym hasłem.
-
-- **TC-AUTH-07 – Wylogowanie**
-  - Kliknięcie „Wyloguj” w `UserMenu`.
-  - Oczekiwane: wywołanie `/api/v1/auth/logout`, redirect na `/login`, brak dostępu do `/` bez logowania.
-
-#### 4.2 Onboarding (3 ostatnie treningi)
-
-- **TC-ONB-01 – Przejście całego procesu onboardingowego**
-  - Nowe konto → automatyczny redirect na `/onboarding`.
-  - Wypełnienie poprawnych danych dla 3 treningów z przeszłości.
-  - Oczekiwane: każdy krok zapisuje dane, po kroku 3 redirect na `nextUrl` (np. `/`), komunikaty sukcesu.
-
-- **TC-ONB-02 – Walidacje formularza treningu**
-  - Dystans < 0.1 km, czas < 60s, tętno poza zakresem 40–220, data w przyszłości.
-  - Oczekiwane: odpowiednie komunikaty błędów, zablokowanie przejścia dalej.
-
-- **TC-ONB-03 – Przerwanie i powrót**
-  - Rozpoczęcie onboarding, odświeżenie strony / wylogowanie w trakcie.
-  - Oczekiwane: po zalogowaniu użytkownik wraca do odpowiedniego kroku lub ponownie do onboarding (wg założeń backendu).
-
-- **TC-ONB-04 – Weryfikacja przykładowych danych**
-  - Sprawdzenie, czy interfejs onboardingu wyświetla przykładowe dane (np. „Spacer 30 min", „Lekki trucht 15 min").
-  - Możliwość użycia przykładowych danych poprzez kliknięcie lub autouzupełnienie.
-  - Oczekiwane: przyciski/linki z przykładowymi danymi są widoczne i funkcjonalne, obniżają barierę wejścia dla nowych użytkowników.
-
-#### 4.3 Kalendarz i treningi
-
-- **TC-CAL-01 – Widok kalendarza (miesiąc)**
-  - Wejście na `/` po zalogowaniu.
-  - Oczekiwane: poprawnie wyświetlony miesiąc, wyróżniony dzisiejszy dzień, oznaczenie dni spoza bieżącego miesiąca.
-
-- **TC-CAL-02 – Nawigacja po okresach i trybach**
-  - Zmiana widoku na „Tydzień”, nawigacja `Poprzedni / Następny`, przycisk „Dzisiaj”.
-  - Oczekiwane: poprawne przeliczanie zakresów dat, numer tygodnia.
-
-- **TC-CAL-03 – Wyświetlanie treningów w komórkach**
-  - Dni z 0, 1, 2 i >2 treningami.
-  - Oczekiwane: limit 2 kart w komórce + link „+N więcej” otwierający `DayDrawer`.
-
-- **TC-CAL-04 – Klawiaturowa nawigacja po kalendarzu**
-  - Fokus na komórce, użycie strzałek i Enter/spacja.
-  - Oczekiwane: przesuwanie fokusu, otwarcie dnia dla Enter/space.
-
-- **TC-CAL-05 – Widok dnia (`DayDrawer`)**
-  - Otwarcie dnia z różnymi statusami treningów.
-  - Oczekiwane: liczba treningów, poprawne etykiety statusów, dostępne `QuickActions` tylko dla `planned`.
-
-- **TC-CAL-06 – Quick actions: „Pomiń” i „Anuluj”**
-  - Dla treningu `planned` użycie „Pomiń” / „Anuluj”.
-  - Oczekiwane: aktualizacja statusu/ usunięcie z listy, odpowiednie komunikaty (alerty / toast), odświeżenie danych.
-
-- **TC-CAL-07 – Szczegóły treningu z kalendarza**
-  - Kliknięcie treningu otwiera `WorkoutDetailDrawer`.
-  - Oczekiwane: poprawne dane planowane, ewentualne dane wykonania, lista kroków.
-
-#### 4.4 Sugestie AI
-
-- **TC-AI-01 – Generowanie sugestii AI**
-  - Z `DayCell` wybór „Generuj z AI” → otwarcie `AISuggestionDrawer`.
-  - Wybór typu treningu i daty, klik „Generuj sugestię AI”.
-  - Oczekiwane: spinner, potem podgląd treningu z podsumowaniem i krokami.
-
-- **TC-AI-02 – Walidacje formularza sugestii**
-  - Brak wyboru typu treningu / daty.
-  - Oczekiwane: komunikaty błędów pod polami.
-
-- **TC-AI-03 – Akceptacja sugestii**
-  - Dla wygenerowanej sugestii klik „Zaakceptuj sugestię”.
-  - Oczekiwane: wywołanie API, zamknięcie drawer, pojawienie się treningu w kalendarzu na odpowiedniej pozycji.
-
-- **TC-AI-04 – Konflikt pozycji (409)**
-  - Wymuszenie sytuacji z już istniejącym treningiem na pozycji 1.
-  - Oczekiwane: otwarcie `ConflictDialog`, wybór pozycji 2–5, ponowna akceptacja, dodanie treningu w wybranej pozycji.
-
-- **TC-AI-05 – Regeneracja sugestii (limit 3)**
-  - Kilkukrotne użycie „Odrzuć i wygeneruj nową”.
-  - Oczekiwane: licznik pozostałych regeneracji, blokada przy 3 użyciach, komunikat o limicie.
-
-- **TC-AI-06 – Wygasanie sugestii**
-  - Symulacja sugestii starszej niż 24h (`isExpired = true`).
-  - Oczekiwane: stan „Sugestia wygasła", brak możliwości akceptacji, możliwość wygenerowania nowej.
-
-- **TC-AI-07 – Tryb kalibracji (pierwsze 3 treningi AI)**
-  - Weryfikacja, że pierwsze 3 treningi wygenerowane przez AI są bardziej zachowawcze i zróżnicowane.
-  - Dla nowego użytkownika po onboardingu wygenerowanie 3 sugestii AI różnych typów.
-  - Oczekiwane:
-    - Sugestie są zróżnicowane pod względem typu (np. nie 3x ten sam typ).
-    - Dystans/czas są bardziej zachowawcze niż średnia z onboardingu (np. nie >120% średniego dystansu).
-    - Komunikat/wskazówka informująca o trybie kalibracji (opcjonalnie, jeśli UI to przewiduje).
-
-- **TC-AI-08 – Logika progresji AI (10% zwiększenie)**
-  - Weryfikacja logiki progresji po 3 pozytywnych ocenach tego samego typu treningu.
-  - Przygotowanie: użytkownik ma w historii 3 ostatnie treningi typu „Bieg Spokojny", wszystkie ocenione jako „W sam raz" lub „Za łatwy".
-  - Wygenerowanie nowej sugestii typu „Bieg Spokojny".
-  - Oczekiwane:
-    - Sugerowany dystans jest większy o ~10% (±2%) niż średnia z 3 ostatnich treningów tego typu.
-    - Alternatywnie: czas jest większy o ~10% (jeśli logika opiera się na czasie).
-
-- **TC-AI-09 – Accuracy sugestii tempa na podstawie historii**
-  - Weryfikacja, że sugerowane tempo jest realistyczne na podstawie historii użytkownika.
-  - Przygotowanie: użytkownik ma w historii kilka treningów z różnym średnim tempem (np. 5:30 min/km, 6:00 min/km, 5:45 min/km).
-  - Wygenerowanie sugestii AI.
-  - Oczekiwane:
-    - Sugerowane tempo w krokach treningu mieści się w rozsądnym zakresie względem średniego tempa użytkownika (np. ±15%).
-    - Tempo dla rozgrzewki jest wolniejsze niż dla części głównej.
-    - Tempo dla schłodzenia jest wolniejsze niż dla części głównej.
-
-#### 4.5 Cele użytkownika
-
-- **TC-GOAL-01 – Ustawienie celu dystansowego**
-  - Wejście na `/goal`, wybór opcji „Mam konkretny cel”.
-  - Wprowadzenie dystansu w km, daty w przyszłości, notatek.
-  - Oczekiwane: walidacja, zapis celu, komunikat sukcesu (toast).
-
-- **TC-GOAL-02 – Walidacje celu**
-  - Dystans spoza zakresu 0.1–1000 km, data w przeszłości, >500 znaków notatek.
-  - Oczekiwane: komunikaty błędów, zablokowanie zapisu.
-
-- **TC-GOAL-03 – Tryb „biegam dla zdrowia”**
-  - Wybór opcji „biegam dla zdrowia”, zapis.
-  - Dla istniejącego celu – oczekiwane usunięcie celu z backendu.
-
-- **TC-GOAL-04 – Usunięcie celu**
-  - Kliknięcie „Usuń cel” i potwierdzenie w `Dialog`.
-  - Oczekiwane: usunięcie z backendu, reset formularza, komunikat sukcesu.
-
-#### 4.6 Akcje na treningu i rating
-
-- **TC-WRK-01 – Ukończenie treningu z poziomu widoku szczegółów**
-  - Dla treningu `planned` klik „✓ Ukończ trening”.
-  - Wypełnienie dystansu (0.1–100 km), czasu (5 min–6 h), tętna (0–240), daty i godziny (nie w przyszłości).
-  - Oczekiwane: walidacje, zapis, status `completed`, uzupełnione metryki.
-
-- **TC-WRK-02 – Ocena treningu**
-  - Dla `completed` klik „⭐ Oceń trening”.
-  - Wybór jednej z opcji („Za łatwy/W sam raz/Za trudny”).
-  - Oczekiwane: zapis ratingu, odświeżenie metryk z polską etykietą.
-
-- **TC-WRK-03 – Skip/Cancel z widoku szczegółów**
-  - Dla `planned` użycie przycisków „Pomiń” i „Anuluj” (z potwierdzeniem).
-  - Oczekiwane: zmiana statusu w UI i odpowiednia aktualizacja danych.
-
-#### 4.7 Preferencje – jednostka tempa
-
-- **TC-PACE-01 – Zmiana jednostki tempa w menu użytkownika**
-  - Otworzenie `UserMenu`, przełącznik `PaceUnitToggle`.
-  - Oczekiwane: zapis w `localStorage`, ponowne wejście do aplikacji zachowuje wybór.
-
-- **TC-PACE-02 – Brak dostępu do localStorage**
-  - Tryb incognito / przeglądarka z blokadą storage.
-  - Oczekiwane: brak crasha, użycie wartości domyślnej, ostrzeżenie w konsoli.
-
-#### 4.8 Błędy, stany brzegowe i dostępność
-
-- **TC-ERR-01 – Brak połączenia z API kalendarza**
-  - Symulacja błędu network dla `/api/v1/calendar`.
-  - Oczekiwane: komunikat błędu w widoku kalendarza z przyciskiem „Odśwież”.
-
-- **TC-ERR-02 – Nieautoryzowany dostęp**
-  - Dostęp do `/`, `/goal`, `/onboarding` bez sesji.
-  - Oczekiwane: redirect do `/login`.
-
-- **TC-ACC-01 – Podstawowa dostępność**
-  - Sprawdzenie etykiet ARIA, kolejek focusu w dialogach i sheetach (`Dialog`, `Sheet`).
-  - Oczekiwane: możliwość przejścia głównych scenariuszy wyłącznie klawiaturą.
-
-### 5. Środowisko testowe
-
-- **Konfiguracja aplikacji**
-  - Node.js: `22.14.0` (zgodnie z `.nvmrc`).
-  - Aplikacja uruchamiana w trybie:
-    - `npm run dev` – szybka weryfikacja lokalna.
-    - `npm run build` + `npm run preview` – środowisko dla E2E / regresji.
-
-- **Baza danych (Supabase / Postgres)**
-  - Dedykowany **testowy projekt Supabase** lub lokalny Postgres z zastosowanymi migracjami:
-    - `supabase/migrations/*`, `supabase/seed.sql` do inicjalizacji danych.
-  - Osobne dane dostępowe w `.env.test` (brak użycia produkcyjnych kluczy).
-
-- **Konfiguracja AI (OpenRouter)**
-  - Dla testów E2E rekomendowane:
-    - środowisko z mockowanymi odpowiedziami (np. przez warstwę usług w `src/lib/services/aiSuggestionsService.ts` i / lub MSW),
-    - lub osobny klucz z twardymi limitami i deterministycznymi modelami.
-
-- **Przeglądarki**
-  - Playwright: Chromium, WebKit (opcjonalnie Firefox).
-  - Rozdzielczości:
+## Test Plan – AI Running Training Planner (MVP)
+
+### 1. Introduction and Testing Goals
+
+This test plan aims to ensure that **AI Running Training Planner**:
+
+- correctly supports core user scenarios (onboarding, planning and completing workouts, using AI suggestions),
+- is functionally stable with typical and edge-case user data,
+- securely manages user sessions and workout data (Supabase + RLS),
+- delivers a consistent UI experience across key browsers and resolutions,
+- has a minimal but meaningful level of test automation (E2E + selected unit / integration tests).
+
+The plan covers **manual exploratory testing** and **automated testing** (mainly Playwright E2E), accounting for the technical stack: Astro 5 (SSR), React 19, Tailwind 4, Supabase, and the API layer under `src/pages/api`.
+
+### 2. Test Scope
+
+#### 2.1 Features in Scope
+
+- **Authentication and account management**
+  - Registration (`RegisterForm`, API `POST /api/v1/auth/register`).
+  - Login (`LoginForm`, `POST /api/v1/auth/login`).
+  - Logout (`UserMenu` → `POST /api/v1/auth/logout`).
+  - Password reset: “forgot password” (`ForgotPasswordForm`, `POST /api/v1/auth/forgot-password`) and setting a new password (`ResetPasswordForm`, `POST /api/v1/auth/reset-password`).
+  - Session handling (cookies, `src/middleware/index.ts`) and redirects (e.g., to `/login`).
+
+- **User onboarding**
+  - 3-step entry of recent workouts (`OnboardingView`, `WorkoutOnboardingForm`, `DurationInput`).
+  - Field validation (distance, time, heart rate, past date).
+  - Transition after step 3 to the rest of the application (e.g., calendar).
+
+- **Calendar and workout management**
+  - Calendar view (`CalendarView`, `useCalendar`, `CalendarHeader`, `CalendarGrid`, `DayCell`).
+  - Month / week views and date navigation.
+  - Day view (`DayDrawer`, `DayDrawerContent`, `WorkoutList`, `WorkoutItem`, `QuickActions`).
+  - Workout details (`WorkoutDetailDrawer`, `WorkoutDetailView`, `WorkoutMetrics`, `WorkoutSteps`, `WorkoutActions`).
+  - Workout actions: completion, rating (`CompleteWorkoutDialog`, `RateWorkoutDialog`), skipping, cancellation.
+
+- **AI suggestions**
+  - Generation (`AISuggestionDrawer`, `AISuggestionForm`, API `POST /api/v1/ai/suggestions`).
+  - Preview (`SuggestionPreview`, `SuggestionMeta`, `SuggestionSteps`).
+  - Acceptance, rejection with regeneration (limit 3/day), and position conflict handling (`SuggestionControls`, `ConflictDialog`).
+  - Expiration after 24h (`ExpiredSuggestionState`).
+
+- **User goal**
+  - Goal view (`GoalView`, `GoalForm`, `useUserGoal`).
+  - Distance goal setup (distance + date) with validation.
+  - “I run for health” mode (no active goal).
+  - Editing and deleting goals.
+
+- **User preferences**
+  - Pace unit (`PaceUnitProvider`, `PaceUnitToggle`, `UserMenu`).
+  - Saving to and restoring from `localStorage`.
+
+- **API layer and domain logic**
+  - Endpoints under `src/pages/api/v1` (auth, workouts, training-types, calendar, ai-suggestions, goals).
+  - Services in `src/lib/services`, utilities in `src/lib/utils`, validation in `src/lib/validation`.
+  - Supabase integration (`src/db/supabase.client.ts`, `src/db/database.types.ts`, migrations in `supabase/migrations`).
+
+#### 2.2 Features Outside Scope (MVP)
+
+- .FIT / .GPX imports, external integrations (Garmin, Strava).
+- Advanced chart visualizations.
+- Social features.
+- Native mobile applications (testing only mobile/responsive browsers).
+
+### 3. Test Types
+
+#### 3.1 Static Tests
+
+- **Linting and formatting**
+  - `npm run lint`, `npm run lint:fix`, `npm run format` as part of CI.
+  - Goal: no lint errors or serious warnings before merging to `master`.
+
+- **Type analysis**
+  - TypeScript compilation (`tsc` via Astro config / CI).
+  - No type errors, especially at API boundaries (`src/types.ts`, `src/types/*`, `src/lib/api/*`).
+
+#### 3.2 Unit Tests
+
+A framework (e.g., **Vitest** or **Jest**) is expected to be added for unit testing.
+
+Priority areas:
+
+- **Utilities** (`src/lib/utils`, `src/lib/utils/workout.ts`):
+  - distance/time/pace formatting,
+  - workout type to color mapping.
+- **Validation** (`src/lib/validation/*`):
+  - correct rules and error messages.
+- **Domain hooks**:
+  - `useCalendar` – date range generation, API data to `DayCellViewModel` mapping.
+  - `useDayWorkouts` – filtering, sorting, network error handling.
+  - `useWorkoutDetail` – DTO → `WorkoutViewModel` transformations, `canBe*` flags.
+- **AI transformations** (`src/lib/services/aiSuggestionsService.ts`, `src/types/suggestions.ts`):
+  - total time/distance, `isExpired` status, step mapping.
+- **AI logic** (if implemented as separate modules):
+  - calibration mode (first 3 workouts – more conservative suggestions),
+  - progression logic (10% increase after 3 positive ratings),
+  - pace suggestion accuracy based on user history.
+
+#### 3.3 Integration Tests (Backend and Frontend)
+
+- **API integration (HTTP)**
+  - Endpoint tests for `src/pages/api/v1/*` on a test Astro server (Node adapter).
+  - Tool: e.g., **supertest** or plain `fetch` in a test environment.
+  - Verify RLS and filters (e.g., date range, user filtering).
+
+- **Frontend–API integrations**
+  - React component tests using **React Testing Library**:
+    - `CalendarView` + `useCalendar` – correct day rendering from API data (mock fetch).
+    - `DayDrawer` + `useDayWorkouts` – correct loading/error states and updates after actions.
+    - `AISuggestionDrawer` – correct transitions (form → suggestion → acceptance/regeneration).
+
+#### 3.4 E2E Tests (Playwright)
+
+Core automation pillar:
+
+- Run against built SSR (`npm run build`, `npm run preview`).
+- Scenarios described in section 4 cover critical flows:
+  - authentication and session management (TC-AUTH-*),
+  - onboarding with sample data (TC-ONB-*),
+  - calendar and workout management (TC-CAL-_, TC-WRK-_),
+  - AI suggestions - basic flow and advanced logic (calibration, progression, pace accuracy) (TC-AI-*),
+  - user goals (TC-GOAL-*),
+  - user preferences (TC-PACE-*).
+- At least 2 browsers (Chromium, WebKit) and responsive testing (desktop + mobile viewport).
+
+#### 3.5 Nonfunctional Tests
+
+- **Performance (lightweight)**
+  - TTFB and rendering time for main views (Onboarding, Calendar).
+  - Verify correct SSR and reasonable client-side JS volume.
+- **Security**
+  - Verify middleware access restrictions (logged-out user).
+  - Verify other users' data is inaccessible (Supabase RLS – API tests).
+  - Check session cookie storage (httpOnly, secure in production).
+- **Accessibility**
+  - Basic Playwright + axe tests (or manual).
+  - Check focus management (modals, drawers, dialogs).
+
+### 4. Test Scenarios for Key Features
+
+The following scenarios should have E2E coverage (high priority), supplemented by unit/integration tests where appropriate.
+
+#### 4.1 Authentication
+
+- **TC-AUTH-01 – New user registration (happy path)**
+  - Visit `/register`.
+  - Enter valid data (unique email, strong password, terms acceptance).
+  - Expected: no validation errors, email verification confirmation screen displayed.
+
+- **TC-AUTH-02 – Registration form validation**
+  - Empty fields, invalid email, short password, missing digits/letters, mismatched passwords, no terms acceptance.
+  - Expected: correct field error messages.
+
+- **TC-AUTH-03 – Login with valid credentials**
+  - Visit `/login`, log in with a valid account.
+  - Expected: redirect to `/` (calendar), `UserMenu` with email visible.
+
+- **TC-AUTH-04 – Login with invalid credentials**
+  - Nonexistent email, wrong password.
+  - Expected: meaningful global error (e.g., “Login failed”).
+
+- **TC-AUTH-05 – Forgot password**
+  - Visit `/forgot-password`, enter existing and nonexistent emails.
+  - Expected: always a success message, no disclosure of account existence.
+
+- **TC-AUTH-06 – Reset password**
+  - Simulate visiting `/reset-password?token=...`.
+  - Set and confirm a new password.
+  - Expected: success message, login with new password possible.
+
+- **TC-AUTH-07 – Logout**
+  - Click “Log out” in `UserMenu`.
+  - Expected: `/api/v1/auth/logout` called, redirect to `/login`, no access to `/` without login.
+
+#### 4.2 Onboarding (3 Recent Workouts)
+
+- **TC-ONB-01 – Complete onboarding**
+  - New account → automatic redirect to `/onboarding`.
+  - Enter valid data for 3 historical workouts.
+  - Expected: each step saves data, step 3 redirects to `nextUrl` (e.g., `/`), success messages.
+
+- **TC-ONB-02 – Workout form validation**
+  - Distance < 0.1 km, time < 60s, heart rate outside 40–220, future date.
+  - Expected: appropriate errors, progression blocked.
+
+- **TC-ONB-03 – Interrupt and return**
+  - Start onboarding, refresh / log out during the process.
+  - Expected: after login, return to the appropriate step or onboarding again (according to backend assumptions).
+
+- **TC-ONB-04 – Sample data verification**
+  - Check onboarding displays sample data (e.g., “30 min walk”, “15 min easy jog”).
+  - Sample data can be used through clicking or autofill.
+  - Expected: sample buttons/links visible and functional, lowering the barrier for new users.
+
+#### 4.3 Calendar and Workouts
+
+- **TC-CAL-01 – Calendar view (month)**
+  - Visit `/` after login.
+  - Expected: correct month, today highlighted, days outside current month indicated.
+
+- **TC-CAL-02 – Period and mode navigation**
+  - Switch to “Week”, use `Previous / Next` and “Today”.
+  - Expected: correct date ranges and week number.
+
+- **TC-CAL-03 – Workouts in cells**
+  - Days with 0, 1, 2, and >2 workouts.
+  - Expected: at most 2 cards + “+N more” link opening `DayDrawer`.
+
+- **TC-CAL-04 – Keyboard calendar navigation**
+  - Focus cell, use arrows and Enter/space.
+  - Expected: focus moves, Enter/space opens day.
+
+- **TC-CAL-05 – Day view (`DayDrawer`)**
+  - Open a day with different workout statuses.
+  - Expected: workout count, correct status labels, `QuickActions` only for `planned`.
+
+- **TC-CAL-06 – Quick actions: “Skip” and “Cancel”**
+  - Use “Skip” / “Cancel” on `planned` workouts.
+  - Expected: status update / removal from list, appropriate messages (alerts / toast), refreshed data.
+
+- **TC-CAL-07 – Workout details from calendar**
+  - Click workout to open `WorkoutDetailDrawer`.
+  - Expected: correct planned data, actual data if present, step list.
+
+#### 4.4 AI Suggestions
+
+- **TC-AI-01 – Generate AI suggestion**
+  - Select “Generate with AI” in `DayCell` → open `AISuggestionDrawer`.
+  - Select type and date, click “Generate AI suggestion”.
+  - Expected: spinner, then workout preview with summary and steps.
+
+- **TC-AI-02 – Suggestion form validation**
+  - No type / date selected.
+  - Expected: field error messages.
+
+- **TC-AI-03 – Accept suggestion**
+  - Click “Accept suggestion” for a generated suggestion.
+  - Expected: API call, drawer closes, workout appears at the correct calendar position.
+
+- **TC-AI-04 – Position conflict (409)**
+  - Force an existing workout at position 1.
+  - Expected: `ConflictDialog` opens, select position 2–5, accept again, workout added at selected position.
+
+- **TC-AI-05 – Regenerate suggestion (limit 3)**
+  - Repeatedly use “Reject and generate another”.
+  - Expected: remaining regeneration count, blocked after 3 uses, limit message.
+
+- **TC-AI-06 – Suggestion expiration**
+  - Simulate a suggestion older than 24h (`isExpired = true`).
+  - Expected: “Suggestion expired”, acceptance blocked, new generation available.
+
+- **TC-AI-07 – Calibration mode (first 3 AI workouts)**
+  - Verify the first 3 AI workouts are more conservative and varied.
+  - Generate 3 AI suggestions of different types for a new user after onboarding.
+  - Expected:
+    - Varied types (e.g., not the same type 3 times).
+    - Distance/time more conservative than onboarding average (e.g., not >120% of average distance).
+    - Calibration message/hint (optional, if supported by UI).
+
+- **TC-AI-08 – AI progression logic (10% increase)**
+  - Verify progression after 3 positive ratings of the same workout type.
+  - Setup: last 3 “Easy Run” workouts all rated “Just right” or “Too easy”.
+  - Generate a new “Easy Run” suggestion.
+  - Expected:
+    - Suggested distance ~10% (±2%) above average of the last 3 workouts of this type.
+    - Alternatively: time ~10% greater (if time-based logic).
+
+- **TC-AI-09 – Pace suggestion accuracy based on history**
+  - Verify suggested pace is realistic based on history.
+  - Setup: several workouts with different average paces (e.g., 5:30 min/km, 6:00 min/km, 5:45 min/km).
+  - Generate an AI suggestion.
+  - Expected:
+    - Step paces within a reasonable range of the user's average pace (e.g., ±15%).
+    - Warm-up pace slower than main part.
+    - Cool-down pace slower than main part.
+
+#### 4.5 User Goals
+
+- **TC-GOAL-01 – Set distance goal**
+  - Visit `/goal`, select “I have a specific goal”.
+  - Enter distance in km, future date, notes.
+  - Expected: validation, goal saved, success toast.
+
+- **TC-GOAL-02 – Goal validation**
+  - Distance outside 0.1–1000 km, past date, >500 note characters.
+  - Expected: errors, save blocked.
+
+- **TC-GOAL-03 – “I run for health” mode**
+  - Select “I run for health”, save.
+  - Existing goal should be deleted from backend.
+
+- **TC-GOAL-04 – Delete goal**
+  - Click “Delete goal” and confirm in `Dialog`.
+  - Expected: backend deletion, form reset, success message.
+
+#### 4.6 Workout Actions and Rating
+
+- **TC-WRK-01 – Complete workout from details**
+  - For `planned`, click “✓ Complete workout”.
+  - Enter distance (0.1–100 km), time (5 min–6 h), heart rate (0–240), date/time (not future).
+  - Expected: validation, save, `completed` status, actual metrics populated.
+
+- **TC-WRK-02 – Rate workout**
+  - For `completed`, click “⭐ Rate workout”.
+  - Select “Too easy/Just right/Too hard”.
+  - Expected: rating saved, metrics refreshed with a Polish label.
+
+- **TC-WRK-03 – Skip/Cancel from details**
+  - For `planned`, use “Skip” and “Cancel” (with confirmation).
+  - Expected: status changes in UI, appropriate data update.
+
+#### 4.7 Preferences – Pace Unit
+
+- **TC-PACE-01 – Change pace unit in user menu**
+  - Open `UserMenu`, use `PaceUnitToggle`.
+  - Expected: saved in `localStorage`, preserved on application reentry.
+
+- **TC-PACE-02 – localStorage unavailable**
+  - Incognito / browser with storage blocked.
+  - Expected: no crash, default value used, console warning.
+
+#### 4.8 Errors, Edge Cases, and Accessibility
+
+- **TC-ERR-01 – Calendar API connection unavailable**
+  - Simulate network error for `/api/v1/calendar`.
+  - Expected: calendar error message with “Refresh”.
+
+- **TC-ERR-02 – Unauthorized access**
+  - Access `/`, `/goal`, `/onboarding` without a session.
+  - Expected: redirect to `/login`.
+
+- **TC-ACC-01 – Basic accessibility**
+  - Check ARIA labels and focus order in dialogs and sheets (`Dialog`, `Sheet`).
+  - Expected: main scenarios can be completed using keyboard alone.
+
+### 5. Test Environment
+
+- **Application configuration**
+  - Node.js: `22.14.0` (according to `.nvmrc`).
+  - Run modes:
+    - `npm run dev` – quick local verification.
+    - `npm run build` + `npm run preview` – E2E / regression environment.
+
+- **Database (Supabase / Postgres)**
+  - Dedicated **test Supabase project** or local Postgres with migrations applied:
+    - `supabase/migrations/*`, `supabase/seed.sql` for initialization.
+  - Separate credentials in `.env.test` (no production keys).
+
+- **AI configuration (OpenRouter)**
+  - Recommended for E2E:
+    - mocked responses (e.g., service layer in `src/lib/services/aiSuggestionsService.ts` and/or MSW),
+    - or a separate key with hard limits and deterministic models.
+
+- **Browsers**
+  - Playwright: Chromium, WebKit (optionally Firefox).
+  - Resolutions:
     - desktop: 1440×900,
     - mobile: 390×844 (iPhone 13).
 
-### 6. Narzędzia do testowania
+### 6. Testing Tools
 
-- **Automatyczne testy E2E**
+- **Automated E2E tests**
   - **Playwright** (`tests/e2e/*`):
-    - scenariusze zgodne z rozdziałem 4,
-    - uruchamiane w CI po `npm run build`.
+    - scenarios matching section 4,
+    - run in CI after `npm run build`.
 
-- **Testy jednostkowe/integracyjne**
-  - Propozycja: **Vitest** + **React Testing Library**:
-    - testy logiki w hooks (`useCalendar`, `useDayWorkouts`, `useWorkoutDetail`),
-    - testy walidacji i utilsów (formatowanie, logika AI).
+- **Unit/integration tests**
+  - Proposed: **Vitest** + **React Testing Library**:
+    - hook logic (`useCalendar`, `useDayWorkouts`, `useWorkoutDetail`),
+    - validation and utilities (formatting, AI logic).
 
-- **Testy API**
-  - `supertest` lub `node-fetch` w środowisku testowym Astro Node.
-  - Alternatywnie: Playwright API testy (APIRequestContext).
+- **API tests**
+  - `supertest` or `node-fetch` in the Astro Node test environment.
+  - Alternatively: Playwright API tests (APIRequestContext).
 
-- **Inne**
-  - **ESLint**, **Prettier**, Husky, lint-staged – gate jakościowy.
-  - **Supabase CLI** – migracje, seedy.
-  - **MSW** (opcjonalnie) – mockowanie wybranych endpointów w testach komponentów.
+- **Other**
+  - **ESLint**, **Prettier**, Husky, lint-staged – quality gate.
+  - **Supabase CLI** – migrations, seeds.
+  - **MSW** (optional) – mocking selected endpoints in component tests.
 
-### 7. Harmonogram testów
+### 7. Test Schedule
 
-Odwołując się do ogólnego harmonogramu (5 tygodni):
+Based on the overall schedule (5 weeks):
 
-- **Tydzień 1–2**
-  - Przygotowanie środowiska testowego (Supabase test, CI).
-  - Ustalenie frameworka unit/integration tests (Vitest/Jest).
-  - Projekt przypadków testowych (rozpisanie TC z rozdziału 4 w narzędziu do managementu testów).
+- **Weeks 1–2**
+  - Prepare test environment (test Supabase, CI).
+  - Choose unit/integration framework (Vitest/Jest).
+  - Design test cases (expand section 4 TCs in a test management tool).
 
-- **Tydzień 2–3**
-  - Implementacja kluczowych testów E2E:
-    - scenariusze autentykacji (TC-AUTH-01 do TC-AUTH-07),
-    - onboarding z przykładowymi danymi (TC-ONB-01 do TC-ONB-04),
-    - podstawowy kalendarz (TC-CAL-01 do TC-CAL-03).
-  - Implementacja testów jednostkowych utilsów i walidacji.
+- **Weeks 2–3**
+  - Implement key E2E tests:
+    - authentication (TC-AUTH-01 to TC-AUTH-07),
+    - onboarding with sample data (TC-ONB-01 to TC-ONB-04),
+    - basic calendar (TC-CAL-01 to TC-CAL-03).
+  - Implement utility and validation unit tests.
 
-- **Tydzień 3–4**
-  - Rozszerzenie E2E o:
-    - sugestie AI - podstawowe flow (TC-AI-01 do TC-AI-06),
-    - zaawansowana logika AI: kalibracja, progresja, tempo (TC-AI-07 do TC-AI-09),
-    - cele użytkownika (TC-GOAL-01 do TC-GOAL-04),
-    - akcje na treningu (TC-WRK-01 do TC-WRK-03).
-  - Dodanie integracyjnych testów API (workouts, calendar, ai-suggestions, goals).
-  - Podstawowe testy wydajności/dostępności.
+- **Weeks 3–4**
+  - Expand E2E to include:
+    - AI suggestions - basic flow (TC-AI-01 to TC-AI-06),
+    - advanced AI logic: calibration, progression, pace (TC-AI-07 to TC-AI-09),
+    - user goals (TC-GOAL-01 to TC-GOAL-04),
+    - workout actions (TC-WRK-01 to TC-WRK-03).
+  - Add API integration tests (workouts, calendar, ai-suggestions, goals).
+  - Basic performance/accessibility tests.
 
-- **Tydzień 4–5**
-  - Regresja pełna przed release.
-  - Stabilizacja flaków w E2E (jeśli wystąpią).
-  - Przegląd pokrycia i uzupełnienie brakujących przypadków dla krytycznych ścieżek.
+- **Weeks 4–5**
+  - Full regression before release.
+  - Stabilize flaky E2E tests (if any).
+  - Review coverage and add missing critical cases.
 
-### 8. Kryteria akceptacji testów
+### 8. Test Acceptance Criteria
 
-- **Funkcjonalne**
-  - 100% przejścia testów E2E dla scenariuszy:
-    - rejestracja/logowanie/reset hasła (TC-AUTH-01 do TC-AUTH-07),
-    - onboarding 3 treningów z weryfikacją przykładowych danych (TC-ONB-01 do TC-ONB-04),
-    - przeglądanie kalendarza i treningów (TC-CAL-01 do TC-CAL-07),
-    - co najmniej jedno pełne użycie sugestii AI (generacja–akceptacja) (TC-AI-01 do TC-AI-06),
-    - weryfikacja logiki AI: tryb kalibracji, progresja, accuracy tempa (TC-AI-07 do TC-AI-09),
-    - ustawienie/edycja/usunięcie celu użytkownika (TC-GOAL-01 do TC-GOAL-04).
-  - Brak otwartych błędów o **priorytecie krytycznym** i **wysokim** blokujących główne flow.
+- **Functional**
+  - 100% E2E pass rate for:
+    - registration/login/password reset (TC-AUTH-01 to TC-AUTH-07),
+    - 3-workout onboarding with sample data checks (TC-ONB-01 to TC-ONB-04),
+    - calendar/workout browsing (TC-CAL-01 to TC-CAL-07),
+    - at least one full AI suggestion flow (generation–acceptance) (TC-AI-01 to TC-AI-06),
+    - AI logic: calibration, progression, pace accuracy (TC-AI-07 to TC-AI-09),
+    - goal setup/edit/delete (TC-GOAL-01 to TC-GOAL-04).
+  - No open **critical** or **high** priority defects blocking main flows.
 
-- **Jakościowe**
-  - Brak błędów lint (`npm run lint`) w gałęzi release.
-  - Brak błędów typów (TypeScript) w buildzie.
-  - Brak oczywistych naruszeń dostępności (np. brak fokusa w dialogach, nieopisane przyciski).
+- **Quality**
+  - No lint errors (`npm run lint`) on release branch.
+  - No TypeScript errors in build.
+  - No obvious accessibility violations (e.g., missing dialog focus, unlabeled buttons).
 
-- **Pokrycie (orientacyjne)**
-  - Testy jednostkowe:
-    - min. 60–70% pokrycia linii dla modułów w `src/lib/utils`, `src/lib/validation`, `src/lib/services/aiSuggestionsService.ts`.
+- **Coverage (indicative)**
+  - Unit tests:
+    - at least 60–70% line coverage for `src/lib/utils`, `src/lib/validation`, `src/lib/services/aiSuggestionsService.ts`.
   - E2E:
-    - pokrycie wszystkich głównych ścieżek opisanych w rozdziale 4.
+    - all main paths in section 4.
 
-### 9. Role i odpowiedzialności
+### 9. Roles and Responsibilities
 
 - **QA Engineer**
-  - Przygotowanie i utrzymywanie planu testów oraz przypadków testowych.
-  - Implementacja i utrzymanie testów E2E (Playwright).
-  - Raportowanie defektów, wsparcie w reprodukcji.
+  - Prepare and maintain test plan and cases.
+  - Implement and maintain Playwright E2E tests.
+  - Report defects and help reproduce them.
 
-- **Developerzy**
-  - Implementacja testów jednostkowych/integracyjnych dla nowych funkcjonalności.
-  - Utrzymanie jakości kodu (lint, typy, refaktoryzacja).
-  - Współpraca przy analizie przyczyn błędów.
+- **Developers**
+  - Implement unit/integration tests for new functionality.
+  - Maintain code quality (lint, types, refactoring).
+  - Collaborate on root cause analysis.
 
-- **Tech Lead / Architekt**
-  - Akceptacja strategii testowania.
-  - Priorytetyzacja napraw defektów.
-  - Nadzór nad integracją testów w CI/CD.
+- **Tech Lead / Architect**
+  - Approve testing strategy.
+  - Prioritize defect fixes.
+  - Oversee CI/CD test integration.
 
 - **Product Owner**
-  - Definiowanie kryteriów akceptacji funkcjonalności.
-  - Udział w UAT (user acceptance testing) dla krytycznych zmian.
+  - Define feature acceptance criteria.
+  - Participate in UAT (user acceptance testing) for critical changes.
 
-### 10. Procedury raportowania błędów
+### 10. Defect Reporting Procedures
 
-- **System śledzenia**: GitHub Issues (lub inne wybrane narzędzie).
+- **Tracking system**: GitHub Issues (or another selected tool).
 
-- **Minimalne pola zgłoszenia**
-  - Tytuł: krótki opis problemu (np. „[Calendar] Błędna liczba treningów w DayDrawer”).
-  - Środowisko: wersja aplikacji (commit/branch), przeglądarka, typ środowiska (dev/preview/prod).
-  - Kroki do odtworzenia (numerowana lista).
-  - Oczekiwany rezultat.
-  - Rzeczywisty rezultat (zrzuty ekranu / logi konsoli / network trace, jeśli dostępne).
-  - Ciężkość (Severity): Blocker / High / Medium / Low.
-  - Priorytet (Priority): P1 / P2 / P3.
-  - Powiązane test case ID (np. TC-AI-03).
+- **Minimum issue fields**
+  - Title: brief description (e.g., “[Calendar] Incorrect workout count in DayDrawer”).
+  - Environment: application version (commit/branch), browser, environment type (dev/preview/prod).
+  - Steps to reproduce (numbered list).
+  - Expected result.
+  - Actual result (screenshots / console logs / network trace, if available).
+  - Severity: Blocker / High / Medium / Low.
+  - Priority: P1 / P2 / P3.
+  - Related test case ID (e.g., TC-AI-03).
 
-- **Workflow obsługi defektu**
-  - Zgłoszenie: QA / Developer tworzy issue z pełnym opisem.
-  - Triaging: Tech Lead + PO nadają priorytet i przypisują do sprintu.
-  - Naprawa: developer tworzy PR z odniesieniem do numeru issue.
-  - Weryfikacja: QA przeprowadza retest oraz, jeśli konieczne, test regresji.
-  - Zamknięcie: po pozytywnej weryfikacji issue oznaczane jako „Done”.
+- **Defect workflow**
+  - Report: QA / Developer creates an issue with full description.
+  - Triage: Tech Lead + PO prioritize and assign to a sprint.
+  - Fix: developer creates a PR referencing the issue.
+  - Verification: QA retests and runs regression if needed.
+  - Close: mark issue “Done” after successful verification.
 
-- **Raportowanie zbiorcze**
-  - Po każdym większym cyklu testowym (np. przed release) przygotowywany jest krótki raport:
-    - liczba wykonanych przypadków testowych,
-    - liczba i status defektów (per severity),
-    - otwarte ryzyka i rekomendacje.
-
-
+- **Aggregate reporting**
+  - After each major test cycle (e.g., before release), prepare a brief report:
+    - number of test cases executed,
+    - defect count and status (by severity),
+    - open risks and recommendations.

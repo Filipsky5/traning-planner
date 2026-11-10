@@ -1,90 +1,93 @@
-# Product Requirements Document (PRD): Planer Biegowy AI - Wersja MVP
+# Product Requirements Document (PRD): AI Running Planner - MVP Version
 
-## 1. Wprowadzenie i Cel 🎯
+## 1. Introduction and Goal 🎯
 
-**Produkt:** Aplikacja webowa, która generuje spersonalizowane propozycje treningów biegowych przy użyciu AI.
+**Product:** A web application that generates personalized running workout suggestions using AI.
 
-**Problem:** Planowanie treningów biegowych jest trudne dla początkujących i średniozaawansowanych biegaczy. Aplikacja eliminuje potrzebę posiadania specjalistycznej wiedzy, dostarczając proste i zróżnicowane sugestie treningowe.
+**Problem:** Planning running workouts is difficult for beginner and intermediate runners. The application removes the need for specialist knowledge by providing simple, varied workout suggestions.
 
-**Cel MVP:** Szybkie zweryfikowanie hipotezy, że użytkownicy zaufają sugestiom AI i będą regularnie korzystać z aplikacji do planowania swoich biegów.
-
----
-
-## 2. Persony Użytkowników
-
-* **Początkująca Ania:** Zaczyna biegać, ma za sobą kilka nieregularnych treningów. Chce biegać systematycznie, ale nie wie, jak zaplanować swoje treningi, aby uniknąć błędów i monotonii.
-* **Biegacz Tomek:** Biega od roku 2-3 razy w tygodniu, ale bez konkretnego planu. Chce poprawić swoje wyniki i wprowadzić do swoich treningów więcej struktury, ale nie chce korzystać ze skomplikowanych, płatnych planów.
+**MVP Goal:** Quickly validate the hypothesis that users will trust AI suggestions and regularly use the application to plan their runs.
 
 ---
 
-## 3. Główne Funkcjonalności (Epiki)
+## 2. User Personas
 
-* Rejestracja i Onboarding Użytkownika
-* Generowanie Sugestii Treningowych przez AI
-* Zarządzanie Treningami (Dodawanie/Edycja/Usuwanie)
-* Wizualizacja Planu w Kalendarzu
-* System Zbierania Ocen Treningów
+- **Beginner Ania:** Has started running and completed a few irregular workouts. Wants to run consistently but does not know how to plan workouts to avoid mistakes and monotony.
+- **Runner Tomek:** Has been running 2-3 times a week for a year without a specific plan. Wants to improve performance and add structure to workouts without using complicated, paid plans.
 
 ---
 
-## 4. Szczegółowe Wymagania i Przepływy Użytkownika
+## 3. Core Features (Epics)
+
+- User Registration and Onboarding
+- AI Workout Suggestion Generation
+- Workout Management (Adding/Editing/Deleting)
+- Calendar Plan Visualization
+- Workout Rating Collection System
+
+---
+
+## 4. Detailed Requirements and User Flows
 
 ### Onboarding
-* Użytkownik po rejestracji musi dodać **dokładnie 3 swoje ostatnie treningi**, aby AI miało dane startowe.
-* Interfejs udostępnia **przykładowe dane** (np. "Spacer 30 min", "Lekki trucht 15 min"), które można wpisać, aby obniżyć barierę wejścia.
-* Użytkownik opcjonalnie odpowiada na pytanie o cel (np. "Biegać dla zdrowia", "Przebiec X km"), z informacją, że dane te posłużą do ulepszenia aplikacji w przyszłości.
-* Funkcjonalność onboardinu wymaga aby uytkownik najpierw się zarejestrowal (Bezpieczny dostęp i uwierzytelnianie).
 
-### Generowanie Treningu (AI)
-* **Tryb Kalibracji:** Pierwsze **3 treningi** wygenerowane przez AI służą "wyczuciu" użytkownika. Powinny być bardziej zachowawcze i zróżnicowane, aby zebrać dane na temat reakcji użytkownika.
-* **Logika Progresji:** Po trybie kalibracji, jeśli 3 ostatnie treningi danego typu (np. Bieg Spokojny) zostaną ocenione jako "W sam raz" lub "Za łatwy", kolejna propozycja tego typu będzie miała nieznacznie (np. o 10%) zwiększony dystans.
-* **Struktura i Treść:** AI zawsze generuje trening o strukturze: **Rozgrzewka, Część główna, Schłodzenie**. Sugerowane tempa są określane przez AI na podstawie analizy **średniego tempa** z historycznych biegów użytkownika.
-* **Interfejs:** Propozycja treningu pojawia się w **oknie modalnym** z przyciskami "Akceptuj i dodaj do planu" oraz "Odrzuć i wygeneruj nowy". Użytkownik ma limit **3 re-generacji na dzień dla każdej daty**.
-* Funkcjonalność generowanie treningów nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
+- After registration, the user must add **exactly 3 recent workouts** to provide initial data for AI.
+- The interface provides **sample data** (e.g., "30 min walk", "15 min easy jog") that users can enter to lower the barrier to entry.
+- The user may optionally answer a question about their goal (e.g., "Run for health", "Run X km"), with a notice that this data will help improve the application in the future.
+- Onboarding requires the user to register first (Secure Access and Authentication).
 
+### Workout Generation (AI)
 
-### Zarządzanie Treningami
-* Użytkownik ręcznie dodaje zrealizowane treningi, podając **dystans, czas trwania i średnie tętno**.
-* Zaplanowany trening jest potwierdzany przez otwarcie formularza z danymi planu, które użytkownik modyfikuje, wpisując faktyczne wyniki.
-* Użytkownik może **edytować i usuwać** historyczne treningi. Funkcja edycji zostanie usunięta po wprowadzeniu wsparcia dla plików .FIT w przyszłości.
-* Po potwierdzeniu wykonania treningu, użytkownik może go ocenić ("Za łatwy", "W sam raz", "Za trudny").
-* Funkcjonalność zarządzania treningami nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
+- **Calibration Mode:** The first **3 workouts** generated by AI are used to get to know the user. They should be more conservative and varied to collect data on the user's response.
+- **Progression Logic:** After calibration, if the last 3 workouts of a given type (e.g., Easy Run) are rated "Just right" or "Too easy", the next suggestion of that type will have a slightly increased distance (e.g., by 10%).
+- **Structure and Content:** AI always generates a workout with the structure: **Warm-up, Main Part, Cool-down**. Suggested paces are determined by AI based on the **average pace** of the user's historical runs.
+- **Interface:** The workout suggestion appears in a **modal window** with "Accept and add to plan" and "Reject and generate another" buttons. The user has a limit of **3 regenerations per day for each date**.
+- Workout generation is unavailable without logging into the system (Secure Access and Authentication).
 
-### Kalendarz i Widok Detali
-* **Widok kalendarza** jest głównym ekranem aplikacji. Wyświetla treningi zróżnicowane za pomocą **kolorów lub ikon** odpowiadających typowi treningu.
-* Puste dni w kalendarzu mają ikonę **"+"** do inicjowania generowania treningu.
-* Widok szczegółów treningu **nie zawiera żadnych wykresów**. Prezentuje kluczowe metryki w formie **numerycznej** (dystans, czas, śr. tętno, śr. tempo) oraz ocenę wystawioną przez użytkownika.
-* Funkcjonalność kalendarza i widok detali nie jest dostępna bez logowania się do systemu (Bezpieczny dostęp i uwierzytelnianie).
+### Workout Management
 
+- The user manually adds completed workouts, entering **distance, duration, and average heart rate**.
+- A planned workout is confirmed by opening a form containing the planned data, which the user modifies to enter actual results.
+- The user can **edit and delete** historical workouts. Editing will be removed once support for .FIT files is introduced in the future.
+- After confirming workout completion, the user can rate it ("Too easy", "Just right", "Too hard").
+- Workout management is unavailable without logging into the system (Secure Access and Authentication).
 
-### Bezpieczny dostęp i uwierzytelnianie
+### Calendar and Detail View
 
-* **Bezpieczny dostęp**
-* Jako użytkownik chcę mieć możliwość rejestracji i logowania się do systemu w sposób zapewniający bezpieczeństwo moich danych.
-- Kryteria akceptacji:
-  - Logowanie i rejestracja odbywają się na dedykowanych stronach.
-  - Logowanie wymaga podania adresu email i hasła.
-  - Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
-  - Użytkownik NIE MOŻE korzystać z funkcji Generowanie Treningu (AI), Zarządzanie Treningami, Kalendarz i Widok Detali bez logowania się do systemu.
-  - Użytkownik musi się zalogować i widok logowania jest pierwszym ekranem który widzi po wejściu na stronę jesli nie jest zalogowany
-  - Użytkownik może się wylogować z systemu poprzez przycisk w prawym górnym rogu w głównym @Layout.astro i jest od razu przekierowany na stronę logowania.
-  - Nie korzystamy z zewnętrznych serwisów logowania (np. Google, GitHub).
-  - Odzyskiwanie hasła powinno być możliwe.
+- The **calendar view** is the application's main screen. It displays workouts differentiated by **colors or icons** corresponding to the workout type.
+- Empty calendar days have a **"+"** icon to initiate workout generation.
+- The workout detail view **contains no charts**. It presents key metrics in **numeric form** (distance, duration, avg. heart rate, avg. pace) and the user's rating.
+- The calendar and detail view are unavailable without logging into the system (Secure Access and Authentication).
 
----
+### Secure Access and Authentication
 
-## 5. Co NIE Wchodzi w Zakres MVP 🚫
+- **Secure Access**
+- As a user, I want to register and log into the system in a way that keeps my data secure.
 
-* **Import plików .FIT, GPX** lub jakichkolwiek innych.
-* **Integracje** z zewnętrznymi aplikacjami (Strava, Garmin Connect etc.).
-* **Wykresy** i zaawansowane wizualizacje danych.
-* Funkcje **społecznościowe** (udostępnianie, komentowanie).
-* Aplikacje mobilne.
+* Acceptance criteria:
+  - Login and registration take place on dedicated pages.
+  - Login requires an email address and password.
+  - Registration requires an email address, password, and password confirmation.
+  - The user CANNOT use Workout Generation (AI), Workout Management, Calendar, or Detail View without logging into the system.
+  - The user must log in, and the login view is the first screen shown when visiting the site while logged out.
+  - The user can log out using a button in the top-right corner of the main @Layout.astro and is immediately redirected to the login page.
+  - External login services (e.g., Google, GitHub) are not used.
+  - Password recovery should be available.
 
 ---
 
-## 6. Kryteria Sukcesu i Mierniki ✅
+## 5. Outside the MVP Scope 🚫
 
-* **Wskaźnik Akceptacji:** 75% treningów wygenerowanych przez AI jest akceptowanych (kliknięcie "Akceptuj i dodaj do planu").
-* **Wskaźnik Wykorzystania AI:** 75% wszystkich treningów dodanych do kalendarza pochodzi z generatora AI (a nie jest dodawanych w pełni ręcznie).
-* **Jakościowy Wskaźnik Satysfakcji:** Dążenie do tego, aby większość ocenianych treningów otrzymywała ocenę "W sam raz".
+- **Importing .FIT, GPX**, or any other files.
+- **Integrations** with external applications (Strava, Garmin Connect, etc.).
+- **Charts** and advanced data visualizations.
+- **Social** features (sharing, commenting).
+- Mobile applications.
+
+---
+
+## 6. Success Criteria and Metrics ✅
+
+- **Acceptance Rate:** 75% of AI-generated workouts are accepted (clicking "Accept and add to plan").
+- **AI Usage Rate:** 75% of all workouts added to the calendar come from the AI generator (rather than being added entirely manually).
+- **Qualitative Satisfaction Indicator:** Aim for most rated workouts to receive a "Just right" rating.

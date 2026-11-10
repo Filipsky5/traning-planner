@@ -1,130 +1,143 @@
-# Plan implementacji widoku Day Drawer
+# Day Drawer View Implementation Plan
 
-## 1. Przegląd
-Widok "Day Drawer" to wysuwany panel (drawer/sheet), który służy do wyświetlania i zarządzania wszystkimi treningami zaplanowanymi na konkretny, wybrany przez użytkownika dzień. Celem jest zapewnienie szybkiego dostępu do listy treningów bez opuszczania głównego widoku kalendarza, co jest kluczowe, gdy na jeden dzień przypada więcej niż jeden trening. Widok ten umożliwi również wykonywanie szybkich akcji, takich jak pominięcie lub anulowanie treningu.
+## 1. Overview
 
-## 2. Routing widoku
-Widok nie będzie posiadał dedykowanej ścieżki URL. Będzie renderowany jako komponent-nakładka (overlay) na głównym widoku kalendarza, dostępnym pod ścieżką `/`. Jego widoczność będzie kontrolowana stanem w komponencie nadrzędnym.
+The "Day Drawer" is a sliding panel (drawer/sheet) for displaying and managing all workouts planned for a specific day selected by the user. It provides quick access to the workout list without leaving the main calendar view, which is essential when a day contains multiple workouts. The view also supports quick actions such as skipping or canceling a workout.
 
-## 3. Struktura komponentów
-Hierarchia komponentów zostanie zbudowana w oparciu o React i `shadcn/ui`, aby zapewnić spójność z resztą aplikacji.
+## 2. View Routing
+
+The view will not have a dedicated URL. It will render as an overlay component on the main calendar view at `/`. Visibility will be controlled by parent component state.
+
+## 3. Component Structure
+
+The component hierarchy will use React and `shadcn/ui` for consistency with the rest of the application.
 
 ```
-- CalendarView (komponent nadrzędny, zarządzający stanem)
-  - DayDrawer (komponent kontenerowy oparty na `shadcn/ui/Sheet`)
-    - DayDrawerContent (komponent prezentacyjny)
-      - Header (tytuł z datą)
-      - LoadingSpinner (wyświetlany podczas ładowania danych)
-      - ErrorMessage (wyświetlany w przypadku błędu API)
-      - WorkoutList (lista treningów)
-        - WorkoutCard (kompaktowa wersja karty treningu)
-          - QuickActions (przyciski szybkich akcji)
+- CalendarView (parent component managing state)
+  - DayDrawer (container component based on `shadcn/ui/Sheet`)
+    - DayDrawerContent (presentation component)
+      - Header (title with date)
+      - LoadingSpinner (displayed while loading data)
+      - ErrorMessage (displayed on API error)
+      - WorkoutList (workout list)
+        - WorkoutCard (compact workout card)
+          - QuickActions (quick action buttons)
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
 ### DayDrawer
-- **Opis komponentu:** Główny kontener widoku, zbudowany przy użyciu `Sheet` z `shadcn/ui`. Odpowiada za zarządzanie stanem otwarcia/zamknięcia, przyjmowanie wybranej daty i inicjowanie pobierania danych z API za pomocą customowego hooka `useDayWorkouts`.
-- **Główne elementy:** `Sheet`, `SheetContent`, `SheetHeader`, `SheetTitle` z `shadcn/ui`.
-- **Obsługiwane interakcje:** Otwarcie panelu, zamknięcie panelu (przez przycisk, gest lub kliknięcie na zewnątrz).
-- **Obsługiwana walidacja:** Brak.
-- **Typy:** `WorkoutSummaryDto` (dla listy treningów).
-- **Propsy:**
-  - `selectedDate: string | null` - Wybrana data w formacie `YYYY-MM-DD`. Drawer jest widoczny, gdy data nie jest `null`.
-  - `onOpenChange: (isOpen: boolean) => void` - Funkcja zwrotna do kontrolowania widoczności z poziomu komponentu nadrzędnego.
+
+- **Component description:** Main view container built with `Sheet` from `shadcn/ui`. Manages open/closed state, receives the selected date, and initiates API data fetching through the custom `useDayWorkouts` hook.
+- **Main elements:** `Sheet`, `SheetContent`, `SheetHeader`, `SheetTitle` from `shadcn/ui`.
+- **Supported interactions:** Open panel, close panel (button, gesture, or outside click).
+- **Validation:** None.
+- **Types:** `WorkoutSummaryDto` (for the workout list).
+- **Props:**
+  - `selectedDate: string | null` - Selected date in `YYYY-MM-DD` format. The Drawer is visible when the date is not `null`.
+  - `onOpenChange: (isOpen: boolean) => void` - Callback to control visibility from the parent component.
 
 ### DayDrawerContent
-- **Opis komponentu:** Komponent odpowiedzialny za renderowanie zawartości wewnątrz drawera. Wyświetla nagłówek z datą, a w zależności od stanu (ładowanie, błąd, sukces) pokazuje odpowiednio: spinner, komunikat błędu lub listę treningów.
-- **Główne elementy:** `div` z logiką warunkową, komponenty `LoadingSpinner`, `ErrorMessage` oraz `WorkoutList`.
-- **Obsługiwane interakcje:** Brak.
-- **Obsługiwana walidacja:** Brak.
-- **Typy:** `WorkoutSummaryDto[]`.
-- **Propsy:**
+
+- **Component description:** Renders content inside the drawer. Displays a date header and, depending on state (loading, error, success), a spinner, error message, or workout list.
+- **Main elements:** `div` with conditional logic, `LoadingSpinner`, `ErrorMessage`, and `WorkoutList` components.
+- **Supported interactions:** None.
+- **Validation:** None.
+- **Types:** `WorkoutSummaryDto[]`.
+- **Props:**
   - `date: string`
   - `workouts: WorkoutSummaryDto[]`
   - `isLoading: boolean`
   - `error: Error | null`
 
 ### WorkoutList
-- **Opis komponentu:** Renderuje listę komponentów `WorkoutCard` na podstawie przekazanej tablicy treningów.
-- **Główne elementy:** `ul`, `li` lub `div` mapujący po tablicy treningów.
-- **Obsługiwane interakcje:** Brak (deleguje obsługę do `WorkoutCard`).
-- **Obsługiwana walidacja:** Brak.
-- **Typy:** `WorkoutSummaryDto[]`.
-- **Propsy:**
+
+- **Component description:** Renders a list of `WorkoutCard` components from the supplied workout array.
+- **Main elements:** `ul`, `li`, or `div` mapping over the workout array.
+- **Supported interactions:** None (delegates handling to `WorkoutCard`).
+- **Validation:** None.
+- **Types:** `WorkoutSummaryDto[]`.
+- **Props:**
   - `workouts: WorkoutSummaryDto[]`
 
-### WorkoutCard (wariant kompaktowy)
-- **Opis komponentu:** Wyświetla podsumowanie pojedynczego treningu w kompaktowej formie, zawierające jego typ (nazwa i kolor), planowany dystans/czas, status oraz komponent `QuickActions`.
-- **Główne elementy:** `Card` z `shadcn/ui`, `div`, `span`, komponenty `Badge` i `Button`.
-- **Obsługiwane interakcje:** Kliknięcie karty (nawigacja do szczegółów), kliknięcie akcji w `QuickActions`.
-- **Obsługiwana walidacja:** Dostępność szybkich akcji zależy od statusu treningu (np. `status === 'planned'`).
-- **Typy:** `WorkoutSummaryDto`.
-- **Propsy:**
+### WorkoutCard (Compact Variant)
+
+- **Component description:** Displays a compact summary of one workout, including type (name and color), planned distance/time, status, and `QuickActions`.
+- **Main elements:** `Card` from `shadcn/ui`, `div`, `span`, `Badge`, and `Button` components.
+- **Supported interactions:** Card click (navigate to details), action clicks in `QuickActions`.
+- **Validation:** Quick action availability depends on workout status (e.g., `status === 'planned'`).
+- **Types:** `WorkoutSummaryDto`.
+- **Props:**
   - `workout: WorkoutSummaryDto`
 
-## 5. Typy
-Widok będzie korzystał bezpośrednio z istniejącego typu `WorkoutSummaryDto` zdefiniowanego w `src/types.ts`. Nie ma potrzeby tworzenia nowych typów ani modeli `ViewModel`.
+## 5. Types
+
+The view will directly use the existing `WorkoutSummaryDto` type from `src/types.ts`. No new types or `ViewModel` models are needed.
 
 - **`WorkoutSummaryDto`**:
-  - `id: string` - Unikalny identyfikator.
-  - `training_type_code: string` - Kod typu treningu (np. "easy", "long_run").
-  - `planned_date: string` - Data w formacie `YYYY-MM-DD`.
-  - `position: number` - Kolejność treningu w danym dniu.
-  - `planned_distance_m: number | null` - Planowany dystans.
-  - `planned_duration_s: number | null` - Planowany czas.
-  - `status: 'planned' | 'completed' | 'skipped' | 'canceled'` - Status treningu.
-  - `origin: 'manual' | 'ai' | 'import'` - Źródło pochodzenia treningu.
-  - `rating: 'too_easy' | 'just_right' | 'too_hard' | null` - Ocena.
-  - `avg_pace_s_per_km: number | null` - Średnie tempo.
+  - `id: string` - Unique identifier.
+  - `training_type_code: string` - Workout type code (e.g., "easy", "long_run").
+  - `planned_date: string` - Date in `YYYY-MM-DD` format.
+  - `position: number` - Workout order within the day.
+  - `planned_distance_m: number | null` - Planned distance.
+  - `planned_duration_s: number | null` - Planned time.
+  - `status: 'planned' | 'completed' | 'skipped' | 'canceled'` - Workout status.
+  - `origin: 'manual' | 'ai' | 'import'` - Workout origin.
+  - `rating: 'too_easy' | 'just_right' | 'too_hard' | null` - Rating.
+  - `avg_pace_s_per_km: number | null` - Average pace.
 
-## 6. Zarządzanie stanem
-Do enkapsulacji logiki pobierania danych, stanu ładowania i obsługi błędów zostanie stworzony dedykowany custom hook `useDayWorkouts`.
+## 6. State Management
+
+A dedicated custom `useDayWorkouts` hook will encapsulate data fetching, loading state, and error handling.
 
 - **`useDayWorkouts(date: string | null)`**:
-  - **Cel:** Abstrakcja logiki biznesowej związanej z pobieraniem treningów na dany dzień.
-  - **Zarządzany stan:** `workouts: WorkoutSummaryDto[]`, `isLoading: boolean`, `error: Error | null`.
-  - **Logika:** Używa `useEffect` do wywołania API, gdy prop `date` ulegnie zmianie. Zarządza stanami ładowania i błędów. Może również udostępniać funkcje do optymistycznego uaktualniania UI (np. usunięcie treningu z listy po anulowaniu).
+  - **Goal:** Abstract business logic for fetching workouts for a given day.
+  - **Managed state:** `workouts: WorkoutSummaryDto[]`, `isLoading: boolean`, `error: Error | null`.
+  - **Logic:** Uses `useEffect` to call the API when the `date` prop changes. Manages loading and error states. May also expose functions for optimistic UI updates (e.g., removing a workout from the list after cancellation).
 
-Stan widoczności samego drawera (`isOpen`) oraz wybrana data (`selectedDate`) będą zarządzane w komponencie nadrzędnym (np. `CalendarView`), aby umożliwić interakcję między kalendarzem a drawerem.
+Drawer visibility (`isOpen`) and the selected date (`selectedDate`) will be managed in the parent component (e.g., `CalendarView`) to enable calendar/drawer interaction.
 
-## 7. Integracja API
-Komponent będzie komunikował się z jednym endpointem API.
+## 7. API Integration
+
+The component will communicate with one API endpoint.
 
 - **Endpoint:** `GET /api/v1/workouts`
-- **Typ żądania:**
-  - **Metoda:** `GET`
-  - **Parametry zapytania (query params):**
-    - `planned_date_gte`: `YYYY-MM-DD` (wybrana data)
-    - `planned_date_lte`: `YYYY-MM-DD` (ta sama wybrana data)
-    - `per_page`: `50` (ustawienie dużej wartości, aby pobrać wszystkie treningi z dnia bez paginacji)
-- **Typ odpowiedzi (sukces):** `ApiListResponse<WorkoutSummaryDto>`
-- **Typ odpowiedzi (błąd):** `{ error: { code: string, message: string } }`
+- **Request type:**
+  - **Method:** `GET`
+  - **Query parameters:**
+    - `planned_date_gte`: `YYYY-MM-DD` (selected date)
+    - `planned_date_lte`: `YYYY-MM-DD` (same selected date)
+    - `per_page`: `50` (a large value to fetch all workouts for the day without pagination)
+- **Response type (success):** `ApiListResponse<WorkoutSummaryDto>`
+- **Response type (error):** `{ error: { code: string, message: string } }`
 
-## 8. Interakcje użytkownika
-- **Użytkownik klika na dzień w kalendarzu:** Otwiera `DayDrawer`, przekazując do niego klikniętą datę.
-- **Użytkownik klika przycisk zamknięcia lub tło:** Zamyka `DayDrawer`.
-- **Użytkownik klika na kartę treningu:** Nawigacja do pełnego widoku szczegółów tego treningu (implementacja poza zakresem tego planu).
-- **Użytkownik klika przycisk "Pomiń" (`Skip`) na karcie treningu:** Wywołanie API `POST /api/v1/workouts/{id}/skip`, a następnie aktualizacja statusu treningu w UI.
-- **Użytkownik klika przycisk "Anuluj" (`Cancel`) na karcie treningu:** Wywołanie API `POST /api/v1/workouts/{id}/cancel`, a następnie usunięcie treningu z listy w UI.
+## 8. User Interactions
 
-## 9. Warunki i walidacja
-- **Warunek:** `selectedDate` musi być poprawną datą w formacie `YYYY-MM-DD`, aby zapytanie API było prawidłowe. Jest to zapewnione przez komponent kalendarza.
-- **Walidacja w UI:** Komponent `QuickActions` (zawierający przyciski "Pomiń", "Anuluj") będzie renderował te przyciski tylko wtedy, gdy `workout.status === 'planned'`. Dla innych statusów przyciski te będą ukryte.
+- **User clicks a calendar day:** Opens `DayDrawer`, passing the clicked date.
+- **User clicks the close button or backdrop:** Closes `DayDrawer`.
+- **User clicks a workout card:** Navigates to the workout's full detail view (implementation outside this plan's scope).
+- **User clicks "Skip" on a workout card:** Calls `POST /api/v1/workouts/{id}/skip`, then updates the workout status in the UI.
+- **User clicks "Cancel" on a workout card:** Calls `POST /api/v1/workouts/{id}/cancel`, then removes the workout from the UI list.
 
-## 10. Obsługa błędów
-- **Błąd sieci lub serwera (np. 500):** Hook `useDayWorkouts` przechwyci błąd. Komponent `DayDrawerContent` wyświetli generyczny komunikat o błędzie (np. "Nie udało się wczytać treningów. Spróbuj ponownie później.") wraz z przyciskiem do ponowienia próby.
-- **Brak autoryzacji (401):** Aplikacja powinna posiadać globalny mechanizm obsługi błędu 401, który przekierowuje użytkownika do strony logowania.
-- **Brak treningów:** Jeśli API zwróci pustą listę (`total: 0`), komponent `DayDrawerContent` wyświetli komunikat informacyjny, np. "Brak zaplanowanych treningów na ten dzień."
+## 9. Conditions and Validation
 
-## 11. Kroki implementacji
-1.  **Stworzenie custom hooka `useDayWorkouts`:** Zaimplementowanie logiki pobierania danych z `GET /api/v1/workouts` z odpowiednimi parametrami (`planned_date_gte`, `planned_date_lte`), zarządzanie stanem ładowania i błędów.
-2.  **Stworzenie komponentów prezentacyjnych:** Zbudowanie komponentów `DayDrawerContent`, `WorkoutList` i kompaktowego wariantu `WorkoutCard` z użyciem `shadcn/ui` i Tailwind CSS.
-3.  **Implementacja `QuickActions`:** Dodanie do `WorkoutCard` przycisków "Pomiń" i "Anuluj", które będą warunkowo renderowane na podstawie statusu treningu.
-4.  **Stworzenie komponentu kontenera `DayDrawer`:** Zintegrowanie `shadcn/ui/Sheet`, hooka `useDayWorkouts` oraz komponentów prezentacyjnych w jedną całość.
-5.  **Integracja z widokiem kalendarza:** W komponencie nadrzędnym (np. `CalendarView`) dodać logikę do zarządzania stanem `selectedDate`. Po kliknięciu dnia w kalendarzu, data powinna być ustawiana, co spowoduje otwarcie i wypełnienie danymi `DayDrawer`. Zapewnić obsługę zamykania drawera (ustawienie `selectedDate` na `null`).
-6.  **Implementacja logiki akcji:** Podpięcie wywołań API (`skip`, `cancel`) do przycisków w `QuickActions` i dodanie logiki aktualizacji UI po pomyślnej odpowiedzi.
-7.  **Obsługa przypadków brzegowych:** Upewnienie się, że UI poprawnie obsługuje stany ładowania, błędu oraz braku treningów.
-8.  **Stylowanie i dopracowanie wizualne:** Finalne dopasowanie stylów komponentów do reszty aplikacji, w tym kolorystyki typów treningów.
-9.  **Testowanie manualne:** Przetestowanie całego przepływu: otwieranie, zamykanie, ładowanie danych, działanie szybkich akcji oraz responsywność widoku.
+- **Condition:** `selectedDate` must be a valid `YYYY-MM-DD` date for a valid API query. The calendar component ensures this.
+- **UI validation:** `QuickActions` (containing "Skip" and "Cancel" buttons) renders these buttons only when `workout.status === 'planned'`. They are hidden for other statuses.
 
+## 10. Error Handling
+
+- **Network or server error (e.g., 500):** `useDayWorkouts` catches the error. `DayDrawerContent` displays a generic error message (e.g., "Could not load workouts. Please try again later.") with a retry button.
+- **Unauthenticated (401):** The application should have a global 401 handler redirecting the user to the login page.
+- **No workouts:** If the API returns an empty list (`total: 0`), `DayDrawerContent` displays an informational message, e.g., "No workouts planned for this day."
+
+## 11. Implementation Steps
+
+1.  **Create the custom `useDayWorkouts` hook:** Implement data fetching from `GET /api/v1/workouts` with appropriate parameters (`planned_date_gte`, `planned_date_lte`), loading state, and error handling.
+2.  **Create presentation components:** Build `DayDrawerContent`, `WorkoutList`, and a compact `WorkoutCard` using `shadcn/ui` and Tailwind CSS.
+3.  **Implement `QuickActions`:** Add "Skip" and "Cancel" buttons to `WorkoutCard`, conditionally rendered based on workout status.
+4.  **Create the `DayDrawer` container:** Integrate `shadcn/ui/Sheet`, `useDayWorkouts`, and presentation components.
+5.  **Integrate with the calendar view:** Add `selectedDate` state management to the parent component (e.g., `CalendarView`). Clicking a calendar day should set the date, opening and populating `DayDrawer`. Handle closing the drawer (set `selectedDate` to `null`).
+6.  **Implement action logic:** Connect API calls (`skip`, `cancel`) to `QuickActions` buttons and update the UI after a successful response.
+7.  **Handle edge cases:** Ensure the UI handles loading, error, and no-workout states correctly.
+8.  **Styling and visual refinement:** Match component styles to the rest of the application, including workout type colors.
+9.  **Manual testing:** Test the entire flow: opening, closing, data loading, quick actions, and responsiveness.

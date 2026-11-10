@@ -1,93 +1,93 @@
 # Authentication UI Implementation Summary
 
-## Przegląd
+## Overview
 
-Zaimplementowano kompletny interfejs użytkownika (UI) dla procesu autentykacji, rejestracji i odzyskiwania hasła zgodnie ze specyfikacją w `auth-spec.md`.
+A complete user interface (UI) for authentication, registration, and password recovery has been implemented according to `auth-spec.md`.
 
-## Status Implementacji
+## Implementation Status
 
-✅ **ZAIMPLEMENTOWANE:**
+✅ **IMPLEMENTED:**
 
-### Komponenty React (src/components/auth/)
+### React Components (src/components/auth/)
 
 1. **LoginForm.tsx**
-   - Pola: email, password
-   - Walidacja client-side (format email, min 8 znaków)
-   - Loading state podczas submitu
-   - Wyświetlanie błędów walidacji
-   - Link do rejestracji i odzyskiwania hasła
+   - Fields: email, password
+   - Client-side validation (email format, min 8 characters)
+   - Loading state during submission
+   - Validation error display
+   - Registration and password recovery links
    - Props: `redirectTo?: string`
 
 2. **RegisterForm.tsx**
-   - Pola: email, password, confirmPassword, acceptTerms
-   - Walidacja client-side:
+   - Fields: email, password, confirmPassword, acceptTerms
+   - Client-side validation:
      - Email format
-     - Hasło: min 8 znaków, zawiera litery i cyfry
-     - Zgodność haseł
-     - Wymagana akceptacja regulaminu
-   - Dwuetapowy flow: formularz → ekran weryfikacji email
+     - Password: min 8 characters, contains letters and numbers
+     - Password matching
+     - Terms acceptance required
+   - Two-stage flow: form → email verification screen
    - Loading state
    - Props: `redirectTo?: string`
 
 3. **ForgotPasswordForm.tsx**
-   - Pole: email
-   - Walidacja email format
-   - Dwuetapowy flow: formularz → komunikat sukcesu
+   - Field: email
+   - Email format validation
+   - Two-stage flow: form → success message
    - Loading state
-   - Security best practice: zawsze pokazuje komunikat sukcesu (nie ujawnia czy email istnieje)
+   - Security best practice: always shows success (does not reveal whether the email exists)
 
 4. **ResetPasswordForm.tsx**
-   - Pola: newPassword, confirmPassword
-   - Walidacja client-side (jak przy rejestracji)
-   - Dwuetapowy flow: formularz → komunikat sukcesu
+   - Fields: newPassword, confirmPassword
+   - Client-side validation (same as registration)
+   - Two-stage flow: form → success message
    - Loading state
    - Props: `token: string`
-   - Sprawdzanie zgodności haseł
+   - Password matching check
 
-### Strony Astro (src/pages/)
+### Astro Pages (src/pages/)
 
 1. **login.astro**
-   - Renderuje LoginForm z `client:load`
-   - Obsługuje query param `redirectTo`
-   - Tytuł: "Logowanie"
+   - Renders LoginForm with `client:load`
+   - Handles `redirectTo` query parameter
+   - Title: "Login"
 
 2. **register.astro**
-   - Renderuje RegisterForm z `client:load`
-   - Obsługuje query param `redirectTo`
-   - Tytuł: "Rejestracja"
+   - Renders RegisterForm with `client:load`
+   - Handles `redirectTo` query parameter
+   - Title: "Registration"
 
 3. **forgot-password.astro**
-   - Renderuje ForgotPasswordForm z `client:load`
-   - Tytuł: "Zapomniałem hasła"
+   - Renders ForgotPasswordForm with `client:load`
+   - Title: "Forgot password"
 
 4. **reset-password.astro**
-   - Renderuje ResetPasswordForm z `client:load`
-   - Wyciąga token z query param `?token=XXX`
-   - Przekierowuje na /forgot-password jeśli brak tokenu
-   - Tytuł: "Resetowanie hasła"
+   - Renders ResetPasswordForm with `client:load`
+   - Extracts token from query parameter `?token=XXX`
+   - Redirects to /forgot-password if no token
+   - Title: "Reset password"
 
-## Funkcjonalności UI
+## UI Features
 
-### Walidacja Client-Side
+### Client-Side Validation
 
-Wszystkie formularze implementują walidację client-side:
+All forms implement client-side validation:
 
-- ✅ Sprawdzanie formatu email (regex)
-- ✅ Minimalna długość hasła (8 znaków)
-- ✅ Wymagane litery i cyfry w haśle
-- ✅ Zgodność haseł (password === confirmPassword)
-- ✅ Wymagana akceptacja regulaminu (checkbox)
-- ✅ Czyszczenie błędów podczas wpisywania
-- ✅ Wyświetlanie błędów pod polami (per-field errors)
-- ✅ Globalne komunikaty błędów (error banner)
+- ✅ Email format check (regex)
+- ✅ Minimum password length (8 characters)
+- ✅ Letters and numbers required in password
+- ✅ Password matching (password === confirmPassword)
+- ✅ Terms acceptance required (checkbox)
+- ✅ Clear errors while typing
+- ✅ Display errors below fields (per-field errors)
+- ✅ Global error messages (error banner)
 
 ### UX Features
 
 - ✅ Loading states (spinner + disabled inputs)
-- ✅ Success states (komunikaty sukcesu, ikony)
-- ✅ Error states (czerwone obramowania, komunikaty)
-- ✅ Disabled states (szare przyciski podczas ładowania)
-- ✅ Auto-focus na pierwszym polu
+- ✅ Success states (success messages, icons)
+- ✅ Error states (red borders, messages)
+- ✅ Disabled states (gray buttons during loading)
+- ✅ Auto-focus on the first field
 - ✅ Accessibility (aria-invalid, labels, autocomplete)
 - ✅ Unique IDs (useId hook)
 - ✅ Icons (lucide-react)
@@ -96,39 +96,39 @@ Wszystkie formularze implementują walidację client-side:
 
 ```
 /login
-  ├─> "Zapomniałeś hasła?" → /forgot-password
-  └─> "Zarejestruj się" → /register
+  ├─> "Forgot password?" → /forgot-password
+  └─> "Sign up" → /register
 
 /register
-  ├─> Sukces → ekran weryfikacji email
-  └─> "Zaloguj się" → /login
+  ├─> Success → email verification screen
+  └─> "Log in" → /login
 
 /forgot-password
-  ├─> Sukces → komunikat o wysłaniu emaila
-  └─> "Wróć do logowania" → /login
+  ├─> Success → email sent message
+  └─> "Back to login" → /login
 
 /reset-password?token=XXX
-  ├─> Brak tokenu → redirect /forgot-password
-  ├─> Sukces → komunikat + przycisk logowania
-  └─> "Wróć do logowania" → /login
+  ├─> No token → redirect /forgot-password
+  ├─> Success → message + login button
+  └─> "Back to login" → /login
 ```
 
-## Stylistyka
+## Styling
 
-Implementacja zgodna z istniejącą stylistyką projektu:
+Implementation matches the project's existing styling:
 
-- **Komponenty UI:** shadcn/ui (Button, Input, Label, Card, etc.)
-- **Ikony:** lucide-react
+- **UI components:** shadcn/ui (Button, Input, Label, Card, etc.)
+- **Icons:** lucide-react
 - **Styling:** Tailwind CSS classes
 - **Framework:** React 19 (functional components + hooks)
 - **Patterns:**
-  - useCallback dla event handlers
-  - useId dla accessibility
-  - useState dla form state
+  - useCallback for event handlers
+  - useId for accessibility
+  - useState for form state
   - Destructuring props
   - TypeScript interfaces
 
-## Struktura Plików
+## File Structure
 
 ```
 src/
@@ -147,10 +147,10 @@ src/
 
 ## TODO: Backend Integration
 
-Formularze zawierają placeholder kod dla integracji z backend API:
+Forms contain placeholder code for backend API integration:
 
 ```typescript
-// TODO: Wywołaj POST /api/v1/auth/login
+// TODO: Call POST /api/v1/auth/login
 // const response = await fetch('/api/v1/auth/login', {
 //   method: 'POST',
 //   headers: { 'Content-Type': 'application/json' },
@@ -158,21 +158,21 @@ Formularze zawierają placeholder kod dla integracji z backend API:
 // });
 ```
 
-Miejsca wymagające integracji backendu:
+Locations requiring backend integration:
 
 1. **LoginForm.tsx:** POST /api/v1/auth/login
 2. **RegisterForm.tsx:** POST /api/v1/auth/register
 3. **ForgotPasswordForm.tsx:** POST /api/v1/auth/forgot-password
 4. **ResetPasswordForm.tsx:** POST /api/v1/auth/reset-password
 
-## Brakujące Elementy (z auth-spec.md)
+## Missing Elements (from auth-spec.md)
 
-❌ **NIE ZAIMPLEMENTOWANE (backend/state management):**
+❌ **NOT IMPLEMENTED (backend/state management):**
 
 1. API Endpoints (/api/v1/auth/*)
 2. Auth Store (nanostores)
 3. AuthService class
-4. Validation schemas (Zod) - na serwerze
+4. Validation schemas (Zod) - server-side
 5. Rate limiting
 6. Session management
 7. Middleware changes (redirect logic)
@@ -180,46 +180,49 @@ Miejsca wymagające integracji backendu:
 9. AuthProvider component
 10. Auth guards
 
-## Zgodność ze Specyfikacją
+## Specification Compliance
 
-Implementacja jest w 100% zgodna z wymaganiami UI z `auth-spec.md`:
+Implementation fully complies with the UI requirements in `auth-spec.md`:
 
-- ✅ Sekcja 1.1: Struktura Stron i Komponentów
-- ✅ Sekcja 1.2: Komponenty React (Client-Side)
-- ✅ Sekcja 1.4: Walidacja i Komunikaty Błędów
-- ✅ Sekcja 1.5: Obsługa Scenariuszy UX
+- ✅ Section 1.1: Page and Component Structure
+- ✅ Section 1.2: React Components (Client-Side)
+- ✅ Section 1.4: Validation and Error Messages
+- ✅ Section 1.5: UX Scenario Handling
 
 ## Testing
 
 Build test: ✅ PASSED
+
 ```bash
 npm run build
 # ✓ Completed in 820ms
 ```
 
 Runtime test: ✅ PASSED
+
 ```bash
 curl http://localhost:3000/login          # <title>Logowanie</title>
 curl http://localhost:3000/register       # <title>Rejestracja</title>
-curl http://localhost:3000/forgot-password # <title>Zapomniałem hasła</title>
-curl http://localhost:3000/reset-password?token=test # <title>Resetowanie hasła</title>
+curl http://localhost:3000/forgot-password # <title>Forgot password</title>
+curl http://localhost:3000/reset-password?token=test # <title>Reset password</title>
 ```
 
-## Następne Kroki
+## Next Steps
 
-1. Implementacja API endpoints (backend)
-2. Integracja z Supabase Auth
-3. Auth Store i session management
-4. Middleware dla ochrony stron
-5. E2E testy (Playwright)
+1. Implement API endpoints (backend)
+2. Integrate Supabase Auth
+3. Auth Store and session management
+4. Middleware for page protection
+5. E2E tests (Playwright)
 6. Rate limiting
 7. Email templates
 
 ## Screenshots Placeholders
 
-Formularze zawierają alert() placeholders:
+Forms contain alert() placeholders:
+
 ```javascript
-alert('Formularz logowania działa! Backend będzie dodany w następnym kroku.');
+alert("The login form works! The backend will be added in the next step.");
 ```
 
-Po implementacji backendu należy usunąć te placeholdery i podłączyć rzeczywiste API calls.
+After backend implementation, remove placeholders and connect real API calls.

@@ -1,198 +1,198 @@
-# Plan implementacji widoku Cel Użytkownika
+# User Goal View Implementation Plan
 
-## 1. Przegląd
+## 1. Overview
 
-Widok "Cel Użytkownika" (`/goal`) umożliwia użytkownikom definiowanie, edytowanie i usuwanie swojego głównego celu treningowego. W wersji MVP, jedynym wspieranym typem celu jest przebiegnięcie określonego dystansu do konkretnej daty (`distance_by_date`). Widok ma również na celu zbieranie informacji o użytkownikach, którzy nie mają sprecyzowanego celu i "biegają dla zdrowia", co w przyszłości posłuży do personalizacji aplikacji.
+The "User Goal" view (`/goal`) lets users define, edit, and delete their main training goal. In the MVP, the only supported goal type is running a specified distance by a specific date (`distance_by_date`). The view also collects information about users without a specific goal who "run for health", for future application personalization.
 
-Interfejs składa się z formularza, który jest inicjalnie wypełniany danymi z API. Użytkownik może zaktualizować swój cel, usunąć go, lub zadeklarować brak konkretnego celu.
+The interface consists of a form initially populated with API data. Users can update or delete their goal, or declare that they have no specific goal.
 
-## 2. Routing widoku
+## 2. View Routing
 
-Widok będzie dostępny pod następującą ścieżką:
-- **Ścieżka**: `/goal`
-- **Plik**: `src/pages/goal.astro`
+The view will be available at:
 
-## 3. Struktura komponentów
+- **Path**: `/goal`
+- **File**: `src/pages/goal.astro`
 
-Widok zostanie zaimplementowany jako wyspa React (`client:load`) wewnątrz strony Astro. Hierarchia komponentów będzie wyglądać następująco:
+## 3. Component Structure
+
+The view will be a React island (`client:load`) inside an Astro page. Component hierarchy:
 
 ```
 src/layouts/Layout.astro
 └── src/pages/goal.astro
-    └── src/components/views/GoalView.tsx (Główny komponent React)
-        ├── Common/LoadingSpinner.tsx (Wskaźnik ładowania)
-        ├── Common/ErrorMessage.tsx (Komunikat o błędzie)
-        └── features/goal/GoalForm.tsx (Formularz celu)
-            ├── ui/RadioGroup.tsx (Wybór typu celu)
-            ├── ui/Input.tsx (Dystans, Notatki)
-            ├── ui/DatePicker.tsx (Data)
-            └── ui/Button.tsx (Zapisz, Usuń)
+    └── src/components/views/GoalView.tsx (Main React component)
+        ├── Common/LoadingSpinner.tsx (Loading indicator)
+        ├── Common/ErrorMessage.tsx (Error message)
+        └── features/goal/GoalForm.tsx (Goal form)
+            ├── ui/RadioGroup.tsx (Goal type selection)
+            ├── ui/Input.tsx (Distance, Notes)
+            ├── ui/DatePicker.tsx (Date)
+            └── ui/Button.tsx (Save, Delete)
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
 ### `GoalView.tsx`
 
-- **Opis komponentu**: Główny kontener widoku. Odpowiada za komunikację z API, zarządzanie stanem (ładowanie, błędy, dane celu) i renderowanie odpowiednich komponentów podrzędnych (`LoadingSpinner`, `ErrorMessage`, `GoalForm`).
-- **Główne elementy**: Wykorzystuje hook `useUserGoal` do pobrania danych. Renderuje warunkowo: wskaźnik ładowania, komunikat o błędzie lub komponent `GoalForm`.
-- **Obsługiwane interakcje**: Brak bezpośrednich interakcji. Przekazuje funkcje do zapisu i usunięcia celu do komponentu `GoalForm`.
-- **Obsługiwana walidacja**: Brak.
-- **Typy**: `UserGoalDto`, `ApiError`.
-- **Propsy**: Brak.
+- **Component description**: Main view container. Handles API communication, state (loading, errors, goal data), and rendering appropriate children (`LoadingSpinner`, `ErrorMessage`, `GoalForm`).
+- **Main elements**: Uses `useUserGoal` to fetch data. Conditionally renders a loading indicator, error message, or `GoalForm`.
+- **Supported interactions**: No direct interactions. Passes save and delete functions to `GoalForm`.
+- **Validation**: None.
+- **Types**: `UserGoalDto`, `ApiError`.
+- **Props**: None.
 
 ### `GoalForm.tsx`
 
-- **Opis komponentu**: Formularz do zarządzania celem użytkownika. Umożliwia wybór między celem dystansowym a ogólnym ("bieganie dla zdrowia"), edycję szczegółów celu i jego usunięcie.
-- **Główne elementy**:
-    - `Card` (Shadcn) jako kontener.
-    - `RadioGroup` do wyboru: "Mam konkretny cel (dystans)" vs "Biegam dla zdrowia".
-    - Pola formularza (`Input`, `DatePicker`, `Textarea` z Shadcn) dla dystansu, daty i notatek, widoczne warunkowo.
-    - `Button` do zapisu i `Button` (wariant `destructive`) do usunięcia celu.
-- **Obsługiwane interakcje**:
-    - `onSubmit`: Waliduje dane i wywołuje funkcję `saveGoal` lub `deleteGoal` z `GoalView`.
-    - `onDelete`: Wyświetla modal z potwierdzeniem, a następnie wywołuje funkcję `deleteGoal`.
-    - Zmiana w `RadioGroup`: Pokazuje lub ukrywa pola formularza celu dystansowego.
-- **Obsługiwana walidacja**:
-    - **Dystans**: Musi być liczbą dodatnią, mniejszą lub równą 1000 km. Komunikat: "Dystans musi być w przedziale 0.1 - 1000 km".
-    - **Data**: Musi być datą dzisiejszą lub w przyszłości. Komunikat: "Data nie może być z przeszłości".
-    - **Notatki**: Maksymalnie 500 znaków. Komunikat: "Notatki mogą mieć maksymalnie 500 znaków".
-- **Typy**: `GoalFormViewModel`, `UserGoalDto`, `UserGoalUpsertDto`.
-- **Propsy**:
-    ```typescript
-    interface GoalFormProps {
-      initialGoal: UserGoalDto | null;
-      isSubmitting: boolean;
-      onSave: (data: UserGoalUpsertDto) => Promise<void>;
-      onDelete: () => Promise<void>;
-    }
-    ```
+- **Component description**: Form for managing a user goal. Allows choosing a distance or general goal ("running for health"), editing goal details, and deleting it.
+- **Main elements**:
+  - `Card` (Shadcn) as the container.
+  - `RadioGroup` to choose: "I have a specific goal (distance)" vs "I run for health".
+  - Conditionally visible form fields (`Input`, `DatePicker`, `Textarea` from Shadcn) for distance, date, and notes.
+  - Save `Button` and delete `Button` (`destructive` variant).
+- **Supported interactions**:
+  - `onSubmit`: Validates data and invokes `saveGoal` or `deleteGoal` from `GoalView`.
+  - `onDelete`: Displays a confirmation modal, then calls `deleteGoal`.
+  - `RadioGroup` change: Shows or hides distance goal fields.
+- **Validation**:
+  - **Distance**: Must be positive and no more than 1000 km. Message: "Distance must be between 0.1 and 1000 km".
+  - **Date**: Must be today or in the future. Message: "Date cannot be in the past".
+  - **Notes**: Maximum 500 characters. Message: "Notes can contain up to 500 characters".
+- **Types**: `GoalFormViewModel`, `UserGoalDto`, `UserGoalUpsertDto`.
+- **Props**:
+  ```typescript
+  interface GoalFormProps {
+    initialGoal: UserGoalDto | null;
+    isSubmitting: boolean;
+    onSave: (data: UserGoalUpsertDto) => Promise<void>;
+    onDelete: () => Promise<void>;
+  }
+  ```
 
-## 5. Typy
+## 5. Types
 
-Do implementacji widoku wymagane będą istniejące typy DTO oraz nowy typ ViewModel dla formularza.
+Implementation requires existing DTO types and a new form ViewModel type.
 
-- **`UserGoalDto` (z `src/types.ts`)**: Reprezentuje obiekt celu pobrany z API.
-    ```typescript
-    export interface UserGoalDto {
-      id: string;
-      user_id: string;
-      goal_type: "distance_by_date";
-      target_distance_m: number;
-      due_date: string; // Format: YYYY-MM-DD
-      notes: string | null;
-      created_at: string;
-    }
-    ```
-- **`UserGoalUpsertDto` (z `src/lib/validation/userGoals.ts`)**: Reprezentuje obiekt wysyłany do API (`PUT`).
-    ```typescript
-    export interface UserGoalUpsertDto {
-      goal_type: "distance_by_date";
-      target_distance_m: number;
-      due_date: string; // Format: YYYY-MM-DD
-      notes?: string;
-    }
-    ```
-- **`GoalFormViewModel` (nowy typ)**: Reprezentuje stan wewnętrzny formularza `GoalForm`.
-    ```typescript
-    interface GoalFormViewModel {
-      // Określa, którą opcję w RadioGroup wybrał użytkownik
-      goalChoice: 'distance' | 'health';
-      
-      // Przechowywany jako string dla łatwiejszej walidacji i obsługi inputu
-      target_distance_km: string; 
-      
-      // Używa typu Date dla kompatybilności z komponentem DatePicker
-      due_date: Date | undefined;
-      
-      // Notatki jako string
-      notes: string;
-    }
-    ```
+- **`UserGoalDto` (from `src/types.ts`)**: Represents the goal object retrieved from the API.
+  ```typescript
+  export interface UserGoalDto {
+    id: string;
+    user_id: string;
+    goal_type: "distance_by_date";
+    target_distance_m: number;
+    due_date: string; // Format: YYYY-MM-DD
+    notes: string | null;
+    created_at: string;
+  }
+  ```
+- **`UserGoalUpsertDto` (from `src/lib/validation/userGoals.ts`)**: Represents the object sent to the API (`PUT`).
+  ```typescript
+  export interface UserGoalUpsertDto {
+    goal_type: "distance_by_date";
+    target_distance_m: number;
+    due_date: string; // Format: YYYY-MM-DD
+    notes?: string;
+  }
+  ```
+- **`GoalFormViewModel` (new type)**: Represents internal `GoalForm` state.
+  ```typescript
+  interface GoalFormViewModel {
+    // Indicates which RadioGroup option the user selected
+    goalChoice: "distance" | "health";
 
-## 6. Zarządzanie stanem
+    // Stored as a string for easier validation and input handling
+    target_distance_km: string;
 
-Zarządzanie stanem zostanie scentralizowane w niestandardowym hooku `useUserGoal`, aby oddzielić logikę pobierania danych i komunikacji z API od komponentów UI.
+    // Uses Date for compatibility with DatePicker
+    due_date: Date | undefined;
+
+    // Notes as a string
+    notes: string;
+  }
+  ```
+
+## 6. State Management
+
+State management will be centralized in the custom `useUserGoal` hook to separate data fetching and API communication from UI components.
 
 - **`useUserGoal.ts`**:
-    - **Cel**: Abstrakcja logiki biznesowej związanej z celem użytkownika.
-    - **Stan wewnętrzny**:
-        - `goal: UserGoalDto | null | undefined` (`undefined` - stan początkowy/ładowanie, `null` - brak celu, `UserGoalDto` - cel istnieje)
-        - `isLoading: boolean`
-        - `error: ApiError | null`
-    - **Funkcje zwracane**:
-        - `goal`, `isLoading`, `error`
-        - `saveGoal(data: UserGoalUpsertDto): Promise<void>`: Wykonuje `PUT /api/v1/user-goal`.
-        - `deleteGoal(): Promise<void>`: Wykonuje `DELETE /api/v1/user-goal`.
-    - **Logika**: Wewnątrz hooka, `useEffect` będzie odpowiedzialny za pobranie początkowych danych (`GET`). Funkcje `saveGoal` i `deleteGoal` będą opakowywać wywołania `fetch`, zarządzać stanem `isLoading` i `error`, oraz aktualizować stan `goal` po pomyślnej operacji.
+  - **Goal**: Abstract business logic related to the user goal.
+  - **Internal state**:
+    - `goal: UserGoalDto | null | undefined` (`undefined` - initial/loading state, `null` - no goal, `UserGoalDto` - goal exists)
+    - `isLoading: boolean`
+    - `error: ApiError | null`
+  - **Returned functions**:
+    - `goal`, `isLoading`, `error`
+    - `saveGoal(data: UserGoalUpsertDto): Promise<void>`: Executes `PUT /api/v1/user-goal`.
+    - `deleteGoal(): Promise<void>`: Executes `DELETE /api/v1/user-goal`.
+  - **Logic**: Inside the hook, `useEffect` fetches initial data (`GET`). `saveGoal` and `deleteGoal` wrap `fetch` calls, manage `isLoading` and `error`, and update `goal` after a successful operation.
 
-## 7. Integracja API
+## 7. API Integration
 
-Integracja będzie realizowana przez `useUserGoal` i obejmie trzy endpointy:
+Integration uses `useUserGoal` and covers three endpoints:
 
 - **`GET /api/v1/user-goal`**:
-    - **Akcja**: Wywoływany przy pierwszym renderowaniu `GoalView` do pobrania aktualnego celu.
-    - **Typ odpowiedzi**: `ApiResponse<UserGoalDto | null>`.
+  - **Action**: Called on the first `GoalView` render to fetch the current goal.
+  - **Response type**: `ApiResponse<UserGoalDto | null>`.
 - **`PUT /api/v1/user-goal`**:
-    - **Akcja**: Wywoływany przez `saveGoal` po zatwierdzeniu formularza z wybranym celem dystansowym.
-    - **Typ żądania (body)**: `UserGoalUpsertDto`.
-    - **Typ odpowiedzi**: `ApiResponse<UserGoalDto>`.
+  - **Action**: Called by `saveGoal` after submitting the form with a distance goal selected.
+  - **Request type (body)**: `UserGoalUpsertDto`.
+  - **Response type**: `ApiResponse<UserGoalDto>`.
 - **`DELETE /api/v1/user-goal`**:
-    - **Akcja**: Wywoływany przez `deleteGoal` po zatwierdzeniu usunięcia lub po zapisaniu formularza z opcją "Biegam dla zdrowia" (gdy cel istniał wcześniej).
-    - **Typ odpowiedzi**: `204 No Content`.
+  - **Action**: Called by `deleteGoal` after confirming deletion or saving with "I run for health" (when a goal previously existed).
+  - **Response type**: `204 No Content`.
 
-## 8. Interakcje użytkownika
+## 8. User Interactions
 
-- **Użytkownik wchodzi na stronę `/goal`**:
-    1. Aplikacja wyświetla `LoadingSpinner`.
-    2. Wykonywane jest żądanie `GET /api/v1/user-goal`.
-    3. Po otrzymaniu odpowiedzi formularz `GoalForm` jest wypełniany danymi (jeśli cel istnieje) lub wyświetlany z domyślnymi wartościami.
-- **Użytkownik wybiera "Biegam dla zdrowia"**:
-    - Pola formularza (dystans, data, notatki) są ukrywane lub wyłączane.
-    - Jeśli użytkownik zapisze ten stan, a wcześniej istniał cel, zostanie wysłane żądanie `DELETE`.
-- **Użytkownik wybiera "Mam konkretny cel (dystans)"**:
-    - Pola formularza stają się widoczne i aktywne.
-- **Użytkownik klika "Zapisz"**:
-    1. Uruchamiana jest walidacja po stronie klienta.
-    2. Jeśli walidacja nie powiedzie się, wyświetlane są komunikaty o błędach przy odpowiednich polach.
-    3. Jeśli walidacja się powiedzie, dane z `GoalFormViewModel` są transformowane do `UserGoalUpsertDto` (np. konwersja km na metry).
-    4. Wysyłane jest żądanie `PUT`. Przycisk "Zapisz" jest w stanie `disabled` z `LoadingSpinner`.
-    5. Po sukcesie wyświetlany jest toast "Cel został zapisany!", a stan lokalny jest aktualizowany.
-- **Użytkownik klika "Usuń cel"**:
-    1. Wyświetlany jest modal z prośbą o potwierdzenie.
-    2. Po potwierdzeniu wysyłane jest żądanie `DELETE`.
-    3. Po sukcesie wyświetlany jest toast "Cel został usunięty!", a formularz jest czyszczony.
+- **User visits `/goal`**:
+  1. The application displays `LoadingSpinner`.
+  2. Sends `GET /api/v1/user-goal`.
+  3. After the response, populates `GoalForm` with data (if a goal exists) or displays defaults.
+- **User selects "I run for health"**:
+  - Form fields (distance, date, notes) are hidden or disabled.
+  - Saving this state sends `DELETE` if a goal previously existed.
+- **User selects "I have a specific goal (distance)"**:
+  - Form fields become visible and active.
+- **User clicks "Save"**:
+  1. Client-side validation runs.
+  2. If validation fails, errors appear beside the relevant fields.
+  3. If validation passes, `GoalFormViewModel` data is transformed into `UserGoalUpsertDto` (e.g., km to meters).
+  4. Sends `PUT`. The "Save" button is `disabled` with `LoadingSpinner`.
+  5. On success, displays "Goal saved!" toast and updates local state.
+- **User clicks "Delete goal"**:
+  1. Displays a confirmation modal.
+  2. After confirmation, sends `DELETE`.
+  3. On success, displays "Goal deleted!" toast and clears the form.
 
-## 9. Warunki i walidacja
+## 9. Conditions and Validation
 
-Walidacja po stronie klienta będzie realizowana w komponencie `GoalForm`, najprawdopodobniej z użyciem biblioteki `react-hook-form` z resolverem `Zod`, aby zapewnić spójność z backendem.
+Client-side validation will be implemented in `GoalForm`, most likely using `react-hook-form` with a `Zod` resolver for backend consistency.
 
-- **Warunek 1: Dystans** (`target_distance_km`)
-    - **Sprawdzenie**: `value > 0 && value <= 1000`.
-    - **UI**: Jeśli warunek nie jest spełniony, pole input otrzymuje czerwoną ramkę, a pod nim pojawia się komunikat błędu. Przycisk "Zapisz" jest nieaktywny.
-- **Warunek 2: Data** (`due_date`)
-    - **Sprawdzenie**: `value >= today`.
-    - **UI**: Komponent `DatePicker` uniemożliwia wybranie dat z przeszłości. Jeśli data jest nieprawidłowa, pole otrzymuje czerwoną ramkę, a pod nim pojawia się komunikat.
-- **Warunek 3: Notatki** (`notes`)
-    - **Sprawdzenie**: `value.length <= 500`.
-    - **UI**: Pod polem `Textarea` może znajdować się licznik znaków. W przypadku przekroczenia limitu, wyświetlany jest komunikat błędu.
+- **Condition 1: Distance** (`target_distance_km`)
+  - **Check**: `value > 0 && value <= 1000`.
+  - **UI**: If the condition fails, the input gets a red border and an error below it. "Save" is disabled.
+- **Condition 2: Date** (`due_date`)
+  - **Check**: `value >= today`.
+  - **UI**: `DatePicker` prevents selecting past dates. An invalid date produces a red border and a message below the field.
+- **Condition 3: Notes** (`notes`)
+  - **Check**: `value.length <= 500`.
+  - **UI**: A character counter may appear below `Textarea`. Exceeding the limit displays an error.
 
-## 10. Obsługa błędów
+## 10. Error Handling
 
-- **Błąd pobierania danych (GET)**: Jeśli `useUserGoal` zwróci błąd, `GoalView` wyświetli komponent `ErrorMessage` z komunikatem "Nie udało się wczytać celu. Spróbuj odświeżyć stronę."
-- **Błąd zapisu/usunięcia (PUT/DELETE)**:
-    - **Błąd serwera (5xx)**: `useUserGoal` ustawi stan błędu. `GoalView` wyświetli globalny toast z komunikatem: "Wystąpił błąd serwera. Spróbuj ponownie później."
-    - **Błąd walidacji (422)**: Teoretycznie nie powinien wystąpić przy poprawnej walidacji frontendu, ale w razie czego zostanie obsłużony jak błąd serwera.
-    - **Brak połączenia sieciowego**: `fetch` rzuci błąd, który zostanie złapany przez `useUserGoal`. Zostanie wyświetlony toast: "Brak połączenia z internetem. Sprawdź połączenie i spróbuj ponownie."
+- **Data fetching error (GET)**: If `useUserGoal` returns an error, `GoalView` displays `ErrorMessage` with "Could not load the goal. Try refreshing the page."
+- **Save/delete error (PUT/DELETE)**:
+  - **Server error (5xx)**: `useUserGoal` sets error state. `GoalView` displays a global toast: "A server error occurred. Please try again later."
+  - **Validation error (422)**: Should not occur with correct frontend validation, but handled as a server error if it does.
+  - **No network connection**: `fetch` throws an error caught by `useUserGoal`. Display toast: "No internet connection. Check your connection and try again."
 
-## 11. Kroki implementacji
+## 11. Implementation Steps
 
-1.  **Utworzenie strony Astro**: Stworzyć plik `src/pages/goal.astro`, który importuje i renderuje `GoalView` z atrybutem `client:load`.
-2.  **Stworzenie `GoalView`**: Stworzyć plik `src/components/views/GoalView.tsx`. Dodać podstawową strukturę do renderowania warunkowego (ładowanie, błąd, formularz).
-3.  **Implementacja hooka `useUserGoal`**: Stworzyć plik `src/lib/hooks/useUserGoal.ts`. Zaimplementować logikę pobierania (`GET`), zapisu (`PUT`) i usuwania (`DELETE`) celu, wraz z zarządzaniem stanem ładowania i błędów.
-4.  **Stworzenie `GoalForm`**: Stworzyć plik `src/components/features/goal/GoalForm.tsx`. Zbudować layout formularza używając komponentów Shadcn/ui (`Card`, `RadioGroup`, `Input`, `DatePicker`, `Button`).
-5.  **Integracja `react-hook-form`**: Dodać `react-hook-form` i `zod` do `GoalForm` w celu zarządzania stanem formularza i walidacją. Zdefiniować schemat walidacji Zod dla `GoalFormViewModel`.
-6.  **Połączenie komponentów**: W `GoalView` użyć hooka `useUserGoal` i przekazać dane oraz funkcje `saveGoal` i `deleteGoal` jako propsy do `GoalForm`.
-7.  **Implementacja logiki interakcji**: Dodać obsługę przełączania `RadioGroup`, logikę `onSubmit` transformującą dane z ViewModel na DTO, oraz obsługę modala potwierdzającego usunięcie.
-8.  **Styling i UX**: Dopracować style za pomocą Tailwind CSS. Dodać toasty (np. używając `sonner` z Shadcn) dla potwierdzenia operacji (zapis, usunięcie) i dla błędów. Upewnić się, że stany ładowania na przyciskach są poprawnie zaimplementowane.
-9.  **Testowanie manualne**: Przetestować wszystkie scenariusze: ładowanie strony, brak celu, istnienie celu, tworzenie, aktualizacja, usuwanie, walidacja pól i obsługa błędów API.
-
+1.  **Create the Astro page**: Create `src/pages/goal.astro` importing and rendering `GoalView` with `client:load`.
+2.  **Create `GoalView`**: Create `src/components/views/GoalView.tsx`. Add conditional rendering structure (loading, error, form).
+3.  **Implement `useUserGoal`**: Create `src/lib/hooks/useUserGoal.ts`. Implement fetching (`GET`), saving (`PUT`), and deleting (`DELETE`) goals with loading and error state.
+4.  **Create `GoalForm`**: Create `src/components/features/goal/GoalForm.tsx`. Build the form layout with Shadcn/ui (`Card`, `RadioGroup`, `Input`, `DatePicker`, `Button`).
+5.  **Integrate `react-hook-form`**: Add `react-hook-form` and `zod` to `GoalForm` for form state and validation. Define the Zod schema for `GoalFormViewModel`.
+6.  **Connect components**: In `GoalView`, use `useUserGoal` and pass data, `saveGoal`, and `deleteGoal` to `GoalForm` as props.
+7.  **Implement interaction logic**: Add `RadioGroup` handling, `onSubmit` ViewModel-to-DTO transformation, and the deletion confirmation modal.
+8.  **Styling and UX**: Refine styles with Tailwind CSS. Add toasts (e.g., Shadcn `sonner`) for successful saves/deletions and errors. Ensure button loading states work correctly.
+9.  **Manual testing**: Test all scenarios: page loading, no goal, existing goal, creation, update, deletion, field validation, and API error handling.

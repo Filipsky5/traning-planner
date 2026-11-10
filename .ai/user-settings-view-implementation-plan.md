@@ -1,16 +1,16 @@
-# Plan implementacji widoku Ustawień Użytkownika
+# User Settings View Implementation Plan
 
-## 1. Przegląd
+## 1. Overview
 
-Celem jest implementacja menu użytkownika w formie rozwijanego panelu (popover/dropdown), dostępnego globalnie w nagłówku aplikacji. Menu to umożliwi użytkownikowi wylogowanie się, nawigację do widoku celu (`/goal`) oraz zmianę preferowanej jednostki tempa (`min/km` vs `km/h`). Wybrana jednostka tempa będzie zapisywana w `localStorage` i udostępniana globalnie w aplikacji w celu spójnej prezentacji danych.
+The goal is to implement a user menu as a dropdown panel (popover/dropdown), globally available in the application header. It will let users log out, navigate to the goal view (`/goal`), and change their preferred pace unit (`min/km` vs `km/h`). The selected pace unit will be saved in `localStorage` and shared globally for consistent data presentation.
 
-## 2. Routing widoku
+## 2. View Routing
 
-Komponent nie będzie posiadał własnej, dedykowanej ścieżki (route). Zostanie zaimplementowany jako globalnie dostępny komponent `UserMenu`, umieszczony w głównym nagłówku aplikacji (`Header.astro`) i renderowany na każdej stronie.
+The component will not have a dedicated route. It will be implemented as a globally available `UserMenu` component in the main application header (`Header.astro`), rendered on every page.
 
-## 3. Struktura komponentów
+## 3. Component Structure
 
-Hierarchia komponentów zostanie oparta o React Context w celu globalnego zarządzania stanem jednostki tempa. Główne komponenty interaktywne będą wyspami Astro (`Astro Islands`).
+The component hierarchy will use React Context to manage pace unit state globally. The main interactive components will be Astro Islands.
 
 ```
 src/layouts/Layout.astro
@@ -18,57 +18,60 @@ src/layouts/Layout.astro
     └── src/components/Header.astro
         └── UserMenu.tsx (client:load)
             └── shadcn/ui DropdownMenu
-                ├── DropdownMenuLabel (Nazwa użytkownika)
-                ├── DropdownMenuItem (Link do /goal)
+                ├── DropdownMenuLabel (User name)
+                ├── DropdownMenuItem (Link to /goal)
                 ├── PaceUnitToggle.tsx
                 │   └── shadcn/ui Switch
-                └── DropdownMenuItem (Przycisk wylogowania)
+                └── DropdownMenuItem (Logout button)
 ```
 
-## 4. Szczegóły komponentów
+## 4. Component Details
 
 ### `PaceUnitProvider`
-- **Opis komponentu**: Niewizualny komponent typu "Provider" (dostawca kontekstu), który zarządza globalnym stanem jednostki tempa. Odczytuje on początkową wartość z `localStorage` (lub ustawia domyślną), a następnie udostępnia stan i funkcję do jego aktualizacji wszystkim komponentom-dzieciom. Będzie to wyspa Astro (`client:load`) opakowująca główny layout aplikacji.
-- **Główne elementy**: Wykorzystuje `React.createContext` i `useState`/`useEffect` do zarządzania stanem.
-- **Obsługiwane interakcje**: Brak.
-- **Obsługiwana walidacja**: Sprawdza, czy wartość w `localStorage` jest poprawna (`'min/km'` lub `'km/h'`). W przypadku niepoprawnej wartości, ustawia domyślną.
-- **Typy**: `PaceUnit`, `PaceUnitContextType`
-- **Propsy**: `children: React.ReactNode`
+
+- **Component description**: A nonvisual Provider component managing global pace unit state. It reads the initial value from `localStorage` (or sets the default), then shares the state and its update function with all child components. It will be an Astro island (`client:load`) wrapping the main application layout.
+- **Main elements**: Uses `React.createContext` and `useState`/`useEffect` for state management.
+- **Supported interactions**: None.
+- **Validation**: Checks whether the `localStorage` value is valid (`'min/km'` or `'km/h'`). Falls back to the default for invalid values.
+- **Types**: `PaceUnit`, `PaceUnitContextType`
+- **Props**: `children: React.ReactNode`
 
 ### `UserMenu`
-- **Opis komponentu**: Główny, widoczny dla użytkownika komponent, renderowany w nagłówku. Będzie wyświetlał awatar lub ikonę użytkownika. Kliknięcie w niego otworzy menu kontekstowe. Zostanie zaimplementowany przy użyciu komponentu `DropdownMenu` z biblioteki `shadcn/ui`.
-- **Główne elementy**: `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSeparator` z `shadcn/ui`. Komponent `PaceUnitToggle` zostanie umieszczony wewnątrz.
-- **Obsługiwane interakcje**:
-    - Otwarcie/zamknięcie menu po kliknięciu.
-    - Nawigacja po kliknięciu w element "Cel".
-    - Wywołanie funkcji wylogowania po kliknięciu "Wyloguj".
-- **Obsługiwana walidacja**: Brak.
-- **Typy**: `UserMenuProps`
-- **Propsy**:
-    - `userEmail: string | null` - email użytkownika przekazany z Header.astro (Astro.locals.user)
+
+- **Component description**: The main visible component rendered in the header. Displays an avatar or user icon. Clicking it opens a context menu. Implemented using the `shadcn/ui` `DropdownMenu` component.
+- **Main elements**: `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSeparator` from `shadcn/ui`. The `PaceUnitToggle` component will be placed inside.
+- **Supported interactions**:
+  - Open/close the menu on click.
+  - Navigate when clicking the "Goal" item.
+  - Invoke logout when clicking "Log out".
+- **Validation**: None.
+- **Types**: `UserMenuProps`
+- **Props**:
+  - `userEmail: string | null` - user email passed from Header.astro (Astro.locals.user)
 
 ### `PaceUnitToggle`
-- **Opis komponentu**: Komponent osadzony w `UserMenu`, odpowiedzialny za przełączanie jednostki tempa. Wyświetla etykietę oraz przełącznik (`Switch` z `shadcn/ui`), który odzwierciedla i pozwala modyfikować bieżące ustawienie.
-- **Główne elementy**: `div` (wrapper), `Label` (etykieta), `Switch` (przełącznik).
-- **Obsługiwane interakcje**: Zmiana stanu przełącznika (`onCheckedChange`).
-- **Obsługiwana walidacja**: Brak.
-- **Typy**: `PaceUnit`
-- **Propsy**: Brak (stan pobierany z kontekstu).
 
-## 5. Typy
+- **Component description**: A component embedded in `UserMenu` for switching pace units. Displays a label and a toggle (`Switch` from `shadcn/ui`) that reflects and allows changes to the current setting.
+- **Main elements**: `div` (wrapper), `Label`, `Switch`.
+- **Supported interactions**: Toggle state change (`onCheckedChange`).
+- **Validation**: None.
+- **Types**: `PaceUnit`
+- **Props**: None (state obtained from context).
 
-Wymagane będzie zdefiniowanie następujących typów, np. w nowym pliku `src/lib/types/ui.ts`:
+## 5. Types
+
+The following types must be defined, for example in a new `src/lib/types/ui.ts` file:
 
 ```typescript
 /**
- * Definiuje dostępne jednostki tempa.
- * 'min/km' - minuty na kilometr
- * 'km/h' - kilometry na godzinę
+ * Defines available pace units.
+ * 'min/km' - minutes per kilometer
+ * 'km/h' - kilometers per hour
  */
-export type PaceUnit = 'min/km' | 'km/h';
+export type PaceUnit = "min/km" | "km/h";
 
 /**
- * Struktura kontekstu React dla jednostki tempa.
+ * React context structure for the pace unit.
  */
 export interface PaceUnitContextType {
   paceUnit: PaceUnit;
@@ -76,64 +79,63 @@ export interface PaceUnitContextType {
 }
 ```
 
-## 6. Zarządzanie stanem
+## 6. State Management
 
-Stan jednostki tempa (`paceUnit`) będzie zarządzany globalnie przy użyciu **React Context API**.
+Pace unit state (`paceUnit`) will be managed globally using the **React Context API**.
 
-- **`PaceUnitProvider`**: Komponent dostawcy, który będzie przechowywał stan. Przy pierwszym renderowaniu na kliencie (`useEffect`), odczyta wartość z `localStorage`. Jeśli wartość nie istnieje lub jest nieprawidłowa, ustawi domyślną (`'min/km'`). Każda zmiana stanu będzie również zapisywana w `localStorage`.
-- **`usePaceUnit`**: Custom hook, który uprości dostęp do kontekstu. Komponenty, które potrzebują odczytać lub zmienić jednostkę tempa, użyją tego hooka.
+- **`PaceUnitProvider`**: Provider component holding the state. On the first client render (`useEffect`), it reads from `localStorage`. If the value is missing or invalid, it sets the default (`'min/km'`). Every state change is also saved in `localStorage`.
+- **`usePaceUnit`**: Custom hook simplifying access to the context. Components that need to read or change the pace unit will use this hook.
 
 ```typescript
-// Przykład użycia hooka
+// Hook usage example
 const { paceUnit, setPaceUnit } = usePaceUnit();
 ```
 
-Logika dostępu do `localStorage` będzie zabezpieczona przed uruchomieniem po stronie serwera (SSR) poprzez umieszczenie jej wewnątrz hooka `useEffect`.
+Access to `localStorage` will be protected from server-side execution (SSR) by placing it inside the `useEffect` hook.
 
-## 7. Integracja API
+## 7. API Integration
 
-Ta funkcjonalność jest w pełni po stronie klienta. **Nie jest wymagana żadna integracja z API.** Stan jest utrwalany w `localStorage` przeglądarki użytkownika.
+This feature is entirely client-side. **No API integration is required.** State is persisted in the user's browser `localStorage`.
 
-## 8. Interakcje użytkownika
+## 8. User Interactions
 
-- **Kliknięcie ikony użytkownika**: Otwiera `DropdownMenu`.
-- **Kliknięcie poza otwartym menu**: Zamyka `DropdownMenu`.
-- **Kliknięcie przełącznika "Jednostka tempa"**: Zmienia wartość `paceUnit` w kontekście i `localStorage`. Zmiana jest natychmiast widoczna na przełączniku.
-- **Kliknięcie "Twój cel"**: Przekierowuje użytkownika na stronę `/goal`.
-- **Kliknięcie "Wyloguj"**: Uruchamia logikę wylogowania (np. wywołanie metody z Supabase Auth i przekierowanie na stronę logowania).
+- **Clicking the user icon**: Opens `DropdownMenu`.
+- **Clicking outside the open menu**: Closes `DropdownMenu`.
+- **Clicking the "Pace unit" toggle**: Changes `paceUnit` in context and `localStorage`. The change is immediately reflected in the toggle.
+- **Clicking "Your goal"**: Redirects the user to `/goal`.
+- **Clicking "Log out"**: Runs logout logic (e.g., a Supabase Auth method followed by a redirect to the login page).
 
-## 9. Warunki i walidacja
+## 9. Conditions and Validation
 
-- Jedyna walidacja odbywa się w `PaceUnitProvider` podczas odczytu danych z `localStorage`.
-- **Warunek**: Wartość odczytana z klucza `paceUnit` musi być równa `'min/km'` lub `'km/h'`.
-- **Obsługa**: Jeśli warunek nie jest spełniony, stan jest inicjowany wartością domyślną `'min/km'`.
+- The only validation occurs in `PaceUnitProvider` when reading `localStorage` data.
+- **Condition**: The value read from the `paceUnit` key must equal `'min/km'` or `'km/h'`.
+- **Handling**: If the condition is not met, initialize state with the default `'min/km'`.
 
-## 10. Obsługa błędów
+## 10. Error Handling
 
-- **Błąd**: `localStorage` jest niedostępny (np. w trybie prywatnym przeglądarki).
-- **Obsługa**: Dostęp do `localStorage` zostanie opakowany w blok `try...catch`. W przypadku błędu, stan `paceUnit` będzie zarządzany tylko w pamięci na czas trwania sesji. Funkcjonalność będzie działać, ale ustawienie nie zostanie zapamiętane po odświeżeniu strony. Jest to akceptowalne dla tej funkcji.
+- **Error**: `localStorage` is unavailable (e.g., in private browsing mode).
+- **Handling**: Wrap `localStorage` access in `try...catch`. On error, manage `paceUnit` only in memory for the session. The feature will work, but the setting will not survive a page refresh. This is acceptable for this feature.
 
-## 11. Kroki implementacji
+## 11. Implementation Steps
 
-1.  **Stworzenie typów**: W pliku `src/lib/types/ui.ts` zdefiniować typy `PaceUnit` i `PaceUnitContextType`.
-2.  **Implementacja `PaceUnitProvider`**:
-    - Stworzyć plik `src/components/providers/PaceUnitProvider.tsx`.
-    - Zaimplementować w nim kontekst, stan, logikę odczytu/zapisu do `localStorage` (wewnątrz `useEffect`) oraz hook `usePaceUnit`.
-3.  **Integracja `PaceUnitProvider`**:
-    - W głównym pliku layoutu (`src/layouts/Layout.astro`), zaimportować i opakować tag `<slot />` komponentem `<PaceUnitProvider client:load>`.
-4.  **Implementacja `PaceUnitToggle`**:
-    - Stworzyć plik `src/components/PaceUnitToggle.tsx`.
-    - Użyć hooka `usePaceUnit` do pobrania stanu i funkcji aktualizującej.
-    - Zbudować interfejs przy użyciu komponentów `Label` i `Switch` z `shadcn/ui`.
-5.  **Implementacja `UserMenu`**:
-    - Stworzyć plik `src/components/UserMenu.tsx`.
-    - Zbudować strukturę menu przy użyciu `DropdownMenu` z `shadcn/ui`.
-    - Osadzić komponent `PaceUnitToggle` wewnątrz menu.
-    - Dodać pozostałe elementy: link do celu i przycisk wylogowania.
-6.  **Dodanie `UserMenu` do nagłówka**:
-    - W pliku `src/components/Header.astro` (lub odpowiedniku), zaimportować i umieścić komponent `<UserMenu client:load />`.
-7.  **Weryfikacja**:
-    - Sprawdzić, czy menu poprawnie się otwiera i zamyka.
-    - Zweryfikować, czy przełącznik działa i czy jego stan jest poprawnie zapisywany w `localStorage` i odczytywany po odświeżeniu strony.
-    - Upewnić się, że link do celu i przycisk wylogowania działają zgodnie z oczekiwaniami.
-
+1.  **Create types**: Define `PaceUnit` and `PaceUnitContextType` in `src/lib/types/ui.ts`.
+2.  **Implement `PaceUnitProvider`**:
+    - Create `src/components/providers/PaceUnitProvider.tsx`.
+    - Implement context, state, `localStorage` read/write logic (inside `useEffect`), and the `usePaceUnit` hook.
+3.  **Integrate `PaceUnitProvider`**:
+    - In the main layout (`src/layouts/Layout.astro`), import it and wrap `<slot />` with `<PaceUnitProvider client:load>`.
+4.  **Implement `PaceUnitToggle`**:
+    - Create `src/components/PaceUnitToggle.tsx`.
+    - Use `usePaceUnit` to obtain state and the update function.
+    - Build the interface using `Label` and `Switch` from `shadcn/ui`.
+5.  **Implement `UserMenu`**:
+    - Create `src/components/UserMenu.tsx`.
+    - Build the menu structure using `DropdownMenu` from `shadcn/ui`.
+    - Embed `PaceUnitToggle` inside the menu.
+    - Add the remaining items: goal link and logout button.
+6.  **Add `UserMenu` to the header**:
+    - In `src/components/Header.astro` (or equivalent), import and place `<UserMenu client:load />`.
+7.  **Verification**:
+    - Check that the menu opens and closes correctly.
+    - Verify that the toggle works, saves its state in `localStorage`, and restores it after a page refresh.
+    - Ensure the goal link and logout button work as expected.

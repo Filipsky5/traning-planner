@@ -1,86 +1,93 @@
-# Specyfikacja Architektury Modułu Autentykacji i Uwierzytelniania
+# Authentication and Authorization Module Architecture Specification
 
-## Przegląd Systemu
+## System Overview
 
-System autentykacji i uwierzytelniania dla aplikacji Training Planner bazuje na Supabase Auth jako głównym mechanizmie zarządzania użytkownikami i sesjami. Integracja z Astro w trybie SSR (Server-Side Rendering) zapewnia bezpieczeństwo i optymalną wydajność.
+Training Planner's authentication and authorization system uses Supabase Auth to manage users and sessions. Integration with Astro in SSR (Server-Side Rendering) mode provides security and optimal performance.
 
-## 1. ARCHITEKTURA INTERFEJSU UŻYTKOWNIKA
+## 1. USER INTERFACE ARCHITECTURE
 
-### 1.1 Struktura Stron i Komponentów
+### 1.1 Page and Component Structure
 
-#### A. Strony Publiczne (Non-Auth)
+#### A. Public Pages (Non-Auth)
 
 **`src/pages/login.astro`**
-- **GŁÓWNA STRONA APLIKACJI dla niezalogowanych użytkowników**
-- Strona logowania dostępna publicznie
-- Renderowana server-side dla szybkiego ładowania
-- Automatyczne przekierowanie zalogowanych użytkowników na dashboard (/)
-- Komponenty:
-  - `LoginForm.tsx` (client:load) - formularz logowania
-  - Link do rejestracji
-  - Link do odzyskiwania hasła
+
+- **MAIN APPLICATION PAGE for logged-out users**
+- Public login page
+- Server-rendered for fast loading
+- Automatically redirects logged-in users to the dashboard (/)
+- Components:
+  - `LoginForm.tsx` (client:load) - login form
+  - Registration link
+  - Password recovery link
 
 **`src/pages/register.astro`**
-- Strona rejestracji nowych użytkowników
-- Renderowana server-side
-- Automatyczne przekierowanie zalogowanych użytkowników
-- **Po pomyślnej rejestracji i weryfikacji email → przekierowanie na /onboarding**
-- Komponenty:
-  - `RegisterForm.tsx` (client:load) - formularz rejestracji
-  - Link do logowania
+
+- New user registration page
+- Server-rendered
+- Automatically redirects logged-in users
+- **After successful registration and email verification → redirect to /onboarding**
+- Components:
+  - `RegisterForm.tsx` (client:load) - registration form
+  - Login link
 
 **`src/pages/forgot-password.astro`**
-- Strona inicjowania procesu odzyskiwania hasła
-- Komponenty:
-  - `ForgotPasswordForm.tsx` (client:load) - formularz z polem email
+
+- Page initiating password recovery
+- Components:
+  - `ForgotPasswordForm.tsx` (client:load) - email form
 
 **`src/pages/reset-password.astro`**
-- Strona resetowania hasła (dostępna przez link z emaila)
-- Weryfikacja tokenu z URL
-- Komponenty:
-  - `ResetPasswordForm.tsx` (client:load) - formularz z nowymi hasłami
 
-#### B. Strony Chronione (Auth Required)
+- Password reset page (accessed through an email link)
+- URL token verification
+- Components:
+  - `ResetPasswordForm.tsx` (client:load) - new password form
 
-**Modyfikacja istniejących stron:**
-- `src/pages/index.astro` - główny kalendarz (wymaga auth)
-- `src/pages/goal.astro` - zarządzanie celem (wymaga auth)
-- `src/pages/onboarding.astro` - proces onboardingu (wymaga auth)
-- `src/pages/workouts/[id].astro` - szczegóły treningu (wymaga auth)
+#### B. Protected Pages (Auth Required)
 
-### 1.2 Komponenty React (Client-Side)
+**Changes to existing pages:**
 
-#### A. Formularze Autentykacji
+- `src/pages/index.astro` - main calendar (requires auth)
+- `src/pages/goal.astro` - goal management (requires auth)
+- `src/pages/onboarding.astro` - onboarding process (requires auth)
+- `src/pages/workouts/[id].astro` - workout details (requires auth)
+
+### 1.2 React Components (Client-Side)
+
+#### A. Authentication Forms
 
 **`src/components/auth/LoginForm.tsx`**
+
 ```typescript
 interface LoginFormProps {
   redirectTo?: string;
 }
 
-// Pola formularza:
-- email: string (walidacja: email format)
-- password: string (walidacja: min 8 znaków)
+// Form fields:
+- email: string (validation: email format)
+- password: string (validation: min 8 characters)
 
-// Stan komponentu:
+// Component state:
 - loading: boolean
 - error: string | null
 - fieldErrors: Record<string, string>
 ```
 
 **`src/components/auth/RegisterForm.tsx`**
+
 ```typescript
 interface RegisterFormProps {
   redirectTo?: string;
 }
 
-// Pola formularza:
-- email: string (walidacja: email format, uniqueness)
-- password: string (walidacja: min 8 znaków, zawiera cyfry i litery)
-- confirmPassword: string (walidacja: zgodność z password)
-- acceptTerms: boolean (walidacja: wymagane)
+// Form fields:
+- email: string (validation: email format, uniqueness)
+- password: string (validation: min 8 characters, contains numbers and letters)
+- confirmPassword: string (validation: matches password)
+- acceptTerms: boolean (validation: required)
 
-// Stan komponentu:
+// Component state:
 - loading: boolean
 - error: string | null
 - fieldErrors: Record<string, string>
@@ -88,35 +95,38 @@ interface RegisterFormProps {
 ```
 
 **`src/components/auth/ForgotPasswordForm.tsx`**
-```typescript
-// Pola formularza:
-- email: string (walidacja: email format)
 
-// Stan komponentu:
+```typescript
+// Form fields:
+- email: string (validation: email format)
+
+// Component state:
 - loading: boolean
 - error: string | null
 - success: boolean
 ```
 
 **`src/components/auth/ResetPasswordForm.tsx`**
+
 ```typescript
 interface ResetPasswordFormProps {
   token: string;
 }
 
-// Pola formularza:
-- newPassword: string (walidacja: min 8 znaków)
-- confirmPassword: string (walidacja: zgodność)
+// Form fields:
+- newPassword: string (validation: min 8 characters)
+- confirmPassword: string (validation: matching)
 
-// Stan komponentu:
+// Component state:
 - loading: boolean
 - error: string | null
 - success: boolean
 ```
 
-#### B. Komponenty Pomocnicze
+#### B. Helper Components
 
 **`src/components/auth/AuthGuard.tsx`**
+
 ```typescript
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -124,131 +134,133 @@ interface AuthGuardProps {
   redirectTo?: string;
 }
 
-// Komponent wrapper sprawdzający stan autoryzacji
-// Pokazuje loading state podczas weryfikacji
-// Przekierowuje lub pokazuje fallback dla niezalogowanych
+// Wrapper component checking authorization state
+// Shows loading state during verification
+// Redirects or shows fallback for logged-out users
 ```
 
 **`src/components/auth/ProtectedRoute.tsx`**
+
 ```typescript
-// Komponent HOC do ochrony tras client-side
-// Używany dla dynamicznych komponentów React
+// HOC component protecting client-side routes
+// Used for dynamic React components
 ```
 
-### 1.3 Modyfikacje Istniejących Komponentów
+### 1.3 Changes to Existing Components
 
 **`src/layouts/Layout.astro`**
+
 ```astro
 ---
-import { isAuthenticated } from '../lib/auth/server';
+import { isAuthenticated } from "../lib/auth/server";
 
 const authenticated = await isAuthenticated(Astro);
-const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password']
-  .includes(Astro.url.pathname);
+const isAuthPage = ["/login", "/register", "/forgot-password", "/reset-password"].includes(Astro.url.pathname);
 
-// Usunięto logikę przekierowania, która została przeniesiona do middleware
+// Redirect logic removed and moved to middleware
 ---
 ```
 
 **`src/components/Header.astro`**
+
 ```astro
 ---
-import { isAuthenticated } from '../lib/auth/server';
+import { isAuthenticated } from "../lib/auth/server";
 const authenticated = await isAuthenticated(Astro);
 const userEmail = Astro.locals.user?.email ?? null;
 ---
 
-<!-- Warunkowe renderowanie elementów menu -->
-{authenticated ? (
-  <UserMenu client:load userEmail={userEmail} />
-) : (
-  <AuthButtons />
-)}
+<!-- Conditional menu item rendering -->
+{authenticated ? <UserMenu client:load userEmail={userEmail} /> : <AuthButtons />}
 ```
 
-**`src/components/UserMenu.tsx`** (rozszerzenie)
-- Przyjmuje dane użytkownika (email) przez props z Astro.locals.user (server-side)
-- Logout przez fetch API (POST /api/v1/auth/logout)
-- Dodanie obsługi błędów sesji
-- Graceful degradation przy braku połączenia
+**`src/components/UserMenu.tsx`** (extension)
 
-### 1.4 Walidacja i Komunikaty Błędów
+- Receives user data (email) through props from Astro.locals.user (server-side)
+- Logout through fetch API (POST /api/v1/auth/logout)
+- Add session error handling
+- Graceful degradation without a connection
 
-#### A. Walidacja Client-Side
+### 1.4 Validation and Error Messages
 
-**Reguły walidacji:**
-- Email: regex pattern, sprawdzanie domeny
-- Hasło: minimum 8 znaków, kombinacja liter i cyfr
-- Potwierdzenie hasła: identyczność z hasłem
-- Pola wymagane: oznaczone czerwoną gwiazdką
+#### A. Client-Side Validation
 
-**Komunikaty błędów:**
+**Validation rules:**
+
+- Email: regex pattern, domain check
+- Password: minimum 8 characters, letters and numbers
+- Password confirmation: identical to password
+- Required fields: marked with a red asterisk
+
+**Error messages:**
+
 ```typescript
 const errorMessages = {
-  'auth/invalid-email': 'Nieprawidłowy adres email',
-  'auth/user-not-found': 'Nie znaleziono użytkownika z tym adresem email',
-  'auth/wrong-password': 'Nieprawidłowe hasło',
-  'auth/email-already-in-use': 'Ten adres email jest już zarejestrowany',
-  'auth/weak-password': 'Hasło jest zbyt słabe. Użyj minimum 8 znaków',
-  'auth/network-error': 'Błąd połączenia. Sprawdź swoje połączenie internetowe',
-  'auth/too-many-requests': 'Zbyt wiele prób. Spróbuj ponownie za chwilę',
-  'validation/email-required': 'Adres email jest wymagany',
-  'validation/password-required': 'Hasło jest wymagane',
-  'validation/password-mismatch': 'Hasła nie są identyczne',
-  'validation/terms-required': 'Musisz zaakceptować regulamin',
+  "auth/invalid-email": "Invalid email address",
+  "auth/user-not-found": "No user found with this email address",
+  "auth/wrong-password": "Incorrect password",
+  "auth/email-already-in-use": "This email address is already registered",
+  "auth/weak-password": "Password is too weak. Use at least 8 characters",
+  "auth/network-error": "Connection error. Check your internet connection",
+  "auth/too-many-requests": "Too many attempts. Please try again shortly",
+  "validation/email-required": "Email address is required",
+  "validation/password-required": "Password is required",
+  "validation/password-mismatch": "Passwords do not match",
+  "validation/terms-required": "You must accept the terms",
 };
 ```
 
-#### B. Feedback Wizualny
+#### B. Visual Feedback
 
-- Loading states: spinner podczas przetwarzania
-- Success states: zielone powiadomienia
-- Error states: czerwone obramowania pól, komunikaty pod polami
-- Disabled states: szare przyciski podczas ładowania
+- Loading states: spinner during processing
+- Success states: green notifications
+- Error states: red field borders, messages below fields
+- Disabled states: gray buttons while loading
 
-### 1.5 Obsługa Scenariuszy UX
+### 1.5 UX Scenario Handling
 
-#### A. Scenariusz Rejestracji
+#### A. Registration Scenario
 
-1. Użytkownik wypełnia formularz rejestracji
-2. Walidacja real-time podczas pisania (debounced)
+1. User completes registration form
+2. Real-time validation while typing (debounced)
 3. Submit → loading state
-4. Sukces → komunikat o wysłaniu emaila weryfikacyjnego
-5. Przekierowanie na stronę weryfikacji emaila
-6. Po weryfikacji → automatyczne logowanie → **OBOWIĄZKOWE przekierowanie na /onboarding**
-7. Po ukończeniu onboardingu (dodanie 3 treningów) → przekierowanie na główny kalendarz (/)
+4. Success → email verification sent message
+5. Redirect to email verification page
+6. After verification → automatic login → **MANDATORY redirect to /onboarding**
+7. After onboarding (adding 3 workouts) → redirect to main calendar (/)
 
-#### B. Scenariusz Logowania
+#### B. Login Scenario
 
-1. Użytkownik wprowadza dane
+1. User enters credentials
 2. Submit → loading state
-3. Sprawdzenie czy użytkownik ukończył onboarding:
-   - Jeśli NIE → przekierowanie na /onboarding
-   - Jeśli TAK → przekierowanie na główny kalendarz (/) lub poprzednią stronę
-4. Błąd → wyświetlenie komunikatu, focus na błędnym polu
+3. Check whether user completed onboarding:
+   - If NO → redirect to /onboarding
+   - If YES → redirect to main calendar (/) or previous page
+4. Error → display message, focus invalid field
 
-#### C. Scenariusz Odzyskiwania Hasła
+#### C. Password Recovery Scenario
 
-1. Użytkownik podaje email
-2. System wysyła link resetowania
-3. Komunikat o wysłaniu emaila (bez ujawniania czy email istnieje)
-4. Użytkownik klika link → strona reset-password z tokenem
-5. Wprowadzenie nowego hasła
-6. Sukces → automatyczne logowanie → sprawdzenie onboardingu jak w scenariuszu B
+1. User enters email
+2. System sends reset link
+3. Email sent message (without revealing whether the email exists)
+4. User clicks link → reset-password page with token
+5. Enter new password
+6. Success → automatic login → onboarding check as in scenario B
 
-#### D. Scenariusz Wylogowania
+#### D. Logout Scenario
 
-1. Kliknięcie "Wyloguj" w UserMenu (prawy górny róg)
-2. Czyszczenie sesji i cache
-3. Przekierowanie na stronę logowania (/login)
+1. Click "Log out" in UserMenu (top-right corner)
+2. Clear session and cache
+3. Redirect to login (/login)
 
-## 2. LOGIKA BACKENDOWA
+## 2. BACKEND LOGIC
 
-### 2.1 Struktura Endpointów API
+### 2.1 API Endpoint Structure
 
-#### A. Endpointy Autentykacji
+#### A. Authentication Endpoints
 
 **`POST /api/v1/auth/login`**
+
 ```typescript
 interface LoginRequest {
   email: string;
@@ -270,6 +282,7 @@ interface LoginResponse {
 ```
 
 **`POST /api/v1/auth/register`**
+
 ```typescript
 interface RegisterRequest {
   email: string;
@@ -289,6 +302,7 @@ interface RegisterResponse {
 ```
 
 **`POST /api/v1/auth/logout`**
+
 ```typescript
 // Wymaga Authorization header
 interface LogoutResponse {
@@ -297,6 +311,7 @@ interface LogoutResponse {
 ```
 
 **`POST /api/v1/auth/forgot-password`**
+
 ```typescript
 interface ForgotPasswordRequest {
   email: string;
@@ -308,6 +323,7 @@ interface ForgotPasswordResponse {
 ```
 
 **`POST /api/v1/auth/reset-password`**
+
 ```typescript
 interface ResetPasswordRequest {
   token: string;
@@ -320,6 +336,7 @@ interface ResetPasswordResponse {
 ```
 
 **`POST /api/v1/auth/refresh`**
+
 ```typescript
 interface RefreshRequest {
   refresh_token: string;
@@ -333,6 +350,7 @@ interface RefreshResponse {
 ```
 
 **`GET /api/v1/auth/me`**
+
 ```typescript
 // Wymaga Authorization header
 interface MeResponse {
@@ -345,70 +363,63 @@ interface MeResponse {
 }
 ```
 
-### 2.2 Mechanizm Walidacji Danych
+### 2.2 Data Validation Mechanism
 
-#### A. Walidacja z Zod
+#### A. Validation with Zod
 
 **`src/lib/validation/auth.ts`**
+
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string()
-    .email('Nieprawidłowy format adresu email')
-    .toLowerCase()
-    .trim(),
-  password: z.string()
-    .min(8, 'Hasło musi mieć minimum 8 znaków'),
+  email: z.string().email("Invalid email address format").toLowerCase().trim(),
+  password: z.string().min(8, "Password must contain at least 8 characters"),
 });
 
 export const registerSchema = z.object({
-  email: z.string()
-    .email('Nieprawidłowy format adresu email')
-    .toLowerCase()
-    .trim(),
-  password: z.string()
-    .min(8, 'Hasło musi mieć minimum 8 znaków')
-    .regex(/[A-Za-z]/, 'Hasło musi zawierać litery')
-    .regex(/[0-9]/, 'Hasło musi zawierać cyfry'),
-  metadata: z.object({
-    acceptedTermsAt: z.string().datetime().optional(),
-  }).optional(),
+  email: z.string().email("Invalid email address format").toLowerCase().trim(),
+  password: z
+    .string()
+    .min(8, "Password must contain at least 8 characters")
+    .regex(/[A-Za-z]/, "Password must contain letters")
+    .regex(/[0-9]/, "Password must contain numbers"),
+  metadata: z
+    .object({
+      acceptedTermsAt: z.string().datetime().optional(),
+    })
+    .optional(),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string()
-    .email('Nieprawidłowy format adresu email')
-    .toLowerCase()
-    .trim(),
+  email: z.string().email("Invalid email address format").toLowerCase().trim(),
 });
 
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token jest wymagany'),
-  newPassword: z.string()
-    .min(8, 'Hasło musi mieć minimum 8 znaków')
-    .regex(/[A-Za-z]/, 'Hasło musi zawierać litery')
-    .regex(/[0-9]/, 'Hasło musi zawierać cyfry'),
+  token: z.string().min(1, "Token is required"),
+  newPassword: z
+    .string()
+    .min(8, "Password must contain at least 8 characters")
+    .regex(/[A-Za-z]/, "Password must contain letters")
+    .regex(/[0-9]/, "Password must contain numbers"),
 });
 ```
 
-#### B. Middleware Walidacji
+#### B. Validation Middleware
 
 **`src/lib/middleware/validation.ts`**
-```typescript
-import type { APIContext } from 'astro';
-import { ZodSchema } from 'zod';
 
-export async function validateRequest<T>(
-  context: APIContext,
-  schema: ZodSchema<T>
-): Promise<T> {
+```typescript
+import type { APIContext } from "astro";
+import { ZodSchema } from "zod";
+
+export async function validateRequest<T>(context: APIContext, schema: ZodSchema<T>): Promise<T> {
   try {
     const body = await context.request.json();
     return schema.parse(body);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw createApiError(422, 'validation_error', 'Invalid request data', {
+      throw createApiError(422, "validation_error", "Invalid request data", {
         errors: error.errors,
       });
     }
@@ -417,11 +428,12 @@ export async function validateRequest<T>(
 }
 ```
 
-### 2.3 Obsługa Wyjątków
+### 2.3 Exception Handling
 
-#### A. Hierarchia Błędów
+#### A. Error Hierarchy
 
 **`src/lib/errors/auth.ts`**
+
 ```typescript
 export class AuthError extends Error {
   constructor(
@@ -430,31 +442,31 @@ export class AuthError extends Error {
     public statusCode: number = 401
   ) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
   }
 }
 
 export class InvalidCredentialsError extends AuthError {
   constructor() {
-    super('invalid_credentials', 'Invalid email or password', 401);
+    super("invalid_credentials", "Invalid email or password", 401);
   }
 }
 
 export class EmailNotVerifiedError extends AuthError {
   constructor() {
-    super('email_not_verified', 'Please verify your email first', 403);
+    super("email_not_verified", "Please verify your email first", 403);
   }
 }
 
 export class SessionExpiredError extends AuthError {
   constructor() {
-    super('session_expired', 'Your session has expired', 401);
+    super("session_expired", "Your session has expired", 401);
   }
 }
 
 export class RateLimitError extends AuthError {
   constructor(retryAfter: number) {
-    super('rate_limit', `Too many attempts. Try again in ${retryAfter} seconds`, 429);
+    super("rate_limit", `Too many attempts. Try again in ${retryAfter} seconds`, 429);
   }
 }
 ```
@@ -462,9 +474,10 @@ export class RateLimitError extends AuthError {
 #### B. Global Error Handler
 
 **`src/lib/middleware/errorHandler.ts`**
+
 ```typescript
 export function handleAuthError(error: unknown): Response {
-  console.error('[Auth Error]:', error);
+  console.error("[Auth Error]:", error);
 
   if (error instanceof AuthError) {
     return jsonResponse(error.statusCode, {
@@ -478,43 +491,44 @@ export function handleAuthError(error: unknown): Response {
   if (error instanceof SupabaseError) {
     return jsonResponse(401, {
       error: {
-        code: 'supabase_error',
-        message: 'Authentication service error',
+        code: "supabase_error",
+        message: "Authentication service error",
       },
     });
   }
 
   return jsonResponse(500, {
     error: {
-      code: 'internal_error',
-      message: 'An unexpected error occurred',
+      code: "internal_error",
+      message: "An unexpected error occurred",
     },
   });
 }
 ```
 
-### 2.4 Server-Side Rendering z Astro
+### 2.4 Server-Side Rendering with Astro
 
-#### A. Middleware Autentykacji
+#### A. Authentication Middleware
 
 **`src/middleware/index.ts`**
-```typescript
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { type MiddlewareHandler } from 'astro';
 
-const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth/callback'];
+```typescript
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { type MiddlewareHandler } from "astro";
+
+const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/api/auth/callback"];
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { url, cookies, redirect } = context;
-  const isPublicPath = publicPaths.some(path => url.pathname.startsWith(path));
-  const isApiAuthPath = url.pathname.startsWith('/api/v1/auth');
+  const isPublicPath = publicPaths.some((path) => url.pathname.startsWith(path));
+  const isApiAuthPath = url.pathname.startsWith("/api/v1/auth");
 
-  // Przekieruj główną stronę na login dla niezalogowanych
-  if (url.pathname === '/' && !isAuthenticated) {
-    return redirect('/login');
+  // Redirect root page to login for logged-out users
+  if (url.pathname === "/" && !isAuthenticated) {
+    return redirect("/login");
   }
 
-  // Utwórz klienta Supabase dla żądania po stronie serwera
+  // Create a server-side Supabase client for the request
   const supabase = createServerClient(import.meta.env.SUPABASE_URL!, import.meta.env.SUPABASE_ANON_KEY!, {
     cookies: {
       get: (key) => cookies.get(key)?.value,
@@ -523,21 +537,23 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     },
   });
 
-  // Pobierz sesję użytkownika
-  const { data: { session } } = await supabase.auth.getSession();
+  // Retrieve user session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   const user = session?.user;
 
-  // Przekieruj zalogowanych użytkowników ze stron publicznych do strony głównej
+  // Redirect logged-in users from public pages to the home page
   if (user && isPublicPath) {
-    return redirect('/');
+    return redirect("/");
   }
 
-  // Zezwól na dostęp do publicznych ścieżek i endpointów API autentykacji
+  // Allow access to public paths and authentication API endpoints
   if (!user && !isPublicPath && !isApiAuthPath) {
-    return redirect('/login?redirectTo=' + encodeURIComponent(url.pathname));
+    return redirect("/login?redirectTo=" + encodeURIComponent(url.pathname));
   }
 
-  // Udostępnij klienta Supabase i sesję w kontekście Astro
+  // Expose Supabase client and session in Astro context
   context.locals.supabase = supabase;
   context.locals.session = session;
   context.locals.user = user;
@@ -546,15 +562,16 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 };
 ```
 
-#### B. Helpery Server-Side
+#### B. Server-Side Helpers
 
 **`src/lib/auth/server.ts`**
+
 ```typescript
-import type { AstroGlobal } from 'astro';
-import { supabaseServer } from '../supabase/server';
+import type { AstroGlobal } from "astro";
+import { supabaseServer } from "../supabase/server";
 
 export async function isAuthenticated(astro: AstroGlobal): Promise<boolean> {
-  const accessToken = astro.cookies.get('sb-access-token');
+  const accessToken = astro.cookies.get("sb-access-token");
   if (!accessToken) return false;
 
   const { data, error } = await supabaseServer.auth.getUser(accessToken.value);
@@ -562,7 +579,7 @@ export async function isAuthenticated(astro: AstroGlobal): Promise<boolean> {
 }
 
 export async function getUser(astro: AstroGlobal) {
-  const accessToken = astro.cookies.get('sb-access-token');
+  const accessToken = astro.cookies.get("sb-access-token");
   if (!accessToken) return null;
 
   const { data, error } = await supabaseServer.auth.getUser(accessToken.value);
@@ -575,80 +592,79 @@ export async function requireAuth(astro: AstroGlobal) {
   const user = await getUser(astro);
 
   if (!user) {
-    return astro.redirect('/login?redirectTo=' + encodeURIComponent(astro.url.pathname));
+    return astro.redirect("/login?redirectTo=" + encodeURIComponent(astro.url.pathname));
   }
 
   return user;
 }
 ```
 
-## 3. SYSTEM AUTENTYKACJI - INTEGRACJA Z SUPABASE
+## 3. AUTHENTICATION SYSTEM - SUPABASE INTEGRATION
 
-### 3.1 Konfiguracja Supabase Auth
+### 3.1 Supabase Auth Configuration
 
-#### A. Inicjalizacja Klientów
+#### A. Client Initialization
 
 **`src/lib/supabase/client.ts`** (Browser)
+
 ```typescript
-import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from '../../db/database.types';
+import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "../../db/database.types";
 
 export const supabaseClient = createBrowserClient<Database>(
   import.meta.env.PUBLIC_SUPABASE_URL,
   import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
   {
     auth: {
-      flowType: 'pkce',
+      flowType: "pkce",
       autoRefreshToken: true,
       detectSessionInUrl: true,
       persistSession: true,
-      storage: localStorage, // Uproszczone dla MVP - zawsze używaj localStorage
+      storage: localStorage, // Simplified for MVP - always use localStorage
     },
   }
 );
 ```
 
 **`src/lib/supabase/server.ts`** (Server)
+
 ```typescript
-import { createServerClient } from '@supabase/ssr';
-import type { Database } from '../../db/database.types';
-import type { AstroGlobal } from 'astro';
+import { createServerClient } from "@supabase/ssr";
+import type { Database } from "../../db/database.types";
+import type { AstroGlobal } from "astro";
 
 export function createSupabaseServer(context: AstroGlobal) {
-  return createServerClient<Database>(
-    import.meta.env.SUPABASE_URL,
-    import.meta.env.SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(key) {
-          return context.cookies.get(key)?.value;
-        },
-        set(key, value, options) {
-          context.cookies.set(key, value, {
-            ...options,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax',
-            path: '/',
-          });
-        },
-        remove(key) {
-          context.cookies.delete(key);
-        },
+  return createServerClient<Database>(import.meta.env.SUPABASE_URL, import.meta.env.SUPABASE_ANON_KEY, {
+    cookies: {
+      get(key) {
+        return context.cookies.get(key)?.value;
       },
-    }
-  );
+      set(key, value, options) {
+        context.cookies.set(key, value, {
+          ...options,
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+        });
+      },
+      remove(key) {
+        context.cookies.delete(key);
+      },
+    },
+  });
 }
 ```
 
-### 3.2 Serwisy Autentykacji
+### 3.2 Authentication Services
 
 #### A. AuthService
 
 **`src/lib/services/authService.ts`**
+
 ```typescript
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../../db/database.types';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../db/database.types";
 
 export class AuthService {
   constructor(private supabase: SupabaseClient<Database>) {}
@@ -660,7 +676,7 @@ export class AuthService {
     });
 
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message.includes("Invalid login credentials")) {
         throw new InvalidCredentialsError();
       }
       throw error;
@@ -680,8 +696,8 @@ export class AuthService {
     });
 
     if (error) {
-      if (error.message.includes('User already registered')) {
-        throw new AuthError('email_already_exists', 'Email already registered', 422);
+      if (error.message.includes("User already registered")) {
+        throw new AuthError("email_already_exists", "Email already registered", 422);
       }
       throw error;
     }
@@ -739,9 +755,10 @@ export class AuthService {
 #### A. Session Store
 
 **`src/lib/stores/authStore.ts`**
+
 ```typescript
-import { atom, computed } from 'nanostores';
-import type { User, Session } from '@supabase/supabase-js';
+import { atom, computed } from "nanostores";
+import type { User, Session } from "@supabase/supabase-js";
 
 export const userAtom = atom<User | null>(null);
 export const sessionAtom = atom<Session | null>(null);
@@ -770,7 +787,7 @@ export const authStore = {
         userAtom.set(session.user);
       }
     } catch (error) {
-      console.error('Failed to initialize auth:', error);
+      console.error("Failed to initialize auth:", error);
       authStore.clear();
     } finally {
       loadingAtom.set(false);
@@ -782,6 +799,7 @@ export const authStore = {
 #### B. Auth Provider
 
 **`src/components/providers/AuthProvider.tsx`**
+
 ```typescript
 import { useEffect } from 'react';
 import { useStore } from '@nanostores/react';
@@ -792,7 +810,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loading = useStore(loadingAtom);
 
   useEffect(() => {
-    // Inicjalizuj stan autentykacji
+    // Initialize authentication state
     authStore.initialize(authService);
 
     // Subskrybuj zmiany stanu
@@ -837,11 +855,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### 3.4 Rate Limiting i Bezpieczeństwo
+### 3.4 Rate Limiting and Security
 
 #### A. Rate Limiter
 
 **`src/lib/services/rateLimiter.ts`**
+
 ```typescript
 interface RateLimitConfig {
   maxAttempts: number;
@@ -857,10 +876,8 @@ export class RateLimiter {
     const now = Date.now();
     const attempts = this.attempts.get(identifier) || [];
 
-    // Usuń stare próby
-    const validAttempts = attempts.filter(
-      (timestamp) => now - timestamp < this.config.windowMs
-    );
+    // Remove old attempts
+    const validAttempts = attempts.filter((timestamp) => now - timestamp < this.config.windowMs);
 
     if (validAttempts.length >= this.config.maxAttempts) {
       const oldestAttempt = validAttempts[0];
@@ -869,7 +886,7 @@ export class RateLimiter {
       return { allowed: false, retryAfter };
     }
 
-    // Zapisz nową próbę
+    // Record new attempt
     validAttempts.push(now);
     this.attempts.set(identifier, validAttempts);
 
@@ -881,10 +898,10 @@ export class RateLimiter {
   }
 }
 
-// Konfiguracja dla różnych operacji
+// Configuration for different operations
 export const loginRateLimiter = new RateLimiter({
   maxAttempts: 5,
-  windowMs: 15 * 60 * 1000, // 15 minut
+  windowMs: 15 * 60 * 1000, // 15 minutes
 });
 
 export const forgotPasswordRateLimiter = new RateLimiter({
@@ -893,55 +910,57 @@ export const forgotPasswordRateLimiter = new RateLimiter({
 });
 ```
 
-<!-- CSRF Protection - pominięte w MVP, Supabase zapewnia podstawową ochronę -->
+<!-- CSRF Protection - omitted in MVP; Supabase provides basic protection -->
 
-### 3.5 Integracja z Onboardingiem
+### 3.5 Onboarding Integration
 
 #### A. Post-Registration Flow
 
 **`src/lib/flows/onboardingFlow.ts`**
+
 ```typescript
 export class OnboardingFlow {
   static async initiate(userId: string) {
-    // Sprawdź czy użytkownik już przeszedł onboarding
+    // Check whether the user has completed onboarding
     const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('onboarding_completed')
-      .eq('user_id', userId)
+      .from("user_profiles")
+      .select("onboarding_completed")
+      .eq("user_id", userId)
       .single();
 
     if (profile?.onboarding_completed) {
-      return { redirect: '/' };
+      return { redirect: "/" };
     }
 
-    // Ustaw flagę w sesji
-    sessionStorage.setItem('onboarding_required', 'true');
+    // Set session flag
+    sessionStorage.setItem("onboarding_required", "true");
 
-    return { redirect: '/onboarding' };
+    return { redirect: "/onboarding" };
   }
 
   static async complete(userId: string) {
-    // Oznacz onboarding jako ukończony
+    // Mark onboarding completed
     await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .update({
         onboarding_completed: true,
-        onboarding_completed_at: new Date().toISOString()
+        onboarding_completed_at: new Date().toISOString(),
       })
-      .eq('user_id', userId);
+      .eq("user_id", userId);
 
-    sessionStorage.removeItem('onboarding_required');
+    sessionStorage.removeItem("onboarding_required");
   }
 }
 ```
 
-## 4. MIGRACJE BAZY DANYCH
+## 4. DATABASE MIGRATIONS
 
-### 4.1 Tabela Profili Użytkowników
+### 4.1 User Profiles Table
 
 **`supabase/migrations/[timestamp]_create_user_profiles.sql`**
+
 ```sql
--- Tabela rozszerzeń profilu użytkownika
+-- User profile extension table
 CREATE TABLE public.user_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -975,7 +994,7 @@ CREATE POLICY "Users can update own profile"
   ON public.user_profiles FOR UPDATE
   USING (auth.uid() = user_id);
 
--- Trigger na automatyczne tworzenie profilu
+-- Trigger to automatically create a profile
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -989,7 +1008,7 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- Trigger na aktualizację updated_at
+-- Trigger to update updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS trigger AS $$
 BEGIN
@@ -1003,72 +1022,74 @@ CREATE TRIGGER set_updated_at
   FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 ```
 
-<!-- Audit Log - pominięte w MVP, może być dodane w przyszłości -->
+<!-- Audit Log - omitted in MVP; may be added in the future -->
 
-## 5. TESTY I MONITORING
+## 5. TESTS AND MONITORING
 
-### 5.1 Testy E2E
+### 5.1 E2E Tests
 
 **`tests/e2e/auth.spec.ts`**
+
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Authentication Flow', () => {
-  test('should register new user', async ({ page }) => {
-    await page.goto('/register');
+test.describe("Authentication Flow", () => {
+  test("should register new user", async ({ page }) => {
+    await page.goto("/register");
 
-    await page.fill('[name="email"]', 'test@example.com');
-    await page.fill('[name="password"]', 'TestPassword123');
-    await page.fill('[name="confirmPassword"]', 'TestPassword123');
+    await page.fill('[name="email"]', "test@example.com");
+    await page.fill('[name="password"]', "TestPassword123");
+    await page.fill('[name="confirmPassword"]', "TestPassword123");
     await page.check('[name="acceptTerms"]');
 
     await page.click('button[type="submit"]');
 
-    // Powinien pokazać komunikat o weryfikacji emaila
-    await expect(page.locator('.success-message')).toContainText('verification email');
+    // Should display an email verification message
+    await expect(page.locator(".success-message")).toContainText("verification email");
   });
 
-  test('should login existing user', async ({ page }) => {
-    await page.goto('/login');
+  test("should login existing user", async ({ page }) => {
+    await page.goto("/login");
 
-    await page.fill('[name="email"]', 'existing@example.com');
-    await page.fill('[name="password"]', 'Password123');
+    await page.fill('[name="email"]', "existing@example.com");
+    await page.fill('[name="password"]', "Password123");
 
     await page.click('button[type="submit"]');
 
-    // Powinien przekierować na dashboard
-    await expect(page).toHaveURL('/');
+    // Should redirect to dashboard
+    await expect(page).toHaveURL("/");
   });
 
-  test('should handle wrong credentials', async ({ page }) => {
-    await page.goto('/login');
+  test("should handle wrong credentials", async ({ page }) => {
+    await page.goto("/login");
 
-    await page.fill('[name="email"]', 'wrong@example.com');
-    await page.fill('[name="password"]', 'WrongPassword');
+    await page.fill('[name="email"]', "wrong@example.com");
+    await page.fill('[name="password"]', "WrongPassword");
 
     await page.click('button[type="submit"]');
 
-    // Powinien pokazać błąd
-    await expect(page.locator('.error-message')).toBeVisible();
+    // Should display an error
+    await expect(page.locator(".error-message")).toBeVisible();
   });
 });
 ```
 
-<!-- Monitoring - uproszczony dla MVP, wykorzystuje wbudowane logi Supabase -->
+<!-- Monitoring - simplified for MVP, uses built-in Supabase logs -->
 
-## 6. PODSUMOWANIE
+## 6. SUMMARY
 
-System autentykacji zapewnia kompletne rozwiązanie dla zarządzania użytkownikami w aplikacji Training Planner MVP:
+The authentication system provides a complete user management solution for Training Planner MVP:
 
-1. **Bezpieczeństwo**: Wykorzystanie Supabase Auth z podstawową ochroną (rate limiting)
-2. **UX**: Intuicyjne formularze z walidacją real-time i przejrzystymi komunikatami błędów
-3. **Flow**: Jasny przepływ: Login → Sprawdzenie onboardingu → Kalendarz lub Onboarding
-4. **Główna strona**: `/login` dla niezalogowanych, `/` (kalendarz) dla zalogowanych
-5. **Integracja z PRD**: Pełna zgodność z wymaganiami certyfikacyjnymi
+1. **Security**: Supabase Auth with basic protection (rate limiting)
+2. **UX**: Intuitive forms with real-time validation and clear error messages
+3. **Flow**: Clear flow: Login → Onboarding check → Calendar or Onboarding
+4. **Home page**: `/login` for logged-out users, `/` (calendar) for logged-in users
+5. **PRD integration**: Full certification requirement compliance
 
-### Kluczowe flow użytkownika:
-- **Nowy użytkownik**: Rejestracja → Weryfikacja email → Login → Onboarding (3 treningi) → Kalendarz
-- **Istniejący użytkownik**: Login → Kalendarz (jeśli ukończył onboarding)
-- **Wylogowanie**: Przycisk w prawym górnym rogu → Przekierowanie na /login
+### Key User Flows:
 
-System jest gotowy do implementacji zgodnie z wymaganiami MVP i certyfikacji.
+- **New user**: Registration → Email verification → Login → Onboarding (3 workouts) → Calendar
+- **Existing user**: Login → Calendar (if onboarding completed)
+- **Logout**: Top-right button → Redirect to /login
+
+The system is ready for implementation according to MVP and certification requirements.
